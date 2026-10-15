@@ -281,7 +281,7 @@ export async function getClaudeDesktopAvailableModels(
         !name.endsWith("cloud")
       );
     });
-    const cloudModels = (cloudResult.models ?? []).map((model) => {
+    const cloudModels = (cloudResult.models ?? []).map((model: ModelResponse) => {
       const name = model.name.replace(/:latest$/, "");
       const tag = name.slice(name.lastIndexOf(":") + 1).toLowerCase();
       const explicitCloud =
