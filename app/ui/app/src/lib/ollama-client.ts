@@ -1,16 +1,16 @@
-import { OWN } from "own/browser";
+import { Ollama } from "ollama/browser";
 import { OLLAMA_HOST } from "./config";
 
-let _ownClient: OWN | null = null;
+let _ownClient: Ollama | null = null;
 
-export const ownClient = new Proxy({} as OWN, {
+export const ownClient = new Proxy({} as Ollama, {
   get(_target, prop) {
     if (!_ownClient) {
-      _ownClient = new OWN({
+      _ownClient = new Ollama({
         host: OLLAMA_HOST,
       });
     }
-    const value = _ownClient[prop as keyof OWN];
+    const value = _ownClient[prop as keyof Ollama];
     return typeof value === "function" ? value.bind(_ownClient) : value;
   },
 });
