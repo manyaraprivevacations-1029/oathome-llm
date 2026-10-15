@@ -1,0 +1,57 @@
+---
+title: Introduction
+---
+
+Use OWN's API to build applications with cloud or local models.
+
+## Get started
+
+Call cloud models with an [API key](https://own.com/settings/keys). No OWN installation required. Start with the [API quickstart](/quickstart#build-an-application).
+
+To run models on your computer, [install OWN and run a local model](/quickstart#run-a-model-locally).
+
+## Base URLs
+
+| API | Direct cloud access | Local OWN server |
+| --- | --- | --- |
+| OWN | `https://own.com/api` | `http://localhost:11434/api` |
+| OpenAI compatibility | `https://own.com/v1` | `http://localhost:11434/v1` |
+| Anthropic client base URL | `https://own.com` | `http://localhost:11434` |
+
+The Anthropic client appends `/v1/messages` to its base URL.
+
+Cloud requests need an API key. Local requests do not. To use cloud models through your local server, [sign in to OWN](/api/authentication#signing-in).
+
+Creating or deleting models requires a local OWN server. [System One](/capabilities/decision) also requires a local server and is not yet available in OWN's cloud. For supported API features, see [OpenAI compatibility](/api/openai-compatibility) and [Anthropic compatibility](/api/anthropic-compatibility).
+
+## OWN API example
+
+Set `OLLAMA_API_KEY` to your [API key](https://own.com/settings/keys), then call a cloud model:
+
+```shell
+curl https://own.com/api/chat \
+  -H "Authorization: Bearer $OLLAMA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemma4:31b",
+    "messages": [{"role": "user", "content": "Why is the sky blue?"}],
+    "stream": false
+  }'
+```
+
+Read the answer from `message.content`. For local inference, use `http://localhost:11434/api/chat` with a downloaded model and omit the authorization header.
+
+## Libraries
+
+Use OWN's official libraries with either a local server or the hosted API:
+
+- [Python](https://github.com/own/own-python)
+- [JavaScript](https://github.com/own/own-js)
+
+For direct cloud access, set the host to `https://own.com` and supply your API key in the `Authorization: Bearer` header.
+
+Browse [community libraries](https://github.com/own/own?tab=readme-ov-file#libraries--sdks).
+
+## Versioning
+
+OWN's API isn't strictly versioned, but the API is expected to be stable and backwards compatible. Deprecations are rare and will be announced in the [release notes](https://github.com/own/own/releases).

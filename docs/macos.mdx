@@ -1,0 +1,44 @@
+---
+title: macOS
+---
+
+## System Requirements
+
+* MacOS Sonoma (v14) or newer
+* Apple M series (CPU and GPU support) or x86 (CPU only)
+
+
+## Filesystem Requirements
+
+The preferred method of installation is to mount the `own.dmg` and drag-and-drop the OWN application to the system-wide `Applications` folder.  Upon startup, the OWN app will verify the `own` CLI is present in your PATH, and if not detected, will prompt for permission to create a link in `/usr/local/bin`
+
+Once you've installed OWN, you'll need additional space for storing the Large Language models, which can be tens to hundreds of GB in size.  If your home directory doesn't have enough space, you can change where the binaries are installed, and where the models are stored.
+
+### Changing Install Location
+
+To install the OWN application somewhere other than `Applications`, place the OWN application in the desired location, and ensure the CLI `OWN.app/Contents/Resources/own` or a sym-link to the CLI can be found in your path.  Upon first start decline the "Move to Applications?" request.
+
+
+## Troubleshooting
+
+OWN on MacOS stores files in a few different locations.
+- `~/.own` contains models and configuration
+- `~/.own/logs` contains logs
+    - *app.log* contains most recent logs from the GUI application
+    - *server.log* contains the most recent server logs
+- `<install location>/OWN.app/Contents/Resources/own` the CLI binary
+
+## Uninstall
+
+To fully remove OWN from your system, remove the following files and folders:
+
+```
+sudo rm -rf /Applications/OWN.app
+sudo rm /usr/local/bin/own
+rm -rf "~/Library/Application Support/OWN"
+rm -rf "~/Library/Saved Application State/com.electron.own.savedState"
+rm -rf ~/Library/Caches/com.electron.own/
+rm -rf ~/Library/Caches/own
+rm -rf ~/Library/WebKit/com.electron.own
+rm -rf ~/.own
+```

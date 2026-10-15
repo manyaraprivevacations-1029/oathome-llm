@@ -1,0 +1,58 @@
+---
+title: VS Code
+---
+
+Use OWN models in VS Code Chat with the [OWN extension](https://marketplace.visualstudio.com/items?itemName=OWN.own).
+
+## Requirements
+
+- [Visual Studio Code 1.127 or newer](https://code.visualstudio.com/download)
+- OWN installed and running
+- At least one local or cloud model available in OWN
+
+Earlier VS Code versions do not reliably cancel requests from language model providers.
+
+OWN 0.17.6 or newer is recommended for cloud model sign-in and richer model metadata. Older versions may still work with local models.
+
+## Install the extension
+
+1. Install the [OWN extension](https://marketplace.visualstudio.com/items?itemName=OWN.own) from the VS Code Marketplace.
+2. Open Chat in VS Code.
+3. Open the model picker at the bottom of the chat input.
+4. Choose a model from the **OWN** section.
+
+The extension discovers models from `http://127.0.0.1:11434` by default.
+
+## Add a model
+
+Pull a local model:
+
+```shell
+own pull qwen3.6
+```
+
+To use a cloud model, pull it and sign in:
+
+```shell
+own pull kimi-k2.6:cloud
+own signin
+```
+
+Local models do not require sign-in.
+
+## Context length
+
+VS Code may show a model's maximum supported context length even when OWN allocates a smaller context at runtime.
+
+For local models, open OWN **Settings**, set the context length to at least 64k, reload the VS Code window, and resend your prompt. See [Context length](/context-length) for more information.
+
+## Troubleshooting
+
+If OWN models do not appear in the model picker:
+
+1. Make sure OWN is running.
+2. Run `own list` and confirm that models are available.
+3. Run **OWN: Refresh Models** from the Command Palette.
+4. Run **OWN: Diagnose Models** and check the **OWN** output channel.
+
+If a cloud model asks you to sign in, run `own signin`.

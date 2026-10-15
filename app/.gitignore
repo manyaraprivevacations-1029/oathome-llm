@@ -1,0 +1,11 @@
+own.syso
+*.crt
+*.exe
+/app/app
+/app/squirrel
+own
+*cover*
+.vscode
+.env
+.DS_Store
+.claude

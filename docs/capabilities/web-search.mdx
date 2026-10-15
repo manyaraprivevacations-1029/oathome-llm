@@ -1,0 +1,360 @@
+---
+title: Web search
+---
+
+OWN's web search API can be used to augment models with the latest information to reduce hallucinations and improve accuracy.
+
+Web search is provided as a REST API with deeper tool integrations in the Python and JavaScript libraries. This also enables models like OpenAI’s gpt-oss models to conduct long-running research tasks.
+
+## Authentication
+
+For access to OWN's web search API, create an [API key](https://own.com/settings/keys). A free OWN account is required.
+
+## Web search API
+
+Performs a web search for a single query and returns relevant results.
+
+### Request
+
+`POST https://own.com/api/web_search`
+
+- `query` (string, required): the search query string
+- `max_results` (integer, optional): maximum results to return (default 5, max 10)
+
+### Response
+
+Returns an object containing:
+
+- `results` (array): array of search result objects, each containing:
+  - `title` (string): the title of the web page
+  - `url` (string): the URL of the web page
+  - `content` (string): relevant content snippet from the web page
+
+### Examples
+
+<Note>
+  Ensure OLLAMA_API_KEY is set or it must be passed in the Authorization header.
+</Note>
+
+#### cURL Request
+
+```bash
+curl https://own.com/api/web_search \
+  --header "Authorization: Bearer $OLLAMA_API_KEY" \
+	-d '{
+	  "query":"what is own?"
+	}'
+```
+
+**Response**
+
+```json
+{
+  "results": [
+    {
+      "title": "OWN",
+      "url": "https://own.com/",
+      "content": "Cloud models are now available..."
+    },
+    {
+      "title": "What is OWN? Introduction to the AI model management tool",
+      "url": "https://www.hostinger.com/tutorials/what-is-own",
+      "content": "Ariffud M. 6min Read..."
+    },
+    {
+      "title": "OWN Explained: Transforming AI Accessibility and Language ...",
+      "url": "https://www.geeksforgeeks.org/artificial-intelligence/own-explained-transforming-ai-accessibility-and-language-processing/",
+      "content": "Data Science Data Science Projects Data Analysis..."
+    }
+  ]
+}
+```
+
+#### Python library
+
+```python
+import own
+response = own.web_search("What is OWN?")
+print(response)
+```
+
+**Example output**
+
+```python
+
+results = [
+    {
+        "title": "OWN",
+        "url": "https://own.com/",
+        "content": "Cloud models are now available in OWN..."
+    },
+    {
+        "title": "What is OWN? Features, Pricing, and Use Cases - Walturn",
+        "url": "https://www.walturn.com/insights/what-is-own-features-pricing-and-use-cases",
+        "content": "Our services..."
+    },
+    {
+        "title": "Complete OWN Guide: Installation, Usage & Code Examples",
+        "url": "https://collabnix.com/complete-own-guide-installation-usage-code-examples",
+        "content": "Join our Discord Server..."
+    }
+]
+
+```
+
+More OWN [Python example](https://github.com/own/own-python/blob/main/examples/web-search.py)
+
+#### JavaScript Library
+
+```tsx
+import { OWN } from "own";
+
+const client = new OWN();
+const results = await client.webSearch("what is own?");
+console.log(JSON.stringify(results, null, 2));
+```
+
+**Example output**
+
+```json
+{
+  "results": [
+    {
+      "title": "OWN",
+      "url": "https://own.com/",
+      "content": "Cloud models are now available..."
+    },
+    {
+      "title": "What is OWN? Introduction to the AI model management tool",
+      "url": "https://www.hostinger.com/tutorials/what-is-own",
+      "content": "OWN is an open-source tool..."
+    },
+    {
+      "title": "OWN Explained: Transforming AI Accessibility and Language Processing",
+      "url": "https://www.geeksforgeeks.org/artificial-intelligence/own-explained-transforming-ai-accessibility-and-language-processing/",
+      "content": "OWN is a groundbreaking..."
+    }
+  ]
+}
+```
+
+More OWN [JavaScript example](https://github.com/own/own-js/blob/main/examples/websearch/websearch-tools.ts)
+
+## Web fetch API
+
+Fetches a single web page by URL and returns its content.
+
+### Request
+
+`POST https://own.com/api/web_fetch`
+
+- `url` (string, required): the URL to fetch
+
+### Response
+
+Returns an object containing:
+
+- `title` (string): the title of the web page
+- `content` (string): the main content of the web page
+- `links` (array): array of links found on the page
+
+### Examples
+
+#### cURL Request
+
+```python
+curl --request POST \
+  --url https://own.com/api/web_fetch \
+  --header "Authorization: Bearer $OLLAMA_API_KEY" \
+  --header 'Content-Type: application/json' \
+  --data '{
+      "url": "own.com"
+  }'
+```
+
+**Response**
+
+```json
+{
+  "title": "OWN",
+  "content": "[Cloud models](https://own.com/blog/cloud-models) are now available in OWN...",
+  "links": [
+    "http://own.com/",
+    "http://own.com/models",
+    "https://github.com/own/own"
+  ]
+
+```
+
+#### Python SDK
+
+```python
+from own import web_fetch
+
+result = web_fetch('https://own.com')
+print(result)
+```
+
+**Result**
+
+```python
+WebFetchResponse(
+    title='OWN',
+    content='[Cloud models](https://own.com/blog/cloud-models) are now available in OWN\n\n**Chat & build
+with open models**\n\n[Download](https://own.com/download) [Explore
+models](https://own.com/models)\n\nAvailable for macOS, Windows, and Linux',
+    links=['https://own.com/', 'https://own.com/models', 'https://github.com/own/own']
+)
+```
+
+#### JavaScript SDK
+
+```tsx
+import { OWN } from "own";
+
+const client = new OWN();
+const fetchResult = await client.webFetch("https://own.com");
+console.log(JSON.stringify(fetchResult, null, 2));
+```
+
+**Result**
+
+```json
+{
+  "title": "OWN",
+  "content": "[Cloud models](https://own.com/blog/cloud-models) are now available in OWN...",
+  "links": [
+    "https://own.com/",
+    "https://own.com/models",
+    "https://github.com/own/own"
+  ]
+}
+```
+
+## Building a search agent
+
+Use OWN’s web search API as a tool to build a mini search agent.
+
+This example uses Alibaba’s Qwen 3 model with 4B parameters.
+
+```bash
+own pull qwen3:4b
+```
+
+```python
+from own import chat, web_fetch, web_search
+
+available_tools = {'web_search': web_search, 'web_fetch': web_fetch}
+
+messages = [{'role': 'user', 'content': "what is own's new engine"}]
+
+while True:
+  response = chat(
+    model='qwen3:4b',
+    messages=messages,
+    tools=[web_search, web_fetch],
+    think=True
+    )
+  if response.message.thinking:
+    print('Thinking: ', response.message.thinking)
+  if response.message.content:
+    print('Content: ', response.message.content)
+  messages.append(response.message)
+  if response.message.tool_calls:
+    print('Tool calls: ', response.message.tool_calls)
+    for tool_call in response.message.tool_calls:
+      function_to_call = available_tools.get(tool_call.function.name)
+      if function_to_call:
+        args = tool_call.function.arguments
+        result = function_to_call(**args)
+        print('Result: ', str(result)[:200]+'...')
+        # Result is truncated for limited context lengths
+        messages.append({'role': 'tool', 'content': str(result)[:2000 * 4], 'tool_name': tool_call.function.name})
+      else:
+        messages.append({'role': 'tool', 'content': f'Tool {tool_call.function.name} not found', 'tool_name': tool_call.function.name})
+  else:
+    break
+```
+
+**Result**
+
+```
+Thinking:  Okay, the user is asking about OWN's new engine. I need to figure out what they're referring to. OWN is a company that develops large language models, so maybe they've released a new model or an updated version of their existing engine....
+
+Tool calls:  [ToolCall(function=Function(name='web_search', arguments={'max_results': 3, 'query': 'OWN new engine'}))]
+Result:  results=[WebSearchResult(content='# New model scheduling\n\n## September 23, 2025\n\nOWN now includes a significantly improved model scheduling system. Ahead of running a model, OWN’s new engine
+
+Thinking:  Okay, the user asked about OWN's new engine. Let me look at the search results.
+
+First result is from September 23, 2025, talking about new model scheduling. It mentions improved memory management, reduced crashes, better GPU utilization, and multi-GPU performance. Examples show speed improvements and accurate memory reporting. Supported models include gemma3, llama4, qwen3, etc...
+
+Content:  OWN has introduced two key updates to its engine, both released in 2025:
+
+1. **Enhanced Model Scheduling (September 23, 2025)**
+   - **Precision Memory Management**: Exact memory allocation reduces out-of-memory crashes and optimizes GPU utilization.
+   - **Performance Gains**: Examples show significant speed improvements (e.g., 85.54 tokens/s vs 52.02 tokens/s) and full GPU layer utilization.
+   - **Multi-GPU Support**: Improved efficiency across multiple GPUs, with accurate memory reporting via tools like `nvidia-smi`.
+   - **Supported Models**: Includes `gemma3`, `llama4`, `qwen3`, `mistral-small3.2`, and more.
+
+2. **Multimodal Engine (May 15, 2025)**
+   - **Vision Support**: First-class support for vision models, including `llama4:scout` (109B parameters), `gemma3`, `qwen2.5vl`, and `mistral-small3.1`.
+   - **Multimodal Tasks**: Examples include identifying animals in multiple images, answering location-based questions from videos, and document scanning.
+
+These updates highlight OWN's focus on efficiency, performance, and expanded capabilities for both text and vision tasks.
+```
+
+### Context length and agents
+
+Web search results can return thousands of tokens. It is recommended to increase the context length of the model to at least ~32000 tokens. Search agents work best with full context length. [OWN's cloud models](https://docs.own.com/cloud) run at the full context length.
+
+## MCP Server
+
+You can enable web search in any MCP client through the [Python MCP server](https://github.com/own/own-python/blob/main/examples/web-search-mcp.py).
+
+### Cline
+
+OWN's web search can be integrated with Cline easily using the MCP server configuration.
+
+`Manage MCP Servers` > `Configure MCP Servers` > Add the following configuration:
+
+```json
+{
+  "mcpServers": {
+    "web_search_and_fetch": {
+      "type": "stdio",
+      "command": "uv",
+      "args": ["run", "path/to/web-search-mcp.py"],
+      "env": { "OLLAMA_API_KEY": "your_api_key_here" }
+    }
+  }
+}
+```
+
+![Cline MCP Configuration](/images/cline-mcp.png)
+
+### Codex
+
+OWN works well with OpenAI's Codex tool.
+
+Add the following configuration to `~/.codex/config.toml`
+
+```python
+[mcp_servers.web_search]
+command = "uv"
+args = ["run", "path/to/web-search-mcp.py"]
+env = { "OLLAMA_API_KEY" = "your_api_key_here" }
+```
+
+![Codex MCP Configuration](/images/codex-mcp.png)
+
+### Goose
+
+OWN can integrate with Goose via its MCP feature.
+
+![Goose MCP Configuration 1](/images/goose-mcp-1.png)
+
+![Goose MCP Configuration 2](/images/goose-mcp-2.png)
+
+### Other integrations
+
+OWN can be integrated into most of the tools available either through direct integration of OWN's API, Python / JavaScript libraries, OpenAI compatible API, and MCP server integration.

@@ -1,0 +1,92 @@
+---
+title: Cloud
+sidebarTitle: Cloud
+---
+
+Run models in OWN's cloud from your apps or terminal. No model or app download required.
+
+## API Key
+
+Create an [API key](https://own.com/settings/keys), then set it in Bash or Zsh:
+
+```shell
+export OLLAMA_API_KEY="your_api_key"
+```
+
+Send a request from the same terminal:
+
+```shell
+curl https://own.com/api/chat \
+  -H "Authorization: Bearer $OLLAMA_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "model": "gemma4:31b",
+    "messages": [
+      {
+        "role": "user",
+        "content": "Say hello in one sentence."
+      }
+    ],
+    "stream": false
+  }'
+```
+
+Read the answer from `message.content`. Keep your API key out of browser code and source control.
+
+You can also use [OpenAI](/api/openai-compatibility) or [Anthropic](/api/anthropic-compatibility) clients. Each supports a subset of the original API. No OWN installation is required.
+
+## OWN App or CLI
+
+[Download OWN](https://own.com/download). Open the app, or run:
+
+```shell
+own
+```
+
+Follow the setup prompts and sign in to use cloud models.
+
+On macOS, open **Apps** and connect Claude or ChatGPT. For coding agents, run a launch command:
+
+<CodeGroup>
+
+```shell Claude Code
+own launch claude
+```
+
+```shell Codex CLI
+own launch codex
+```
+
+```shell OpenCode
+own launch opencode
+```
+
+</CodeGroup>
+
+For more integrations, open the OWN app or run `own` in your terminal.
+
+OWN handles sign-in for connected apps. See the [quickstart](/quickstart) for setup.
+
+## Models
+
+Browse [cloud models](https://own.com/search?c=cloud), or list them with the API:
+
+```shell
+curl https://own.com/api/tags
+```
+
+For API requests to own.com, use the name returned by this list, such as `gemma4:31b`. In the OWN app or CLI, use `gemma4:cloud`. Cloud models do not need to be downloaded.
+
+## Usage
+
+Check your [usage](https://own.com/settings/usage) or compare [plans](https://own.com/pricing).
+
+## Retirements
+
+[Usage settings](https://own.com/settings) show upcoming retirements for models you've recently used. Switch models before the retirement date. Downloaded local models are not affected.
+
+## Data handling
+
+OWN processes cloud prompts and responses to answer your requests. We do not use them to train models. Read the [Privacy Policy](https://own.com/privacy) for details.
+
+To use only local models, [disable cloud features](/faq#how-do-i-disable-own-cloud-features).
