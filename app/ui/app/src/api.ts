@@ -21,7 +21,7 @@ import type {
 type ModelResponse = {
   name: string;
   digest: string;
-  modified_at?: string;
+  modified_at?: Date;
   details?: { families?: string[] };
   remote_model?: string;
   remote_host?: string;
@@ -210,7 +210,7 @@ export async function getModels(query?: string): Promise<Model[]> {
         return new Model({
           model: modelName,
           digest: m.digest,
-          modified_at: m.modified_at ? new Date(m.modified_at) : undefined,
+          modified_at: m.modified_at ? new Date(String(m.modified_at)) : undefined,
         });
       });
 
@@ -317,7 +317,7 @@ export async function getClaudeDesktopAvailableModels(
             model: model.name.replace(/:latest$/, ""),
             digest: model.digest,
             modified_at: model.modified_at
-              ? new Date(model.modified_at)
+              ? new Date(String(model.modified_at))
               : undefined,
           }),
       );
