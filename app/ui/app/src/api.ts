@@ -12,13 +12,21 @@ import {
   User,
 } from "@/gotypes";
 import { parseJsonlFromResponse } from "./util/jsonl-parsing";
-import { ownClient as own } from "./lib/own-client";
-import type { ModelResponse } from "own/browser";
+import { ownClient as own } from "./lib/ollama-client";
 import { API_BASE, OLLAMA_DOT_COM } from "./lib/config";
 import type {
   ClaudeDesktopStatus,
   CodexDesktopModelsSettingsResult,
 } from "./types/webview";
+type ModelResponse = {
+  name: string;
+  digest: string;
+  modified_at?: string;
+  details?: { families?: string[] };
+  remote_model?: string;
+  remote_host?: string;
+};
+
 
 // Extend Model class with utility methods
 declare module "@/gotypes" {
