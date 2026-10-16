@@ -1,9 +1,47 @@
 "use client";
 
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
 type Model = { name: string; size?: number; details?: { parameter_size?: string; family?: string } };
+
+
+function renderInline(text: string): ReactNode[] {
+  const tokens = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|https?:\/\/[^\s)]+)/g).filter(Boolean);
+  return tokens.map((token, index) => {
+    if (token.startsWith("**") && token.endsWith("**")) return <strong key={index}>{token.slice(2, -2)}</strong>;
+    if (token.startsWith("*") && token.endsWith("*")) return <em key={index}>{token.slice(1, -1)}</em>;
+    if (token.startsWith("`") && token.endsWith("`")) return <code key={index}>{token.slice(1, -1)}</code>;
+    if (/^https?:\/\//i.test(token)) return <a key={index} href={token} target="_blank" rel="noreferrer noopener">{token}</a>;
+    return token;
+  });
+}
+
+function renderMarkdown(content: string): ReactNode {
+  const blocks = content.replace(/\r\n/g, "\n").trim().split(/\n\s*\n/).filter(Boolean);
+  return blocks.map((block, index) => {
+    const trimmed = block.trim();
+    if (trimmed.startsWith("```")) {
+      const code = trimmed.replace(/^```[^\n]*\n?/, "").replace(/\n?```$/, "");
+      return <pre className="markdown-code" key={index}><code>{code}</code></pre>;
+    }
+    const lines = trimmed.split("\n");
+    if (lines.every((line) => /^\s*[-*+]\s+/.test(line))) {
+      return <ul key={index}>{lines.map((line, lineIndex) => <li key={lineIndex}>{renderInline(line.replace(/^\s*[-*+]\s+/, ""))}</li>)}</ul>;
+    }
+    if (lines.every((line) => /^\s*\d+[.)]\s+/.test(line))) {
+      return <ol key={index}>{lines.map((line, lineIndex) => <li key={lineIndex}>{renderInline(line.replace(/^\s*\d+[.)]\s+/, ""))}</li>)}</ol>;
+    }
+    const heading = trimmed.match(/^(#{1,3})\s+(.+)$/);
+    if (heading) {
+      const children = renderInline(heading[2]);
+      if (heading[1].length === 1) return <h3 key={index}>{children}</h3>;
+      if (heading[1].length === 2) return <h4 key={index}>{children}</h4>;
+      return <h5 key={index}>{children}</h5>;
+    }
+    return <p key={index}>{renderInline(lines.join(" "))}</p>;
+  });
+}
 
 const starters = [
   { title: "Explain something", prompt: "Explain how large language models work in simple terms." },
@@ -30,6 +68,7 @@ export default function Home() {
   const [modelNotice, setModelNotice] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const historyReadyRef = useRef(false);
 
   const loadModels = useCallback(async (tokenOverride?: string) => {
     setStatus("checking");
@@ -64,6 +103,30 @@ export default function Home() {
       void loadModels("");
     }
   }, [loadModels]);
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("own_current_conversation");
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          const restored = parsed.filter((item): item is Message =>
+            !!item && typeof item === "object" &&
+            ((item as Message).role === "user" || (item as Message).role === "assistant") &&
+            typeof (item as Message).content === "string"
+          );
+          setMessages(restored.slice(-40));
+        }
+      }
+    } catch {
+      window.localStorage.removeItem("own_current_conversation");
+    } finally {
+      historyReadyRef.current = true;
+    }
+  }, []);
+  useEffect(() => {
+    if (!historyReadyRef.current) return;
+    try { window.localStorage.setItem("own_current_conversation", JSON.stringify(messages.slice(-40))); } catch { /* Storage may be disabled or full. */ }
+  }, [messages]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const sendMessage = async (text = draft) => {
@@ -237,7 +300,7 @@ export default function Home() {
               <div className="conversation-label"><span className="blue-pip"></span> CONVERSATION</div>
               {messages.map((message, index) => <article className={`message ${message.role}`} key={index}>
                 <div className={`message-avatar ${message.role}`}>{message.role === "user" ? "Y" : "O"}</div>
-                <div className="message-body"><div className="message-author">{message.role === "user" ? "You" : "OWN"} <span>{message.role === "assistant" && index === messages.length - 1 && loading ? "· generating" : ""}</span></div><div className="message-content">{message.content || (loading && index === messages.length - 1 ? <span className="typing"><i></i><i></i><i></i></span> : "")}</div></div>
+                <div className="message-body"><div className="message-author">{message.role === "user" ? "You" : "OWN"} <span>{message.role === "assistant" && index === messages.length - 1 && loading ? "· generating" : ""}</span></div><div className="message-content">{message.content ? renderMarkdown(message.content) : (loading && index === messages.length - 1 ? <span className="typing"><i></i><i></i><i></i></span> : "")}</div></div>
               </article>)}
               <div ref={endRef} />
             </div>
