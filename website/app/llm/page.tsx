@@ -16,7 +16,7 @@ export default function LlmPlayground() {
 
   async function refreshModels() {
     try {
-      const response = await fetch("/api/llm/health", { cache: "no-store" });
+      const response = await fetch("/api/llm/health", { cache: "no-store", headers: token ? { authorization: `Bearer ${token}` } : {} });
       const data = await response.json();
       if (!response.ok || !data.ok) {
         setStatus(data.error ?? "OATHome runtime is not reachable.");
@@ -68,9 +68,9 @@ export default function LlmPlayground() {
   return (
     <main style={{ minHeight: "100vh", background: "#0b0d10", color: "#edf0f5", padding: "32px 18px", fontFamily: "Inter, ui-sans-serif, system-ui, sans-serif" }}>
       <section style={{ maxWidth: 900, margin: "0 auto" }}>
-        <a href="/" style={{ color: "#a8b3c5", textDecoration: "none", fontSize: 14 }}>← Back to On A Trip Holidays</a>
+        <a href="/" style={{ color: "#a8b3c5", textDecoration: "none", fontSize: 14 }}>← Back to OWN</a>
         <header style={{ margin: "28px 0 22px" }}>
-          <div style={{ color: "#f3a6c7", fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>OATHOME LLM · PLAYGROUND</div>
+          <div style={{ color: "#7190ff", fontSize: 12, fontWeight: 700, letterSpacing: 2 }}>OWN · OATHOME INTELLIGENCE</div>
           <h1 style={{ fontSize: "clamp(30px, 5vw, 44px)", margin: "8px 0" }}>Your model. Your runtime.</h1>
           <p style={{ color: "#9ba5b5", margin: 0 }}>Chat through your OATHome inference server. No third-party LLM API is used by this playground.</p>
         </header>
