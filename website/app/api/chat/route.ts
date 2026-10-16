@@ -10,6 +10,16 @@ const MAX_MESSAGES = 40;
 const MAX_MESSAGE_CHARS = 24000;
 const MAX_TOTAL_CHARS = 100000;
 
+const SYSTEM_PROMPT = `You are OWN, a helpful general-purpose AI assistant. Answer the question the user actually asked.
+
+Accuracy rules:
+- Do not invent people, names, film titles, dates, quotations, sources, or facts. If you do not know, say so plainly.
+- Treat well-known names in their ordinary context. For example, “Prabhas” usually refers to the Indian Telugu film actor when the user asks about a hero or actor. Do not replace a clear subject with a made-up person or place.
+- If a question is ambiguous in a way that changes the answer, ask one short clarifying question. Otherwise answer directly.
+- Do not present guesses as verified facts. For recent or uncertain facts, say you cannot verify them without a search tool. Do not claim to have browsed the web.
+- Keep answers relevant, concise, and well structured. Use valid Markdown for headings, lists, and bold text. Never output fake citations.
+- Follow the user’s language and requested format.`;
+
 function ollamaBaseUrl() {
   const configured = process.env.OATHOME_LLM_BASE_URL?.trim();
   if (configured) return configured.replace(/\/+$/, "");
@@ -90,24 +100,24 @@ export async function POST(request: NextRequest) {
   }
 
   let totalChars = 0;
-  const safeMessages: Array<{ role: "system" | "user" | "assistant"; content: string }> = [];
+  const safeMessages: Array<{ role: "user" | "assistant"; content: string }> = [];
   for (const entry of messages) {
     if (!entry || typeof entry !== "object") return NextResponse.json({ error: "Invalid message format." }, { status: 400 });
     const message = entry as { role?: unknown; content?: unknown };
-    if (!["user", "assistant", "system"].includes(String(message.role)) || typeof message.content !== "string") {
+    if (!["user", "assistant"].includes(String(message.role)) || typeof message.content !== "string") {
       return NextResponse.json({ error: "Each message needs a supported role and text content." }, { status: 400 });
     }
     if (message.content.length > MAX_MESSAGE_CHARS) return NextResponse.json({ error: "A message is too long." }, { status: 413 });
     totalChars += message.content.length;
     if (totalChars > MAX_TOTAL_CHARS) return NextResponse.json({ error: "Conversation is too large. Start a new chat." }, { status: 413 });
-    safeMessages.push({ role: message.role as "system" | "user" | "assistant", content: message.content });
+    safeMessages.push({ role: message.role as "user" | "assistant", content: message.content });
   }
 
   try {
     const upstream = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
       headers: upstreamHeaders(),
-      body: JSON.stringify({ model, messages: safeMessages, stream: true }),
+      body: JSON.stringify({ model, messages: [{ role: "system", content: SYSTEM_PROMPT }, ...safeMessages], stream: true }),
       cache: "no-store",
       signal: request.signal,
     });
