@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -16,6 +17,24 @@ function ollamaBaseUrl() {
   return "";
 }
 
+function isAuthorized(request: NextRequest): boolean {
+  // Local development stays convenient; production is closed unless explicitly configured.
+  if (process.env.NODE_ENV !== "production") return true;
+  const expected = process.env.OATHOME_LLM_ACCESS_TOKEN?.trim();
+  const supplied = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
+  if (!expected || !supplied) return false;
+  const expectedBytes = Buffer.from(expected);
+  const suppliedBytes = Buffer.from(supplied);
+  return expectedBytes.length === suppliedBytes.length && timingSafeEqual(expectedBytes, suppliedBytes);
+}
+
+function authError() {
+  if (!process.env.OATHOME_LLM_ACCESS_TOKEN?.trim()) {
+    return NextResponse.json({ error: "Production access is not configured. Set OATHOME_LLM_ACCESS_TOKEN in your hosting environment." }, { status: 503 });
+  }
+  return NextResponse.json({ error: "Enter the OATHome access token to use this runtime." }, { status: 401 });
+}
+
 function upstreamHeaders() {
   const headers: Record<string, string> = { "content-type": "application/json" };
   const token = process.env.OATHOME_LLM_ACCESS_TOKEN?.trim();
@@ -23,7 +42,8 @@ function upstreamHeaders() {
   return headers;
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  if (!isAuthorized(request)) return authError();
   const baseUrl = ollamaBaseUrl();
   if (!baseUrl) {
     return NextResponse.json({ error: "OATHOME_LLM_BASE_URL is not configured for production.", models: [] }, { status: 503 });
@@ -49,6 +69,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAuthorized(request)) return authError();
   const baseUrl = ollamaBaseUrl();
   if (!baseUrl) return NextResponse.json({ error: "OATHOME_LLM_BASE_URL is not configured for production." }, { status: 503 });
 
