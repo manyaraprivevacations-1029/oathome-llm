@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -12,6 +13,23 @@ function runtimeBaseUrl() {
 }
 
 export async function POST(request: Request) {
+  // Authenticate before parsing the request body or invoking the inference server.
+  const accessToken = process.env.OATHOME_LLM_ACCESS_TOKEN?.trim();
+  if (process.env.NODE_ENV === "production" && !accessToken) {
+    return NextResponse.json(
+      { ok: false, error: "Inference is disabled until OATHOME_LLM_ACCESS_TOKEN is configured." },
+      { status: 503 },
+    );
+  }
+  if (accessToken) {
+    const supplied = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? "";
+    const expectedBytes = Buffer.from(accessToken);
+    const suppliedBytes = Buffer.from(supplied);
+    if (expectedBytes.length !== suppliedBytes.length || !timingSafeEqual(expectedBytes, suppliedBytes)) {
+      return NextResponse.json({ ok: false, error: "Invalid or missing access token." }, { status: 401 });
+    }
+  }
+
   const body = await request.json().catch(() => null);
   if (
     !body ||
@@ -32,18 +50,6 @@ export async function POST(request: Request) {
       { ok: false, error: "Provide a model and 1–100 valid chat messages." },
       { status: 400 },
     );
-  }
-
-  // Never expose an unprotected public inference endpoint by default.
-  const accessToken = process.env.OATHOME_LLM_ACCESS_TOKEN;
-  if (process.env.NODE_ENV === "production" && !accessToken) {
-    return NextResponse.json(
-      { ok: false, error: "Inference is disabled until OATHOME_LLM_ACCESS_TOKEN is configured." },
-      { status: 503 },
-    );
-  }
-  if (accessToken && request.headers.get("authorization") !== `Bearer ${accessToken}`) {
-    return NextResponse.json({ ok: false, error: "Invalid or missing access token." }, { status: 401 });
   }
 
   const baseUrl = runtimeBaseUrl();
