@@ -1,35 +1,47 @@
-# OATHome LLM + On A Trip Holidays
+# OWN — OATHome Intelligence
 
-This repository contains the OATHome Go inference runtime and a Next.js web interface. The runtime is the source of model inference; the website does not require a third-party LLM API.
+OWN is our custom AI chat frontend. It uses a server-side adapter to talk to an Ollama-compatible inference endpoint. The UI and platform are ours; the model runtime can evolve independently.
 
-## OATHome model playground
+## Local development
 
-Run the Go runtime locally on its default port (11434), install a supported model, and start the website:
+Requirements: Node.js 20+, Go, and the OATHome/Ollama-compatible runtime available on the same computer.
 
-```bash
-# From the repository root, build/run the runtime using this project's documented Go commands.
-go run . serve
+1. Start the inference server on its default local address, `http://127.0.0.1:11434`. For this repository's Go runtime, use the supported command documented by the current checkout (currently `go run . serve`).
+2. In a second terminal, run:
 
-# In another terminal
-cd website
-cp .env.example .env.local
-npm install
-npm run dev
-```
+   ```bash
+   cd website
+   npm install
+   npm run dev
+   ```
 
-Open [http://localhost:3000/llm](http://localhost:3000/llm). The playground discovers installed models through the runtime's `/api/tags` endpoint and sends chat messages to `/api/chat`.
+3. Open [http://localhost:3000](http://localhost:3000).
 
-If your local checkout uses a prebuilt executable, run that executable with `serve` instead of `go run . serve`. Install a model with the runtime's `pull` command before selecting it in the playground.
+During local development the website defaults to `http://127.0.0.1:11434` and does not require the production access token.
 
-## Production configuration
+## Environment variables
 
-Configure these server-side variables in Vercel or the hosting environment:
+Set these in the hosting environment, not in client-side variables:
 
-- `OATHOME_LLM_BASE_URL`: base URL of the OATHome inference service, reachable from the website server.
-- `OATHOME_LLM_ACCESS_TOKEN`: long random access token required by the website's chat route in production.
+- `OATHOME_LLM_BASE_URL`: URL of the inference server, reachable **from the website server**. Do not use `localhost` for a separate Vercel deployment.
+- `OATHOME_LLM_ACCESS_TOKEN`: long, random secret required to access the production chat API. Enter this in the OWN UI to unlock chat; it is held in browser session storage for the current tab session.
+- `OATHOME_LLM_UPSTREAM_TOKEN` (optional): separate bearer token for an inference endpoint that requires upstream authentication. Do not reuse the frontend access token for this.
+- `OATHOME_LLM_MODEL` (optional): default installed model name, such as `qwen2.5:3b`.
 
-The website forwards requests server-side and does not expose the inference URL in browser code. Protect the inference server with network rules or an authenticated reverse proxy; do not expose an unrestricted model endpoint to the public internet. Vercel hosts the website/API proxy, not the model weights or GPU inference process.
+Generate secrets with a password manager or cryptographically secure generator. Never commit them to Git or expose them through a `NEXT_PUBLIC_*` variable. Add production variables in Vercel and redeploy.
 
-## Existing travel assistant
+## Production checklist
 
-The On A Trip Holidays sales dashboard remains available at `/`. Its voice/telephony integrations are separate from the OATHome LLM playground and are not required to run local model inference.
+- Set the Vercel project root to `website`.
+- Configure `OATHOME_LLM_BASE_URL` and `OATHOME_LLM_ACCESS_TOKEN` for Production.
+- Configure `OATHOME_LLM_UPSTREAM_TOKEN` only if the inference server itself requires bearer authentication.
+- The inference URL must be reachable from the deployed Next.js server. A Mac's `127.0.0.1` is not reachable from Vercel.
+- Do not expose an unauthenticated Ollama/OATHome port directly to the public internet.
+- The shared-token gate is starter access control, not a multi-user identity system. Before sharing broadly, add account-based auth, rate limiting, usage limits, and server-side observability.
+- Run `npm run typecheck` and `npm run build` before shipping.
+
+## Architecture
+
+Browser → OWN Next.js UI → `/api/chat` server route → inference server `/api/tags` and `/api/chat`.
+
+The browser never calls the inference server directly, keeping its URL and upstream credentials out of the client bundle. The existing `/llm` route remains as a legacy runtime playground while the OWN homepage becomes the primary experience.
