@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ ok: false, configured: false, runtime: "OATHome LLM", error: "Inference is disabled until OATHOME_LLM_ACCESS_TOKEN is configured.", models: [] }, { status: 503 });
   }
   if (accessToken) {
-    const supplied = request.headers.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() ?? "";
+    const supplied = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim() ?? "";
     const expectedBytes = Buffer.from(accessToken);
     const suppliedBytes = Buffer.from(supplied);
     if (expectedBytes.length !== suppliedBytes.length || !timingSafeEqual(expectedBytes, suppliedBytes)) {
