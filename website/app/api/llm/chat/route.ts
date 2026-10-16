@@ -63,7 +63,10 @@ export async function POST(request: Request) {
   try {
     const upstream = await fetch(`${baseUrl}/api/chat`, {
       method: "POST",
-      headers: { "content-type": "application/json" },
+      headers: {
+        "content-type": "application/json",
+        ...(process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim() ? { authorization: `Bearer ${process.env.OATHOME_LLM_UPSTREAM_TOKEN.trim()}` } : {}),
+      },
       body: JSON.stringify({
         model: body.model.trim(),
         messages: body.messages,
