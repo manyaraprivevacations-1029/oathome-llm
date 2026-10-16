@@ -35,7 +35,9 @@ export async function GET(request: Request) {
   }
 
   try {
+    const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
     const response = await fetch(`${baseUrl}/api/tags`, {
+      headers: upstreamToken ? { authorization: `Bearer ${upstreamToken}` } : {},
       cache: "no-store",
       signal: AbortSignal.timeout(5000),
     });
