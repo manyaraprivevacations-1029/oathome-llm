@@ -23,7 +23,11 @@ export default function Home() {
   const [accessToken, setAccessToken] = useState("");
   const [tokenDraft, setTokenDraft] = useState("");
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);\n  const [modelsOpen, setModelsOpen] = useState(false);\n  const [modelToPull, setModelToPull] = useState("");\n  const [modelBusy, setModelBusy] = useState(false);\n  const [modelNotice, setModelNotice] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [modelsOpen, setModelsOpen] = useState(false);
+  const [modelToPull, setModelToPull] = useState("");
+  const [modelBusy, setModelBusy] = useState(false);
+  const [modelNotice, setModelNotice] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
