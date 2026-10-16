@@ -30,6 +30,10 @@ Set these in the hosting environment, not in client-side variables:
 
 Generate secrets with a password manager or cryptographically secure generator. Never commit them to Git or expose them through a `NEXT_PUBLIC_*` variable. Add production variables in Vercel and redeploy.
 
+## Legacy travel API
+
+The old `/api/ai-bot/*` routes are intentionally blocked with HTTP 404 by `middleware.ts`. They are not part of OWN LLM and remain disabled until separately audited and secured.
+
 ## Production checklist
 
 - Set the Vercel project root to `website`.
