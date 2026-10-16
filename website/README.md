@@ -4,10 +4,13 @@ OWN is our custom AI chat frontend. It uses a server-side adapter to talk to an 
 
 ## Local development
 
-Requirements: Node.js 20+, Go, and the OATHome/Ollama-compatible runtime available on the same computer.
+Requirements: Node.js 20+ and either Ollama or the OATHome Go runtime. Use only one server on port `11434` at a time.
 
-1. Start the inference server on its default local address, `http://127.0.0.1:11434`. For this repository's Go runtime, use the supported command documented by the current checkout (currently `go run . serve`).
-2. In a second terminal, run:
+### Option A — Ollama backend (quickest)
+
+1. Install Ollama from https://ollama.com/download and start it.
+2. Pull a starter model: `ollama pull qwen2.5:3b`.
+3. Start the website in a terminal:
 
    ```bash
    cd website
@@ -15,7 +18,11 @@ Requirements: Node.js 20+, Go, and the OATHome/Ollama-compatible runtime availab
    npm run dev
    ```
 
-3. Open [http://localhost:3000](http://localhost:3000).
+4. Open [http://localhost:3000](http://localhost:3000).
+
+### Option B — OATHome Go runtime
+
+To test the in-repository runtime instead, stop Ollama first and start the Go server using the supported command for this checkout (currently `go run . serve`). Then use the same website steps above.
 
 During local development the website defaults to `http://127.0.0.1:11434` and does not require the production access token.
 
