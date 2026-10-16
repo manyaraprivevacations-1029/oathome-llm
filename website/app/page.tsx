@@ -69,6 +69,7 @@ export default function Home() {
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const [historyReady, setHistoryReady] = useState(false);
+  const [webSearch, setWebSearch] = useState(false);
 
   const loadModels = useCallback(async (tokenOverride?: string) => {
     setStatus("checking");
@@ -150,7 +151,7 @@ export default function Home() {
           "content-type": "application/json",
           ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
         },
-        body: JSON.stringify({ model, messages: next }),
+        body: JSON.stringify({ model, messages: next, webSearch }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {
@@ -310,7 +311,7 @@ export default function Home() {
         <div className="composer-area">
           <form className="composer" onSubmit={submit}>
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} placeholder={model ? "Message OWN…" : "Connect Ollama and select a model to start"} rows={1} disabled={!model || loading} aria-label="Message OWN" />
-            <div className="composer-toolbar"><div className="composer-hint"><span>↵</span> Send <span className="hint-divider">·</span> Shift + ↵ for new line</div><div className="composer-actions"><span className="runtime-mini"><i className={`status-dot ${status}`}></i> {model || "No model"}</span>{loading ? <button type="button" className="send-button stop-button" onClick={() => abortRef.current?.abort()} aria-label="Stop generation">■</button> : <button type="submit" className="send-button" disabled={!draft.trim() || !model} aria-label="Send message">↑</button>}</div></div>
+            <div className="composer-toolbar"><div className="composer-tools"><label className={`web-search-toggle ${webSearch ? "active" : ""}`} title="Search public web results for this message"><input type="checkbox" checked={webSearch} onChange={(event) => setWebSearch(event.target.checked)} disabled={loading} /><span className="web-search-icon">⌕</span> Search the web</label><span className="composer-hint"><span>↵</span> Send <span className="hint-divider">·</span> Shift + ↵ for new line</span></div><div className="composer-actions"><span className="runtime-mini"><i className={`status-dot ${status}`}></i> {model || "No model"}</span>{loading ? <button type="button" className="send-button stop-button" onClick={() => abortRef.current?.abort()} aria-label="Stop generation">■</button> : <button type="submit" className="send-button" disabled={!draft.trim() || !model} aria-label="Send message">↑</button>}</div></div>
           </form>
           <p className="disclaimer">OWN can make mistakes. Verify important information. <span>·</span> Your interface, your choice of models.</p>
         </div></>}
