@@ -238,15 +238,15 @@ export default function Home() {
               <div ref={endRef} />
             </div>
           )}
-        </div>
-        {error && messages.length > 0 && <div className="inline-error">{error}{needsAuth && <form className="inline-token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock</button></form>}<button onClick={() => setError("")}>×</button></div>}
+        </div>}
+        {!modelsOpen && <>{error && messages.length > 0 && <div className="inline-error">{error}{needsAuth && <form className="inline-token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock</button></form>}<button onClick={() => setError("")}>×</button></div>}
         <div className="composer-area">
           <form className="composer" onSubmit={submit}>
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} placeholder={model ? "Message OWN…" : "Connect Ollama and select a model to start"} rows={1} disabled={!model || loading} aria-label="Message OWN" />
             <div className="composer-toolbar"><div className="composer-hint"><span>↵</span> Send <span className="hint-divider">·</span> Shift + ↵ for new line</div><div className="composer-actions"><span className="runtime-mini"><i className={`status-dot ${status}`}></i> {model || "No model"}</span>{loading ? <button type="button" className="send-button stop-button" onClick={() => abortRef.current?.abort()} aria-label="Stop generation">■</button> : <button type="submit" className="send-button" disabled={!draft.trim() || !model} aria-label="Send message">↑</button>}</div></div>
           </form>
           <p className="disclaimer">OWN can make mistakes. Verify important information. <span>·</span> Your interface, your choice of models.</p>
-        </div>
+        </div></>}
       </section>
     </main>
   );
