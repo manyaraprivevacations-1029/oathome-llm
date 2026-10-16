@@ -20,16 +20,26 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<"checking" | "online" | "offline">("checking");
   const [error, setError] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [tokenDraft, setTokenDraft] = useState("");
+  const [needsAuth, setNeedsAuth] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
-  const loadModels = useCallback(async () => {
+  const loadModels = useCallback(async (tokenOverride?: string) => {
     setStatus("checking");
     try {
-      const response = await fetch("/api/chat", { cache: "no-store" });
+      const token = tokenOverride ?? accessToken;
+      const response = await fetch("/api/chat", {
+        cache: "no-store",
+        headers: token ? { authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
+      if (response.status === 401) setNeedsAuth(true);
+      if (response.status === 503 && String(data.error || "").includes("access is not configured")) setNeedsAuth(false);
       if (!response.ok) throw new Error(data.error || "Ollama is not reachable.");
+      setNeedsAuth(false);
       const available: Model[] = Array.isArray(data.models) ? data.models : [];
       setModels(available);
       setModel((current) => current && available.some((item) => item.name === current) ? current : (data.defaultModel || available[0]?.name || ""));
@@ -39,9 +49,17 @@ export default function Home() {
       setStatus("offline");
       setError(err instanceof Error ? err.message : "Could not connect to the OATHome runtime.");
     }
-  }, []);
+  }, [accessToken]);
 
-  useEffect(() => { void loadModels(); }, [loadModels]);
+  useEffect(() => {
+    const savedToken = window.sessionStorage.getItem("oathome_access_token") || "";
+    if (savedToken) {
+      setAccessToken(savedToken);
+      void loadModels(savedToken);
+    } else {
+      void loadModels("");
+    }
+  }, [loadModels]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const sendMessage = async (text = draft) => {
@@ -61,12 +79,16 @@ export default function Home() {
     try {
       const response = await fetch("/api/chat", {
         method: "POST",
-        headers: { "content-type": "application/json" },
+        headers: {
+          "content-type": "application/json",
+          ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({ model, messages: next }),
         signal: controller.signal,
       });
       if (!response.ok || !response.body) {
         const data = await response.json().catch(() => ({}));
+        if (response.status === 401) setNeedsAuth(true);
         throw new Error(data.error || "The model request failed.");
       }
       const reader = response.body.getReader();
@@ -120,6 +142,25 @@ export default function Home() {
   };
 
   const submit = (event: FormEvent) => { event.preventDefault(); void sendMessage(); };
+  const submitToken = (event: FormEvent) => {
+    event.preventDefault();
+    const token = tokenDraft.trim();
+    if (!token) return;
+    window.sessionStorage.setItem("oathome_access_token", token);
+    setAccessToken(token);
+    setTokenDraft("");
+    setError("");
+    void loadModels(token);
+  };
+  const clearToken = () => {
+    window.sessionStorage.removeItem("oathome_access_token");
+    setAccessToken("");
+    setNeedsAuth(true);
+    setModels([]);
+    setModel("");
+    setStatus("offline");
+    setError("Access token cleared.");
+  };
   const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); }
   };
@@ -156,6 +197,7 @@ export default function Home() {
               {!models.length && <option value="">No models found</option>}
               {models.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
             </select>
+            {accessToken && <button className="icon-button" onClick={clearToken} title="Lock runtime" aria-label="Lock runtime">⌑</button>}
             <button className="icon-button" onClick={() => void loadModels()} title="Refresh runtime" aria-label="Refresh runtime">↻</button>
           </div>
         </header>
@@ -166,7 +208,7 @@ export default function Home() {
               <div className="welcome-kicker"><span className="blue-pip"></span> YOUR SPACE. YOUR MODELS. YOUR AI.</div>
               <h1>Intelligence,<br /><span>on your terms.</span></h1>
               <p className="welcome-description">A home for your ideas, powered by models you choose.<br className="desktop-break" /> Private by design. Built by you. Growing with you.</p>
-              {status === "offline" && <div className="connection-warning"><span>!</span><div><strong>Connect your model runtime</strong><p>{error || "Start Ollama and make sure the OATHome server can reach it."}</p><button onClick={() => void loadModels()}>Try again ↗</button></div></div>}
+              {status === "offline" && <div className="connection-warning"><span>!</span><div><strong>{needsAuth ? "Unlock your OWN runtime" : "Connect your model runtime"}</strong><p>{error || (needsAuth ? "Enter the access token configured by your runtime administrator." : "Start Ollama and make sure the OATHome server can reach it.")}</p>{needsAuth ? <form className="token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="OATHome access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock ↗</button></form> : <button onClick={() => void loadModels()}>Try again ↗</button>}</div></div>}
               {status === "online" && <div className="connected-note"><span className="status-dot online"></span> Connected · {models.length} model{models.length === 1 ? "" : "s"} available</div>}
               <div className="starter-grid">{starters.map((starter, index) => <button className="starter-card" key={starter.title} onClick={() => void sendMessage(starter.prompt)} disabled={!model || loading}><span className={`starter-icon starter-icon-${index}`}>{["✳", "⌘", "↗", "◇"][index]}</span><strong>{starter.title}</strong><span>{starter.prompt}</span><b>↗</b></button>)}</div>
             </div>
@@ -181,7 +223,7 @@ export default function Home() {
             </div>
           )}
         </div>
-        {error && messages.length > 0 && <div className="inline-error">{error}<button onClick={() => setError("")}>×</button></div>}
+        {error && messages.length > 0 && <div className="inline-error">{error}{needsAuth && <form className="inline-token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock</button></form>}<button onClick={() => setError("")}>×</button></div>}
         <div className="composer-area">
           <form className="composer" onSubmit={submit}>
             <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} placeholder={model ? "Message OWN…" : "Connect Ollama and select a model to start"} rows={1} disabled={!model || loading} aria-label="Message OWN" />
