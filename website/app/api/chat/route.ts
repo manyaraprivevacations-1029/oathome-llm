@@ -37,7 +37,7 @@ function authError() {
 
 function upstreamHeaders() {
   const headers: Record<string, string> = { "content-type": "application/json" };
-  const token = process.env.OATHOME_LLM_ACCESS_TOKEN?.trim();
+  const token = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
   if (token) headers.authorization = `Bearer ${token}`;
   return headers;
 }
@@ -51,7 +51,7 @@ export async function GET(request: NextRequest) {
   try {
     const response = await fetch(`${baseUrl}/api/tags`, {
       method: "GET",
-      headers: process.env.OATHOME_LLM_ACCESS_TOKEN ? { authorization: `Bearer ${process.env.OATHOME_LLM_ACCESS_TOKEN}` } : {},
+      headers: process.env.OATHOME_LLM_UPSTREAM_TOKEN ? { authorization: `Bearer ${process.env.OATHOME_LLM_UPSTREAM_TOKEN}` } : {},
       cache: "no-store",
       signal: AbortSignal.timeout(10000),
     });
