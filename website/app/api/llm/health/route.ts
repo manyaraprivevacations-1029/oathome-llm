@@ -1,3 +1,4 @@
+import { timingSafeEqual } from "node:crypto";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -9,7 +10,19 @@ function runtimeBaseUrl() {
   return process.env.NODE_ENV === "production" ? null : "http://127.0.0.1:11434";
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  const accessToken = process.env.OATHOME_LLM_ACCESS_TOKEN?.trim();
+  if (process.env.NODE_ENV === "production" && !accessToken) {
+    return NextResponse.json({ ok: false, configured: false, runtime: "OATHome LLM", error: "Inference is disabled until OATHOME_LLM_ACCESS_TOKEN is configured.", models: [] }, { status: 503 });
+  }
+  if (accessToken) {
+    const supplied = request.headers.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim() ?? "";
+    const expectedBytes = Buffer.from(accessToken);
+    const suppliedBytes = Buffer.from(supplied);
+    if (expectedBytes.length !== suppliedBytes.length || !timingSafeEqual(expectedBytes, suppliedBytes)) {
+      return NextResponse.json({ ok: false, configured: true, runtime: "OATHome LLM", error: "Enter the OATHome access token to view models.", models: [] }, { status: 401 });
+    }
+  }
   const baseUrl = runtimeBaseUrl();
   if (!baseUrl) {
     return NextResponse.json({
