@@ -68,7 +68,7 @@ export default function Home() {
   const [modelNotice, setModelNotice] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
-  const historyReadyRef = useRef(false);
+  const [historyReady, setHistoryReady] = useState(false);
 
   const loadModels = useCallback(async (tokenOverride?: string) => {
     setStatus("checking");
@@ -120,13 +120,13 @@ export default function Home() {
     } catch {
       window.localStorage.removeItem("own_current_conversation");
     } finally {
-      historyReadyRef.current = true;
+      setHistoryReady(true);
     }
   }, []);
   useEffect(() => {
-    if (!historyReadyRef.current) return;
+    if (!historyReady) return;
     try { window.localStorage.setItem("own_current_conversation", JSON.stringify(messages.slice(-40))); } catch { /* Storage may be disabled or full. */ }
-  }, [messages]);
+  }, [messages, historyReady]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const sendMessage = async (text = draft) => {
