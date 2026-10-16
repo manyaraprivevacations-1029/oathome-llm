@@ -23,7 +23,7 @@ export default function Home() {
   const [accessToken, setAccessToken] = useState("");
   const [tokenDraft, setTokenDraft] = useState("");
   const [needsAuth, setNeedsAuth] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);\n  const [modelsOpen, setModelsOpen] = useState(false);\n  const [modelToPull, setModelToPull] = useState("");\n  const [modelBusy, setModelBusy] = useState(false);\n  const [modelNotice, setModelNotice] = useState("");
   const endRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -164,7 +164,23 @@ export default function Home() {
   const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); }
   };
-  const newChat = () => { abortRef.current?.abort(); setMessages([]); setDraft(""); setError(""); setLoading(false); setSidebarOpen(false); };
+  const newChat = () => { abortRef.current?.abort(); setMessages([]); setDraft(""); setError(""); setLoading(false); setSidebarOpen(false); setModelsOpen(false); };
+  const manageModel = async (action: "pull" | "delete", name: string) => {
+    if (!name.trim() || modelBusy) return;
+    if (action === "delete" && !window.confirm(`Remove model "${name}" from this machine? This cannot be undone.`)) return;
+    setModelBusy(true); setModelNotice(action === "pull" ? "Downloading model… this can take several minutes." : "Removing model…"); setError("");
+    try {
+      const response = await fetch("/api/models", { method: action === "pull" ? "POST" : "DELETE", headers: { "content-type": "application/json", ...(accessToken ? { authorization: `Bearer ${accessToken}` } : {}) }, body: JSON.stringify({ model: name.trim() }) });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Model operation failed.");
+      setModelNotice(data.message || "Done.");
+      await loadModels();
+      if (action === "delete" && model === name) setModel("");
+      if (action === "pull") setModel(name.trim());
+      setModelToPull("");
+    } catch (err) { setModelNotice(err instanceof Error ? err.message : "Model operation failed."); }
+    finally { setModelBusy(false); }
+  };
 
   return (
     <main className="app-shell">
@@ -177,7 +193,7 @@ export default function Home() {
         <button className="new-chat" onClick={newChat}><span className="plus">＋</span> New chat <span className="shortcut">⌘ K</span></button>
         <div className="side-label">YOUR WORKSPACE</div>
         <button className="side-link selected"><span className="side-icon">◈</span> Chat</button>
-        <button className="side-link" onClick={() => setError("Model management is handled by Ollama for now. Run `ollama pull <model>` on your runtime machine to add a model.")}><span className="side-icon">⬡</span> Models <span className="coming">LOCAL</span></button>
+        <button className={`side-link ${modelsOpen ? "selected" : ""}`} onClick={() => { setModelsOpen(!modelsOpen); setModelNotice(""); setSidebarOpen(false); }}><span className="side-icon">⬡</span> Models <span className="coming">LOCAL</span></button>
         <div className="sidebar-bottom">
           <div className="runtime-card">
             <div className="runtime-heading"><span className={`status-dot ${status}`}></span><strong>Runtime status</strong></div>
@@ -201,7 +217,7 @@ export default function Home() {
             <button className="icon-button" onClick={() => void loadModels()} title="Refresh runtime" aria-label="Refresh runtime">↻</button>
           </div>
         </header>
-        <div className="chat-scroll">
+        {modelsOpen ? <div className="model-manager"><div className="model-manager-head"><div><div className="conversation-label"><span className="blue-pip"></span> YOUR MODEL LIBRARY</div><h1>Models</h1><p>Manage models on your connected inference runtime.</p></div><button className="icon-button" onClick={() => void loadModels()} aria-label="Refresh models">↻</button></div><form className="model-pull-form" onSubmit={(event) => { event.preventDefault(); void manageModel("pull", modelToPull); }}><label htmlFor="pull-model">Download a model</label><div className="model-pull-row"><input id="pull-model" value={modelToPull} onChange={(event) => setModelToPull(event.target.value)} placeholder="e.g. qwen2.5:3b" disabled={modelBusy} /><button type="submit" disabled={modelBusy || !modelToPull.trim()}>{modelBusy ? "Working…" : "Download model"}</button></div><p>Enter a model name supported by your runtime, such as <code>qwen2.5:3b</code> or <code>mistral</code>.</p></form>{modelNotice && <div className="model-notice" role="status">{modelBusy && <span className="status-dot checking" />} {modelNotice}</div>}<div className="model-list-head"><strong>Installed models</strong><span>{models.length} available</span></div>{models.length ? <div className="model-grid">{models.map((item) => <article className="model-card" key={item.name}><div className="model-card-icon">⬡</div><div className="model-card-info"><strong>{item.name}</strong><span>{item.details?.parameter_size || item.details?.family || "Local model"}{item.size ? ` · ${(item.size / 1_000_000_000).toFixed(1)} GB` : ""}</span></div><button className="model-use" onClick={() => { setModel(item.name); setModelsOpen(false); }} disabled={model === item.name}>{model === item.name ? "Selected" : "Use model"}</button><button className="model-delete" onClick={() => void manageModel("delete", item.name)} disabled={modelBusy} aria-label={`Remove ${item.name}`} title="Remove model">×</button></article>)}</div> : <div className="model-empty">No models detected. Check the runtime connection or download a model above.</div>}<p className="model-safety-note">Downloads can be large and use disk space. Removing a model permanently deletes its local files.</p></div> : <div className="chat-scroll">
           {messages.length === 0 ? (
             <div className="welcome">
               <div className="welcome-symbol"><div className="symbol-core">O</div><span className="symbol-orbit orbit-one"></span><span className="symbol-orbit orbit-two"></span></div>
