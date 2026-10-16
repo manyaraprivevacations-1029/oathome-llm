@@ -1,6 +1,6 @@
 {
-  "name": "on-a-trip-holidays-ai-bot",
-  "version": "1.0.0",
+  "name": "oathome-llm",
+  "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
