@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import knowledge from "../../data/travel-knowledge.json";
+import knowledge from "../../../data/travel-knowledge.json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
