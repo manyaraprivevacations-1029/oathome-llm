@@ -9,7 +9,7 @@ function isAuthorized(request: Request): boolean {
   if (process.env.NODE_ENV !== "production") return true;
 
   const expected = process.env.OATHOME_LLM_ACCESS_TOKEN?.trim();
-  const supplied = request.headers.get("authorization")?.match(/^Bearer\\s+(.+)$/i)?.[1]?.trim();
+  const supplied = request.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1]?.trim();
   if (!expected || !supplied) return false;
 
   const expectedBytes = Buffer.from(expected);
