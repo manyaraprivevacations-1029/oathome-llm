@@ -1,0 +1,32 @@
+{
+  "company": {
+    "name": "On A Trip Holidays",
+    "website": "https://onatripholidays.in",
+    "greeting": "Hello! Welcome to On A Trip Holidays.",
+    "fallback": "I can help with On A Trip Holidays packages and travel services. For this question, I’ll confirm with our travel team. A travel expert will let you know, sir."
+  },
+  "services": [
+    "Tour packages",
+    "Customized trips",
+    "Hotel bookings",
+    "Flight bookings"
+  ],
+  "packages": [],
+  "faqs": [
+    {
+      "question": "What services do you provide?",
+      "keywords": ["services", "hotel booking", "flight booking", "customized trip"],
+      "answer": "On A Trip Holidays helps with tour packages, customized trips, hotel bookings, and flight bookings. Tell me your destination and travel dates so I can check the available package information."
+    },
+    {
+      "question": "How do I book a trip?",
+      "keywords": ["book", "booking process", "reserve", "reservation"],
+      "answer": "I can help you find the right package. Please share your destination, travel dates, and number of travellers. Our travel team will confirm availability and the next booking steps."
+    },
+    {
+      "question": "Are package prices final?",
+      "keywords": ["price", "cost", "gst", "final amount", "payment"],
+      "answer": "Package prices and any applicable taxes must be checked against the specific package details. I won’t guess or promise an unverified price. If the amount isn’t listed, I’ll confirm with our travel team. A travel expert will let you know, sir."
+    }
+  ]
+}
