@@ -57,10 +57,16 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
     return "Please visit " + data.company.website + " or ask me about a package. Our travel team can confirm contact details.";
   }
 
-  const isShortFollowUp = q.split(" ").length <= 7;
+  const isShortFollowUp = q.split(" ").length <= 10;
   if (isShortFollowUp && contextPackage) {
+    if (includesAny(q, ["two sharing", "2 sharing", "double sharing", "twin sharing", "private room", "private rooms", "double room"])) {
+      return "The brochure says double-sharing is available as an upgrade for an additional ₹3,000 per person for 8 nights only. Kedarnath and Badrinath stays remain group-sharing. Please confirm the current option with our travel team.";
+    }
+    if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
+      return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
+    }
     if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
-      return `The **${contextPackage.name}** brochure price is **${contextPackage.price || "not listed"}**. Please confirm the current price and availability with our travel team.`;
+      return `The brochure price is **${contextPackage.price || "not listed"}**. Please confirm the current price and availability with our travel team.`;
     }
     if (includesAny(q, ["day", "days", "duration", "night", "nights", "how long"])) {
       return `It’s **${contextPackage.duration || "not listed"}**.`;
@@ -115,7 +121,7 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
         : data.company.fallback;
     }
     // A package name or general package question gets a short overview, never the whole brochure.
-    return `**${pkg.name}**\nDuration: **${pkg.duration || "Please confirm"}**\nPrice: **${pkg.price || "Please confirm"}**\nAsk me for price, duration, inclusions, exclusions, or itinerary.`;
+    return `**${pkg.name}** is a ${pkg.duration || "tour package"} covering ${pkg.destination || "the listed destinations"}. Would you like to know the price, duration, inclusions, or itinerary?`;
   }
 
   const faq = [...data.faqs].map((item) => {
