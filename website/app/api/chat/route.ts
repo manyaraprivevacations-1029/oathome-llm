@@ -29,9 +29,10 @@ const normalize = (value: string) =>
 const words = (value: string) => normalize(value).split(" ").filter((word) => word.length > 2);
 const includesAny = (text: string, values: string[]) => values.some((value) => text.includes(normalize(value)));
 
-function answerQuestion(question: string): string {
+function answerQuestion(question: string, conversationContext = ""): string {
   const q = normalize(question);
   const tokens = words(q);
+  const context = normalize(conversationContext);
 
   if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
     return `Hello! Welcome to ${data.company.name}. 😊 I can help you with our available tour packages, prices, itineraries, inclusions, exclusions, and departure details. What destination are you interested in?`;
@@ -52,6 +53,32 @@ function answerQuestion(question: string): string {
       return { pkg, score: new Set(matched).size };
     })
     .sort((a, b) => b.score - a.score)[0];
+
+  const contextMatchedPackage = data.packages
+    .map((pkg) => {
+      const aliases = normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham yatra");
+      const score = new Set(words(aliases).filter((token) => context.includes(token))).size;
+      return { pkg, score };
+    })
+    .sort((a, b) => b.score - a.score)[0];
+
+  // Resolve short follow-ups against the package discussed earlier in this chat.
+  const isShortFollowUp = q.split(" ").length <= 5;
+  const contextPackage = contextMatchedPackage && contextMatchedPackage.score >= 2 ? contextMatchedPackage.pkg : undefined;
+  if (isShortFollowUp && contextPackage) {
+    if (includesAny(q, ["price", "cost", "rate", "how much", "per person"]) && contextPackage.price) {
+      return "The **" + contextPackage.name + "** brochure price is **" + contextPackage.price + "**. The current price and availability must be reconfirmed with our travel team.";
+    }
+    if (includesAny(q, ["day", "days", "duration", "night", "nights", "how long"]) && contextPackage.duration) {
+      return "The **" + contextPackage.name + "** is **" + contextPackage.duration + "**. It starts and ends in Delhi. Please confirm the latest batch with our travel team.";
+    }
+    if (includesAny(q, ["include", "inclusions", "included"]) && contextPackage.inclusions?.length) {
+      return "**Inclusions for " + contextPackage.name + ":**\n" + contextPackage.inclusions.map((value) => "- " + value).join("\n") + "\nPlease reconfirm current inclusions before booking.";
+    }
+    if (includesAny(q, ["exclude", "exclusions", "not included"]) && contextPackage.exclusions?.length) {
+      return "**Exclusions for " + contextPackage.name + ":**\n" + contextPackage.exclusions.map((value) => "- " + value).join("\n");
+    }
+  }
 
   const packageIntent = includesAny(q, [
     "package", "tour", "trip", "itinerary", "price", "cost", "rate", "per person",
@@ -138,7 +165,16 @@ export async function POST(request: NextRequest) {
   }
   if (latest.content.length > 4000) return NextResponse.json({ error: "Your message is too long." }, { status: 413 });
 
-  const answer = answerQuestion(latest.content);
+  const previousContext = payload.messages
+    .filter((item): item is { role: string; content: string } =>
+      !!item && typeof item === "object" &&
+      typeof (item as { role?: unknown }).role === "string" &&
+      typeof (item as { content?: unknown }).content === "string" &&
+      item !== latest
+    )
+    .map((item) => item.content)
+    .join(" ");
+  const answer = answerQuestion(latest.content, previousContext);
   const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\n";
   return new Response(ndjson, {
     status: 200,
