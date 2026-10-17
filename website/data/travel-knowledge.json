@@ -11,21 +11,108 @@
     "Hotel bookings",
     "Flight bookings"
   ],
-  "packages": [],
+  "packages": [
+    {
+      "name": "Char Dham Yatra 2026 — Dasara Special Offer",
+      "destination": "Yamunotri, Gangotri, Kedarnath and Badrinath, with Haridwar, Lakhamandal, Uttarkashi, Sonprayag/Sitapur, Joshimath/Chamoli and Mana Village",
+      "duration": "10 nights / 11 days (10N/11D)",
+      "price": "₹23,499 per person + 5% GST, as printed in the supplied brochure. Current price and availability must be reconfirmed with the travel team.",
+      "departures": [
+        "The brochure shows departure dates during August, September and October 2026. These are brochure dates only; confirm the next available batch with the travel team."
+      ],
+      "inclusions": [
+        "AC transport from Delhi to Haridwar only; AC does not operate on the hills",
+        "Round-trip sleeper-class train reservation, subject to availability",
+        "Group-sharing rooms, generally 3- or 4-sharing according to group size and gender",
+        "1 night in Haridwar",
+        "2 nights in Lakhamandal",
+        "2 nights in Uttarkashi",
+        "2 nights in Sonprayag/Sitapur",
+        "1 night at Kedarnath camps",
+        "1 night in Badrinath/Joshimath",
+        "1 night in Chamoli or Haridwar",
+        "10 breakfasts and 10 dinners",
+        "Virtual travel manager available 24x7, as stated in the brochure",
+        "Sightseeing and darshans",
+        "Tolls, parking, transport taxes, fuel charges and driver allowance",
+        "Travel insurance, as stated in the brochure"
+      ],
+      "exclusions": [
+        "Personal expenses",
+        "Costs caused by natural calamities, landslides or roadblocks",
+        "Pony, doli and other trekking activity charges",
+        "Tips and heater charges",
+        "Hot water at Kedarnath",
+        "Anything not mentioned in the inclusions",
+        "Government shared vehicle from Sonprayag to Gaurikund and personal cloakroom charges for luggage during the Kedarnath trek",
+        "Double-sharing upgrade: brochure states an additional ₹3,000 per person for 8 nights only; Kedarnath and Badrinath remain group-sharing"
+      ],
+      "itinerary": [
+        "Day 1: Delhi to Haridwar; visit Har Ki Pauri and attend Ganga Aarti; dinner and overnight hotel stay.",
+        "Day 2: Haridwar to Lakhamandal; visit Lakhamandal Shiva Temple; breakfast and dinner.",
+        "Day 3: Lakhamandal to Yamunotri via Janki Chatti; trek to Yamunotri and return; breakfast and dinner.",
+        "Day 4: Lakhamandal to Uttarkashi; visit Kashi Vishwanath Temple; breakfast and dinner.",
+        "Day 5: Uttarkashi to Gangotri and back; Gangotri Temple darshan; breakfast and dinner.",
+        "Day 6: Uttarkashi to Sonprayag or Sitapur; breakfast and dinner.",
+        "Day 7: Sonprayag/Sitapur to Kedarnath; approximately 22 km trek each way is described in the brochure; overnight at On A Trip camps; breakfast and dinner.",
+        "Day 8: Kedarnath darshan and trek down to Sonprayag/Sitapur; breakfast and dinner.",
+        "Day 9: Sonprayag/Sitapur to Badrinath/Joshimath; breakfast and dinner.",
+        "Day 10: Badrinath darshan, Tapt Kund and Mana Village sightseeing; overnight at Chamoli or Haridwar; breakfast and dinner.",
+        "Day 11: Depart for Delhi and drop-off; breakfast; yatra ends."
+      ],
+      "notes": "Brochure notes: Kedarnath camping has common washrooms and no private rooms. AC is available only at the Haridwar hotel; other hotels are non-AC. Guests should carry their own water bottle. Early departures apply for Kedarnath and Yamunotri, with packed breakfast. The company may modify the itinerary due to conditions. Trekking distances, transport, hotel allocation, price, taxes, departure dates and availability must be reconfirmed before booking. The brochure lists package price ₹23,499 + 5% GST and a normal price ₹29,999; do not promise the offer is still active."
+    }
+  ],
   "faqs": [
     {
+      "question": "What is included in the Char Dham Yatra package?",
+      "keywords": [
+        "char dham inclusions",
+        "char dham included",
+        "what is included char dham",
+        "char dham package includes"
+      ],
+      "answer": "The brochure lists Delhi–Haridwar AC transport (AC does not operate on hills), round-trip sleeper train reservation subject to availability, group-sharing stays across the itinerary, 10 breakfasts, 10 dinners, sightseeing and darshans, a virtual travel manager, transport-related charges and travel insurance. Please reconfirm the current inclusions with our travel team before booking."
+    },
+    {
+      "question": "What is excluded from the Char Dham Yatra package?",
+      "keywords": [
+        "char dham exclusions",
+        "char dham excluded",
+        "what is excluded char dham",
+        "char dham package excludes"
+      ],
+      "answer": "The brochure excludes personal expenses, pony/doli and trekking activity charges, tips, heater charges, hot water at Kedarnath, certain natural-calamity/roadblock costs and anything not listed in inclusions. Government shared transport to Gaurikund and luggage cloakroom charges are also described as at the traveller’s own cost. Our travel team can confirm the current details."
+    },
+    {
       "question": "What services do you provide?",
-      "keywords": ["services", "hotel booking", "flight booking", "customized trip"],
+      "keywords": [
+        "services",
+        "hotel booking",
+        "flight booking",
+        "customized trip"
+      ],
       "answer": "On A Trip Holidays helps with tour packages, customized trips, hotel bookings, and flight bookings. Tell me your destination and travel dates so I can check the available package information."
     },
     {
       "question": "How do I book a trip?",
-      "keywords": ["book", "booking process", "reserve", "reservation"],
+      "keywords": [
+        "book",
+        "booking process",
+        "reserve",
+        "reservation"
+      ],
       "answer": "I can help you find the right package. Please share your destination, travel dates, and number of travellers. Our travel team will confirm availability and the next booking steps."
     },
     {
       "question": "Are package prices final?",
-      "keywords": ["price", "cost", "gst", "final amount", "payment"],
+      "keywords": [
+        "price",
+        "cost",
+        "gst",
+        "final amount",
+        "payment"
+      ],
       "answer": "Package prices and any applicable taxes must be checked against the specific package details. I won’t guess or promise an unverified price. If the amount isn’t listed, I’ll confirm with our travel team. A travel expert will let you know, sir."
     }
   ]
