@@ -41,20 +41,14 @@ function answerQuestion(question: string): string {
     return "Please share your name and the best time to contact you, or visit " + data.company.website + ". Our travel team can confirm the correct contact details and help you further.";
   }
 
-  const faq = [...data.faqs]
-    .map((item) => {
-      const terms = [item.question, ...(item.keywords || [])].flatMap(words);
-      const overlap = new Set(tokens.filter((token) => terms.includes(token))).size;
-      return { item, overlap };
-    })
-    .sort((a, b) => b.overlap - a.overlap)[0];
-  if (faq && faq.overlap >= 2) return faq.item.answer;
-
+  // Match a named package before FAQs: questions such as "char dham trip how many days"
+  // contain the word "trip", which must not accidentally trigger the generic booking FAQ.
   const matchedPackage = data.packages
     .map((pkg) => {
       const name = normalize(pkg.name);
       const destination = normalize(pkg.destination || "");
-      const matched = tokens.filter((token) => (name + " " + destination).includes(token));
+      const aliases = normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham yatra");
+      const matched = tokens.filter((token) => aliases.split(" ").includes(token));
       return { pkg, score: new Set(matched).size };
     })
     .sort((a, b) => b.score - a.score)[0];
@@ -67,6 +61,10 @@ function answerQuestion(question: string): string {
 
   if (matchedPackage && matchedPackage.score >= 1) {
     const pkg = matchedPackage.pkg;
+    const durationQuestion = includesAny(q, ["how many days", "how long", "duration", "how many nights", "days is", "days trip", "trip how many days", "nights"]);
+    if (durationQuestion && pkg.duration) {
+      return `The ${pkg.name} is a **${pkg.duration}** trip. It starts and ends in Delhi. Please confirm the latest batch availability with our travel team.`;
+    }
     const lines = [`**${pkg.name}**`];
     if (pkg.destination) lines.push(`Destination: ${pkg.destination}`);
     if (pkg.duration) lines.push(`Duration: ${pkg.duration}`);
@@ -86,6 +84,15 @@ function answerQuestion(question: string): string {
     lines.push("For any detail not listed here, our travel team will confirm it for you.");
     return lines.join("\n");
   }
+
+  const faq = [...data.faqs]
+    .map((item) => {
+      const terms = [item.question, ...(item.keywords || [])].flatMap(words);
+      const overlap = new Set(tokens.filter((token) => terms.includes(token))).size;
+      return { item, overlap };
+    })
+    .sort((a, b) => b.overlap - a.overlap)[0];
+  if (faq && faq.overlap >= 2) return faq.item.answer;
 
   if (packageIntent) {
     const available = data.packages.map((pkg) => pkg.name);
