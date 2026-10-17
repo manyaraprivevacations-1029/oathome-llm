@@ -29,108 +29,112 @@ const normalize = (value: string) =>
 const words = (value: string) => normalize(value).split(" ").filter((word) => word.length > 2);
 const includesAny = (text: string, values: string[]) => values.some((value) => text.includes(normalize(value)));
 
-function answerQuestion(question: string, conversationContext = ""): string {
+function getPackageMentionedInContext(contextMessages: { role: string; content: string }[]): PackageRecord | undefined {
+  // Search recent messages first so the most recently discussed package wins.
+  for (const message of [...contextMessages].reverse()) {
+    const text = normalize(message.content);
+    const ranked = data.packages.map((pkg) => {
+      const aliases = normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham");
+      const aliasWords = [...new Set(words(aliases))];
+      const score = aliasWords.filter((word) => text.split(" ").includes(word)).length;
+      return { pkg, score };
+    }).sort((a, b) => b.score - a.score);
+    if (ranked[0]?.score && ranked[0].score >= 1) return ranked[0].pkg;
+  }
+  return undefined;
+}
+
+function answerQuestion(question: string, contextMessages: { role: string; content: string }[] = []): string {
   const q = normalize(question);
   const tokens = words(q);
-  const context = normalize(conversationContext);
+  const contextPackage = getPackageMentionedInContext(contextMessages);
 
   if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
-    return `Hello! Welcome to ${data.company.name}. 😊 I can help you with our available tour packages, prices, itineraries, inclusions, exclusions, and departure details. What destination are you interested in?`;
+    return `Hello! Welcome to ${data.company.name}. What destination or package are you interested in?`;
   }
 
   if (includesAny(q, ["contact", "phone number", "call you", "contact number", "whatsapp"])) {
-    return "Please share your name and the best time to contact you, or visit " + data.company.website + ". Our travel team can confirm the correct contact details and help you further.";
+    return "Please visit " + data.company.website + " or ask me about a package. Our travel team can confirm contact details.";
   }
 
-  // Match a named package before FAQs: questions such as "char dham trip how many days"
-  // contain the word "trip", which must not accidentally trigger the generic booking FAQ.
-  const matchedPackage = data.packages
-    .map((pkg) => {
-      const name = normalize(pkg.name);
-      const destination = normalize(pkg.destination || "");
-      const aliases = normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham yatra");
-      const matched = tokens.filter((token) => aliases.split(" ").includes(token));
-      return { pkg, score: new Set(matched).size };
-    })
-    .sort((a, b) => b.score - a.score)[0];
-
-  const contextMatchedPackage = data.packages
-    .map((pkg) => {
-      const aliases = normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham yatra");
-      const score = new Set(words(aliases).filter((token) => context.includes(token))).size;
-      return { pkg, score };
-    })
-    .sort((a, b) => b.score - a.score)[0];
-
-  // Resolve short follow-ups against the package discussed earlier in this chat.
-  const isShortFollowUp = q.split(" ").length <= 5;
-  const contextPackage = contextMatchedPackage && contextMatchedPackage.score >= 2 ? contextMatchedPackage.pkg : undefined;
+  const isShortFollowUp = q.split(" ").length <= 7;
   if (isShortFollowUp && contextPackage) {
-    if (includesAny(q, ["price", "cost", "rate", "how much", "per person"]) && contextPackage.price) {
-      return "The **" + contextPackage.name + "** brochure price is **" + contextPackage.price + "**. The current price and availability must be reconfirmed with our travel team.";
+    if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
+      return `The **${contextPackage.name}** brochure price is **${contextPackage.price || "not listed"}**. Please confirm the current price and availability with our travel team.`;
     }
-    if (includesAny(q, ["day", "days", "duration", "night", "nights", "how long"]) && contextPackage.duration) {
-      return "The **" + contextPackage.name + "** is **" + contextPackage.duration + "**. It starts and ends in Delhi. Please confirm the latest batch with our travel team.";
+    if (includesAny(q, ["day", "days", "duration", "night", "nights", "how long"])) {
+      return `It’s **${contextPackage.duration || "not listed"}**.`;
     }
-    if (includesAny(q, ["include", "inclusions", "included"]) && contextPackage.inclusions?.length) {
-      return "**Inclusions for " + contextPackage.name + ":**\n" + contextPackage.inclusions.map((value) => "- " + value).join("\n") + "\nPlease reconfirm current inclusions before booking.";
+    if (includesAny(q, ["include", "inclusions", "included"])) {
+      const shortList = (contextPackage.inclusions || []).slice(0, 5);
+      return shortList.length
+        ? `**Main inclusions:** ${shortList.join("; ")}. Ask if you want the full list.`
+        : data.company.fallback;
     }
-    if (includesAny(q, ["exclude", "exclusions", "not included"]) && contextPackage.exclusions?.length) {
-      return "**Exclusions for " + contextPackage.name + ":**\n" + contextPackage.exclusions.map((value) => "- " + value).join("\n");
+    if (includesAny(q, ["exclude", "exclusions", "not included"])) {
+      const shortList = (contextPackage.exclusions || []).slice(0, 4);
+      return shortList.length
+        ? `**Main exclusions:** ${shortList.join("; ")}. Ask if you want the full list.`
+        : data.company.fallback;
+    }
+    if (includesAny(q, ["departure", "batch", "dates", "when"])) {
+      return `The brochure lists ${(contextPackage.departures || ["no dates"]).join("; ")} Please confirm the next available batch with our travel team.`;
+    }
+    if (includesAny(q, ["where", "destination", "places", "which places"])) {
+      return contextPackage.destination || data.company.fallback;
     }
   }
+
+  const matchedPackage = data.packages.map((pkg) => {
+    const aliases = normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham yatra");
+    const score = new Set(tokens.filter((token) => aliases.split(" ").includes(token))).size;
+    return { pkg, score };
+  }).sort((a, b) => b.score - a.score)[0];
+
+  if (matchedPackage && matchedPackage.score >= 1) {
+    const pkg = matchedPackage.pkg;
+    if (includesAny(q, ["how many days", "how long", "duration", "how many nights", "days is", "days trip", "nights"])) {
+      return `It’s **${pkg.duration || "not listed"}**.`;
+    }
+    if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
+      return `The brochure price is **${pkg.price || "not listed"}**. Please confirm the current price and availability with our travel team.`;
+    }
+    if (includesAny(q, ["include", "inclusions", "included"])) {
+      return (pkg.inclusions || []).length
+        ? `**Main inclusions:** ${(pkg.inclusions || []).slice(0, 5).join("; ")}. Ask if you want the full list.`
+        : data.company.fallback;
+    }
+    if (includesAny(q, ["exclude", "exclusions", "not included"])) {
+      return (pkg.exclusions || []).length
+        ? `**Main exclusions:** ${(pkg.exclusions || []).slice(0, 4).join("; ")}. Ask if you want the full list.`
+        : data.company.fallback;
+    }
+    if (includesAny(q, ["itinerary", "day wise", "day by day", "schedule"])) {
+      return (pkg.itinerary || []).length
+        ? `**${pkg.name} — ${pkg.duration || ""}**\n` + (pkg.itinerary || []).join("\n")
+        : data.company.fallback;
+    }
+    // A package name or general package question gets a short overview, never the whole brochure.
+    return `**${pkg.name}**\nDuration: **${pkg.duration || "Please confirm"}**\nPrice: **${pkg.price || "Please confirm"}**\nAsk me for price, duration, inclusions, exclusions, or itinerary.`;
+  }
+
+  const faq = [...data.faqs].map((item) => {
+    const terms = [item.question, ...(item.keywords || [])].flatMap(words);
+    const overlap = new Set(tokens.filter((token) => terms.includes(token))).size;
+    return { item, overlap };
+  }).sort((a, b) => b.overlap - a.overlap)[0];
+  if (faq && faq.overlap >= 2) return faq.item.answer;
 
   const packageIntent = includesAny(q, [
     "package", "tour", "trip", "itinerary", "price", "cost", "rate", "per person",
     "inclusion", "inclusions", "exclusion", "exclusions", "hotel", "stay", "departure",
     "batch", "days", "nights", "booking", "destination", "places to visit"
   ]);
-
-  if (matchedPackage && matchedPackage.score >= 1) {
-    const pkg = matchedPackage.pkg;
-    const durationQuestion = includesAny(q, ["how many days", "how long", "duration", "how many nights", "days is", "days trip", "trip how many days", "nights"]);
-    if (durationQuestion && pkg.duration) {
-      return `The ${pkg.name} is a **${pkg.duration}** trip. It starts and ends in Delhi. Please confirm the latest batch availability with our travel team.`;
-    }
-    const lines = [`**${pkg.name}**`];
-    if (pkg.destination) lines.push(`Destination: ${pkg.destination}`);
-    if (pkg.duration) lines.push(`Duration: ${pkg.duration}`);
-    if (pkg.price) lines.push(`Package price: ${pkg.price}`);
-    if (pkg.departures?.length) lines.push(`Departure dates: ${pkg.departures.join(", ")}`);
-    if (includesAny(q, ["include", "inclusion", "inclusions", "included", "package include"]) && pkg.inclusions?.length) {
-      lines.push("**Inclusions**", ...pkg.inclusions.map((value) => "- " + value));
-    } else if (includesAny(q, ["exclude", "exclusion", "exclusions", "not included"]) && pkg.exclusions?.length) {
-      lines.push("**Exclusions**", ...pkg.exclusions.map((value) => "- " + value));
-    } else if (includesAny(q, ["itinerary", "day wise", "day by day", "schedule"]) && pkg.itinerary?.length) {
-      lines.push("**Itinerary**", ...pkg.itinerary.map((value, i) => `${i + 1}. ${value}`));
-    } else {
-      if (pkg.inclusions?.length) lines.push("**Inclusions**", ...pkg.inclusions.map((value) => "- " + value));
-      if (pkg.exclusions?.length) lines.push("**Exclusions**", ...pkg.exclusions.map((value) => "- " + value));
-      if (pkg.notes) lines.push(pkg.notes);
-    }
-    lines.push("For any detail not listed here, our travel team will confirm it for you.");
-    return lines.join("\n");
-  }
-
-  const faq = [...data.faqs]
-    .map((item) => {
-      const terms = [item.question, ...(item.keywords || [])].flatMap(words);
-      const overlap = new Set(tokens.filter((token) => terms.includes(token))).size;
-      return { item, overlap };
-    })
-    .sort((a, b) => b.overlap - a.overlap)[0];
-  if (faq && faq.overlap >= 2) return faq.item.answer;
-
   if (packageIntent) {
     const available = data.packages.map((pkg) => pkg.name);
-    if (available.length) {
-      return "I can help with package details from our approved travel information. Which package are you asking about?\n\n" +
-        available.map((name) => "- " + name).join("\n") +
-        "\n\nIf your question is about a detail not listed, I’ll confirm with our travel team. A travel expert will let you know, sir.";
-    }
-    return "I can help with package prices, itineraries, inclusions, exclusions, and departure details once they are added to our approved package information. For this specific question, I’ll confirm with our travel team. A travel expert will let you know, sir.";
+    if (available.length) return "Which package do you mean?\n" + available.map((name) => "- " + name).join("\n");
+    return data.company.fallback;
   }
-
   return data.company.fallback;
 }
 
@@ -154,27 +158,18 @@ export async function POST(request: NextRequest) {
   if (!Array.isArray(payload.messages) || payload.messages.length === 0) {
     return NextResponse.json({ error: "Send a message to continue." }, { status: 400 });
   }
-  const latest = [...payload.messages].reverse().find(
-    (item): item is { role: string; content: string } =>
-      !!item && typeof item === "object" &&
-      (item as { role?: unknown }).role === "user" &&
-      typeof (item as { content?: unknown }).content === "string"
+  const messages = payload.messages.filter((item): item is { role: string; content: string } =>
+    !!item && typeof item === "object" &&
+    typeof (item as { role?: unknown }).role === "string" &&
+    typeof (item as { content?: unknown }).content === "string"
   );
-  if (!latest || latest.content.trim().length === 0) {
-    return NextResponse.json({ error: "Enter a question." }, { status: 400 });
-  }
+  const latestIndex = messages.map((item) => item.role).lastIndexOf("user");
+  const latest = messages[latestIndex];
+  if (!latest || !latest.content.trim()) return NextResponse.json({ error: "Enter a question." }, { status: 400 });
   if (latest.content.length > 4000) return NextResponse.json({ error: "Your message is too long." }, { status: 413 });
 
-  const previousContext = payload.messages
-    .filter((item): item is { role: string; content: string } =>
-      !!item && typeof item === "object" &&
-      typeof (item as { role?: unknown }).role === "string" &&
-      typeof (item as { content?: unknown }).content === "string" &&
-      item !== latest
-    )
-    .map((item) => item.content)
-    .join(" ");
-  const answer = answerQuestion(latest.content, previousContext);
+  const contextMessages = messages.slice(0, latestIndex).slice(-20);
+  const answer = answerQuestion(latest.content, contextMessages);
   const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\n";
   return new Response(ndjson, {
     status: 200,
