@@ -68,6 +68,9 @@ function hasTravellerCount(text: string): boolean {
     || includesAny(q, ["people", "persons", "person", "travellers", "travelers", "adults", "members", "pax", "couple", "family", "solo trip", "just me", "we are", "only five", "only four", "only three", "only two"])
     || ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"].some((number) => q.split(" ").includes(number));
 }
+function hasOriginCity(text: string): boolean {
+  return includesAny(normalize(text), ["hyderabad", "vijayawada", "visakhapatnam", "vizag", "bangalore", "bengaluru", "chennai", "mumbai", "pune", "delhi", "kolkata", "tirupati", "warangal", "karimnagar", "nizamabad", "khammam", "guntur", "rajahmundry", "nellore", "kurnool", "anantapur"]);
+}
 function isPackageEnquiry(q: string): boolean {
   return includesAny(q, ["package", "tour", "trip", "travel", "char dham", "chardham", "yatra", "holiday", "vacation", "itinerary", "price", "cost", "inclusions", "hotel", "destination"]);
 }
@@ -78,8 +81,8 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
     const n = normalize(m);
     return data.packages.some((pkg) => normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham").split(" ").some((w) => w.length > 3 && n.split(" ").includes(w)));
   });
-  const datesKnown = hasTravelDates(priorText) || hasTravelDates(q);
-  const travellersKnown = hasTravellerCount(priorText) || hasTravellerCount(q);
+  const travellersKnown = userMessages.some(hasTravellerCount) || hasTravellerCount(q);
+  const originKnown = userMessages.some(hasOriginCity) || hasOriginCity(q);
   const alreadyIntroduced = /radhika|రాధిక/.test(priorText.toLowerCase());
   if (!isPackageEnquiry(q) && !contextPackage) return undefined;
   if (!alreadyIntroduced) {
@@ -88,12 +91,11 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       ? `నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ${packageLabel} గురించి ఆసక్తి చూపించారు. ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?`
       : "నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ట్రావెల్ ప్యాకేజ్ గురించి ఆసక్తి చూపించారు. ఎక్కడికి లేదా ఎలాంటి ట్రిప్‌కి వెళ్లాలని చూస్తున్నారండి?";
   }
-  if (!destinationKnown) return "సరే అండి, మీకు ఏ destination లేదా ఏ టైపు trip కావాలో చెప్పండి. దాని ప్రకారం సరిపోయే package సూచిస్తాను.";
-  if (!datesKnown) return "సరే అండి, ఆ ట్రిప్ కోసం ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?";
-  if (!travellersKnown) return "అలాగే అండి. మీతో కలిపి మొత్తం ఎంతమంది ప్రయాణిస్తారండి?";
+  if (!destinationKnown) return "Okay andi, meeru ye destination ki vellali anukuntunnaru?";
+  if (!travellersKnown) return "Okay andi, mee group lo entha mandi untaru? Meeru Hyderabad nunchi start avuthara, leka vere city nunchi?";
+  if (!originKnown) return "Super andi, total members note chesukunnanu. Meeru ye city nunchi start avutharu?";
   if (contextPackage) {
-    const inclusions = (contextPackage.inclusions || []).slice(0, 3).join(", ");
-    return `ధన్యవాదాలు అండి! మీకు **${contextPackage.name}** సరిపోవచ్చు. Duration: ${contextPackage.duration || "travel team will confirm"}. Brochure price: ${contextPackage.price || "travel team will confirm"}. Main inclusions: ${inclusions || "travel team will confirm the inclusions"}. Current price and availability మా travel team confirm చేస్తారు. పూర్తి details WhatsApp‌లో పంపించనా?`;
+    return "Super andi! Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi. Total 10 nights / 11 days journey. Yamunotri, Gangotri, Kedarnath, Badrinath darshan cover avuthayi. Day-wise itinerary cheppana, leka package price and inclusions kavala?";
   }
   return "ధన్యవాదాలు అండి! మీ travel dates, travellers వివరాల ప్రకారం సరిపోయే package ఎంపిక చేసి చెప్తాను. పూర్తి details WhatsApp‌లో పంపించనా?";
 }
