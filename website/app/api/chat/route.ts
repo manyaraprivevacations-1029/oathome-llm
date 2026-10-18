@@ -108,6 +108,12 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
 
   const isShortFollowUp = q.split(" ").length <= 10;
   if (isShortFollowUp && contextPackage) {
+    if (includesAny(q, ["things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring"])) {
+      const items = (contextPackage as PackageRecord & { thingsToCarry?: string[] }).thingsToCarry || [];
+      return items.length
+        ? "**Things to carry for the Char Dham Yatra:**\\n" + items.map((item) => "- " + item).join("\\n") + "\\n\\nKeep your ID and Yatra Parchi printouts handy. Please check the latest travel instructions before departure."
+        : data.company.fallback;
+    }
     // Explicit requests for a day-by-day schedule must be checked before the generic "day/days" duration rule.
     if (includesAny(q, ["itinerary", "day wise", "day by day", "schedule", "daily plan", "each day"])) {
       return (contextPackage.itinerary || []).length
