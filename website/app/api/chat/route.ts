@@ -75,9 +75,10 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
   const travellersKnown = hasTravellerCount(priorText) || hasTravellerCount(q);
   const alreadyIntroduced = /radhika|రాధిక/.test(priorText.toLowerCase());
   if (!isPackageEnquiry(q) && !contextPackage) return undefined;
-  if (!alreadyIntroduced && !contextPackage) {
+  if (!alreadyIntroduced) {
+    const packageLabel = contextPackage?.name || "travel package";
     return destinationKnown
-      ? "నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు Char Dham package గురించి ఆసక్తి చూపించారు. ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?"
+      ? `నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ${packageLabel} గురించి ఆసక్తి చూపించారు. ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?`
       : "నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ట్రావెల్ ప్యాకేజ్ గురించి ఆసక్తి చూపించారు. ఎక్కడికి లేదా ఎలాంటి ట్రిప్‌కి వెళ్లాలని చూస్తున్నారండి?";
   }
   if (!destinationKnown) return "సరే అండి, మీకు ఏ destination లేదా ఏ టైపు trip కావాలో చెప్పండి. దాని ప్రకారం సరిపోయే package సూచిస్తాను.";
