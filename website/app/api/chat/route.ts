@@ -62,7 +62,7 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
     // Explicit requests for a day-by-day schedule must be checked before the generic "day/days" duration rule.
     if (includesAny(q, ["itinerary", "day wise", "day by day", "schedule", "daily plan", "each day"])) {
       return (contextPackage.itinerary || []).length
-        ? `**${contextPackage.name} — ${contextPackage.duration || ""}**\\n` + (contextPackage.itinerary || []).join("\\n")
+        ? `**${contextPackage.name} — ${contextPackage.duration || ""}**\n` + (contextPackage.itinerary || []).join("\n")
         : data.company.fallback;
     }
     if (includesAny(q, ["room sharing", "sharing room", "room type", "room basis", "sharing basis", "how many sharing", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation", "stay arrangement", "two sharing", "2 sharing", "double sharing", "twin sharing", "private room", "private rooms", "double room"])) {
