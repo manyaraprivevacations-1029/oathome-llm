@@ -116,7 +116,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
  * travel FAQ engine available during platform development.
  */
 async function answerWithConfiguredLLM(question: string, history: ChatMessage[]): Promise<string | null> {
-  const configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\\/+$/, "");
+  const configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\/+$/, "");
   if (!configuredUrl) return null;
 
   const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
@@ -196,6 +196,6 @@ export async function POST(request: NextRequest) {
   const modelAnswer = await answerWithConfiguredLLM(latest.content, history);
   const answer = modelAnswer || answerQuestion(latest.content, history);
   const responseMode = modelAnswer ? "configured-llm" : "knowledge-fallback";
-  const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\\n";
+  const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\n";
   return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-OATHome-Response-Mode": responseMode } });
 }
