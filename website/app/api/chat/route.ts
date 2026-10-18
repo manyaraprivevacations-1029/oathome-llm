@@ -51,13 +51,13 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
 
 function hasTravelDates(text: string): boolean {
   const q = normalize(text);
-  return /\\b(jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|september|oct|october|nov|november|dec|december)\\b/.test(q)
-    || /\\b(next week|next month|this weekend|weekend|tomorrow|from \\d{1,2}|\\d{1,2}\\s*(to|-)\\s*\\d{1,2}|\\d{1,2}\\/\\d{1,2})\\b/.test(q);
+  return includesAny(q, ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "next week", "next month", "this weekend", "weekend", "tomorrow"])
+    || q.split(" ").some((token) => token.includes("/") || (token.length <= 2 && token.split("").every((ch) => "0123456789".includes(ch))));
 }
 function hasTravellerCount(text: string): boolean {
   const q = normalize(text);
-  return /\\b(\\d+|one|two|three|four|five|six|seven|eight|nine|ten|couple|family)\\s*(people|persons|person|travellers|travelers|adults|members|pax)\\b/.test(q)
-    || /\\b(for a couple|for family|just me|solo trip|we are \\d+)\\b/.test(q);
+  return includesAny(q, ["people", "persons", "person", "travellers", "travelers", "adults", "members", "pax", "couple", "family", "solo trip", "just me", "we are"])
+    || ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"].some((number) => q.includes(number));
 }
 function isPackageEnquiry(q: string): boolean {
   return includesAny(q, ["package", "tour", "trip", "travel", "char dham", "chardham", "yatra", "holiday", "vacation", "itinerary", "price", "cost", "inclusions", "hotel", "destination"]);
