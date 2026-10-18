@@ -67,3 +67,12 @@ The old `/api/ai-bot/*` routes are intentionally blocked with HTTP 404 by `middl
 Browser → OWN Next.js UI → `/api/chat` server route → inference server `/api/tags` and `/api/chat`.
 
 Supabase connectivity is verified by a separate authenticated server route. The browser never receives the Supabase secret key or upstream inference credentials.
+
+
+## OATHome cloud runtime milestone
+
+The public, non-secret runtime diagnostic endpoint is `GET /api/runtime`. It reports whether a separately deployed Ollama-compatible runtime is configured and reachable, the runtime version, and the number/names of installed models. It never returns the runtime URL or credentials. The endpoint is diagnostic only; it does not generate text by itself.
+
+The current Render Free service deploys only the Next.js website because its Root Directory is `website`. It does **not** deploy the Go inference runtime or model weights. The website can remain cloud-hosted independently of your Mac, but real LLM inference will work only after a separate reachable runtime is deployed and `OATHOME_LLM_BASE_URL` points to it. A free web tier is suitable for the control plane and lightweight APIs, not a dependable always-on LLM inference server; model memory, CPU/GPU, cold starts, and persistent model storage are separate constraints.
+
+Keep the first milestone free-first: do not add paid inference APIs or provider API keys. Before connecting a runtime, verify that its host can build/run the Go runtime, has sufficient RAM/CPU (or GPU), and provides persistent model storage if models are downloaded at runtime. Protect inference endpoints with authentication and do not expose an unauthenticated Ollama-compatible port publicly.
