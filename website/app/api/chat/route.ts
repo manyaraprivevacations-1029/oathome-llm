@@ -81,7 +81,11 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
   if (!destinationKnown) return "సరే అండి, మీకు ఏ destination లేదా ఏ టైపు trip కావాలో చెప్పండి. దాని ప్రకారం సరిపోయే package సూచిస్తాను.";
   if (!datesKnown) return "సరే అండి, ఆ ట్రిప్ కోసం ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?";
   if (!travellersKnown) return "అలాగే అండి. మీతో కలిపి మొత్తం ఎంతమంది ప్రయాణిస్తారండి?";
-  return "ధన్యవాదాలు అండి. మీ travel dates, travellers వివరాలు తీసుకున్నాను. ఇప్పుడు మీకు సరిపోయే package, price, inclusions వివరాలు చెప్తాను. పూర్తి వివరాలు WhatsApp‌లో పంపించాలా?";
+  if (contextPackage) {
+    const inclusions = (contextPackage.inclusions || []).slice(0, 3).join(", ");
+    return `ధన్యవాదాలు అండి! మీకు **${contextPackage.name}** సరిపోవచ్చు. Duration: ${contextPackage.duration || "travel team will confirm"}. Brochure price: ${contextPackage.price || "travel team will confirm"}. Main inclusions: ${inclusions || "travel team will confirm the inclusions"}. Current price and availability మా travel team confirm చేస్తారు. పూర్తి details WhatsApp‌లో పంపించనా?`;
+  }
+  return "ధన్యవాదాలు అండి! మీ travel dates, travellers వివరాల ప్రకారం సరిపోయే package ఎంపిక చేసి చెప్తాను. పూర్తి details WhatsApp‌లో పంపించనా?";
 }
 
   if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
