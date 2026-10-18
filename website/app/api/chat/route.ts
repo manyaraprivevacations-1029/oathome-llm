@@ -134,8 +134,8 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
   if (!alreadyIntroduced) {
     const packageLabel = contextPackage?.name || "travel package";
     return destinationKnown
-      ? `నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ${packageLabel} గురించి ఆసక్తి చూపించారు. ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?`
-      : "నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ట్రావెల్ ప్యాకేజ్ గురించి ఆసక్తి చూపించారు. ఎక్కడికి లేదా ఎలాంటి ట్రిప్‌కి వెళ్లాలని చూస్తున్నారండి?";
+      ? `Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ${packageLabel} gurinchi enquiry chesaru kada. Mee group lo entha mandi untaru? Meeru ye city nunchi start avutharu?`
+      : "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
   }
   if (!destinationKnown) return "Okay andi, meeru ye destination ki vellali anukuntunnaru?";
   if (!travellersKnown) return "Okay andi, mee group lo entha mandi untaru? Meeru Hyderabad nunchi start avuthara, leka vere city nunchi?";
@@ -225,7 +225,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       return `It’s **${pkg.duration || "not listed"}**.`;
     }
     if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
-      return `Char Dham package price **₹23,499 per person + 5% GST**. Current offer and seats availability confirm cheyyali.`;
+      return `Char Dham package price **₹23,499 per person + 5% GST** andi.`;
     }
     if (includesAny(q, ["include", "inclusions", "included"])) {
       return (pkg.inclusions || []).length
