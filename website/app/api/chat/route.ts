@@ -99,7 +99,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
 }
 
   if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
-    return `Hello! Welcome to ${data.company.name}. What destination or package are you interested in?`;
+    return "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
   }
 
   if (includesAny(q, ["contact", "phone number", "call you", "contact number", "whatsapp"])) {
