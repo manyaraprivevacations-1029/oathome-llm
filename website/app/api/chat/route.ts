@@ -49,6 +49,13 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
   const tokens = words(q);
   const contextPackage = getPackageMentionedInContext(contextMessages);
 
+  // Handle packing questions before sales qualification so they never return a generic package pitch.
+  if (includesAny(q, ["things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring"])) {
+    const pkg = contextPackage || data.packages.find((item) => normalize(item.name + " " + (item.destination || "")).includes("char dham"));
+    const items = (pkg as (PackageRecord & { thingsToCarry?: string[] }) | undefined)?.thingsToCarry || [];
+    if (items.length) return "Char Dham trip ki carry cheyyalsina items:\\n" + items.map((item) => "- " + item).join("\\n") + "\\n\\nID proof, Yatra Parchi printout and medicines marchipokandi.";
+  }
+
 function hasTravelDates(text: string): boolean {
   const q = normalize(text);
   return includesAny(q, ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "next week", "next month", "this weekend", "weekend", "tomorrow"])
