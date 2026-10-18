@@ -16,7 +16,7 @@
       "name": "Char Dham Yatra 2026 — Dasara Special Offer",
       "destination": "Yamunotri, Gangotri, Kedarnath and Badrinath, with Haridwar, Lakhamandal, Uttarkashi, Sonprayag/Sitapur, Joshimath/Chamoli and Mana Village",
       "duration": "10 nights / 11 days (10N/11D)",
-      "price": "₹23,499 per person + 5% GST, as printed in the supplied brochure. Current price and availability must be reconfirmed with the travel team.",
+      "price": "₹23,499 per person + 5% GST",
       "departures": [
         "The brochure shows departure dates during August, September and October 2026. These are brochure dates only; confirm the next available batch with the travel team."
       ],
@@ -74,7 +74,13 @@
         "Towel",
         "Mosquito repellent",
         "Helicopter ticket printout, if booked"
-      ]
+      ],
+      "childPricing": {
+        "under5": "Free",
+        "age5to11": "₹15,399 + 5% GST per child",
+        "age11plus": "Adult price applies"
+      },
+      "doubleSharing": "Double-sharing costs ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath stays remain group-sharing."
     }
   ],
   "faqs": [
