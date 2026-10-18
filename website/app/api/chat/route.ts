@@ -110,13 +110,70 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   return fallback;
 }
 
+/**
+ * Optional self-hosted Ollama adapter.
+ * When no private model runtime is configured, keep the existing deterministic
+ * travel FAQ engine available during platform development.
+ */
+async function answerWithConfiguredLLM(question: string, history: ChatMessage[]): Promise<string | null> {
+  const configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\\/+$/, "");
+  if (!configuredUrl) return null;
+
+  const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
+  const systemPrompt = [
+    "You are Radhika, a friendly sales assistant for On A Trip Holidays.",
+    "Reply naturally in the language used by the customer. Telugu-English mix is welcome.",
+    "Use only the verified company knowledge supplied below for package prices, dates, inclusions, exclusions, policies and itinerary facts.",
+    "Never invent prices, availability, booking confirmations, discounts or package details.",
+    "If the supplied knowledge does not answer a question, say you will confirm with the travel team.",
+    "Ask one useful qualifying question at a time. Do not claim to have booked anything or sent a WhatsApp message.",
+    "Keep answers concise and customer-friendly.",
+    "VERIFIED COMPANY KNOWLEDGE:",
+    JSON.stringify(data)
+  ].join("\n");
+
+  const priorMessages = history
+    .filter((m) => (m.role === "user" || m.role === "assistant") && typeof m.content === "string")
+    .slice(-12)
+    .map((m) => ({ role: m.role, content: m.content.slice(0, 4000) }));
+  const messages = [
+    { role: "system", content: systemPrompt },
+    ...priorMessages,
+    { role: "user", content: question }
+  ];
+
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
+  if (upstreamToken) headers.Authorization = `Bearer ${upstreamToken}`;
+
+  try {
+    const response = await fetch(`${configuredUrl}/api/chat`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ model, messages, stream: false }),
+      cache: "no-store",
+      signal: AbortSignal.timeout(25000)
+    });
+    if (!response.ok) return null;
+    const payload: unknown = await response.json().catch(() => null);
+    if (!payload || typeof payload !== "object") return null;
+    const message = (payload as { message?: { content?: unknown } }).message;
+    if (typeof message?.content !== "string" || !message.content.trim()) return null;
+    return message.content.trim().slice(0, 6000);
+  } catch {
+    return null;
+  }
+}
+
 export async function GET() {
   return NextResponse.json({
     models: [{ name: "OWN-Travel-Knowledge", details: { family: "rule-based", parameter_size: "local knowledge engine" } }],
     defaultModel: "OWN-Travel-Knowledge",
     runtime: "OWN deterministic travel knowledge engine",
     externalAI: false,
-    apiKeysRequired: false
+    apiKeysRequired: false,
+    configuredLLM: Boolean(process.env.OATHOME_LLM_BASE_URL?.trim()),
+    selectedLLM: process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b"
   }, { headers: { "Cache-Control": "no-store" } });
 }
 
@@ -136,7 +193,9 @@ export async function POST(request: NextRequest) {
   if (!latest || !latest.content.trim()) return NextResponse.json({ error: "Enter a question." }, { status: 400 });
   if (latest.content.length > 4000) return NextResponse.json({ error: "Your message is too long." }, { status: 413 });
   const history = messages.slice(0, latestIndex).slice(-20);
-  const answer = answerQuestion(latest.content, history);
-  const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\n";
-  return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" } });
+  const modelAnswer = await answerWithConfiguredLLM(latest.content, history);
+  const answer = modelAnswer || answerQuestion(latest.content, history);
+  const responseMode = modelAnswer ? "configured-llm" : "knowledge-fallback";
+  const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\\n";
+  return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-OATHome-Response-Mode": responseMode } });
 }
