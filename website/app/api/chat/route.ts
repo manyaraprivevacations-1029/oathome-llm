@@ -52,12 +52,14 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
 function hasTravelDates(text: string): boolean {
   const q = normalize(text);
   return includesAny(q, ["january", "february", "march", "april", "may", "june", "july", "august", "september", "october", "november", "december", "jan", "feb", "mar", "apr", "jun", "jul", "aug", "sep", "oct", "nov", "dec", "next week", "next month", "this weekend", "weekend", "tomorrow"])
-    || q.split(" ").some((token) => token.includes("/") || (token.length <= 2 && token.split("").every((ch) => "0123456789".includes(ch))));
+    || q.includes(" to ") || q.includes(" - ") || q.includes("/");
 }
 function hasTravellerCount(text: string): boolean {
   const q = normalize(text);
-  return includesAny(q, ["people", "persons", "person", "travellers", "travelers", "adults", "members", "pax", "couple", "family", "solo trip", "just me", "we are"])
-    || ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"].some((number) => q.includes(number));
+  const numericReply = q.split(" ").some((token) => token.length > 0 && token.split("").every((ch) => "0123456789".includes(ch)));
+  return numericReply
+    || includesAny(q, ["people", "persons", "person", "travellers", "travelers", "adults", "members", "pax", "couple", "family", "solo trip", "just me", "we are", "only five", "only four", "only three", "only two"])
+    || ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"].some((number) => q.split(" ").includes(number));
 }
 function isPackageEnquiry(q: string): boolean {
   return includesAny(q, ["package", "tour", "trip", "travel", "char dham", "chardham", "yatra", "holiday", "vacation", "itinerary", "price", "cost", "inclusions", "hotel", "destination"]);
