@@ -18,7 +18,7 @@
       "duration": "10 nights / 11 days (10N/11D)",
       "price": "₹23,499 per person + 5% GST",
       "departures": [
-        "The brochure shows departure dates during August, September and October 2026. These are brochure dates only; confirm the next available batch with the travel team."
+        "Listed departure dates need updating; do not promise a batch until the travel team confirms it."
       ],
       "inclusions": [
         "AC transport from Delhi to Haridwar only; AC does not operate on the hills",
@@ -32,10 +32,10 @@
         "1 night in Badrinath/Joshimath",
         "1 night in Chamoli or Haridwar",
         "10 breakfasts and 10 dinners",
-        "Virtual travel manager available 24x7, as stated in the brochure",
+        "Virtual travel manager available 24x7, included in the package details",
         "Sightseeing and darshans",
         "Tolls, parking, transport taxes, fuel charges and driver allowance",
-        "Travel insurance, as stated in the brochure"
+        "Travel insurance, included in the package details"
       ],
       "exclusions": [
         "Personal expenses",
@@ -45,7 +45,7 @@
         "Hot water at Kedarnath",
         "Anything not mentioned in the inclusions",
         "Government shared vehicle from Sonprayag to Gaurikund and personal cloakroom charges for luggage during the Kedarnath trek",
-        "Double-sharing upgrade: brochure states an additional ₹3,000 per person for 8 nights only; Kedarnath and Badrinath remain group-sharing"
+        "Double-sharing upgrade: package details state an additional ₹3,000 per person for 8 nights only; Kedarnath and Badrinath remain group-sharing"
       ],
       "itinerary": [
         "Day 1 — Delhi to Haridwar: Delhi nunchi Haridwar ki journey start chestham. Har Ki Pauri visit chesi evening Ganga Aarti chustham. Tarvatha hotel check-in, dinner and night stay.",
@@ -54,13 +54,13 @@
         "Day 4 — Lakhamandal to Uttarkashi: Uttarkashi ki travel chesi Kashi Vishwanath Temple visit chestham. Tarvatha hotel check-in, dinner and night stay.",
         "Day 5 — Gangotri: Uttarkashi nunchi Gangotri ki velli darshan cheskoni, malli Uttarkashi ki return avutham. Dinner and night stay hotel lo.",
         "Day 6 — Uttarkashi to Sonprayag/Sitapur: Sonprayag leda Sitapur ki travel chestham. Hotel check-in ayyaka dinner chesi Kedarnath trek kosam rest teesukuntam.",
-        "Day 7 — Kedarnath: Early morning Kedarnath trek start chestham. Darshan tarvatha On A Trip camp lo night stay. Brochure prakaram trek around 22 km; camp lo common washrooms untayi.",
+        "Day 7 — Kedarnath: Early morning Kedarnath trek start chestham. Darshan tarvatha On A Trip camp lo night stay. details prakaram trek around 22 km; camp lo common washrooms untayi.",
         "Day 8 — Kedarnath to Sonprayag/Sitapur: Trek back chesi Sonprayag/Sitapur ki return avutham. Dinner tarvatha night stay.",
         "Day 9 — Sonprayag/Sitapur to Badrinath/Joshimath: Badrinath leda Joshimath ki travel chestham. Hotel check-in, dinner and night stay.",
         "Day 10 — Badrinath and Mana Village: Badrinath Temple darshan chesi Tapt Kund, Mana Village lo sightseeing chestham. Night stay Chamoli leda Haridwar lo untundi.",
         "Day 11 — Return to Delhi: Breakfast tarvatha Delhi ki return journey start chestham. Delhi drop tho trip complete avuthundi."
       ],
-      "notes": "Brochure notes: Kedarnath camping has common washrooms and no private rooms. AC is available only at the Haridwar hotel; other hotels are non-AC. Guests should carry their own water bottle. Early departures apply for Kedarnath and Yamunotri, with packed breakfast. The company may modify the itinerary due to conditions. Trekking distances, transport, hotel allocation, price, taxes, departure dates and availability must be reconfirmed before booking. The brochure lists package price ₹23,499 + 5% GST and a normal price ₹29,999; do not promise the offer is still active.",
+      "notes": "Trip notes: Kedarnath camping has common washrooms and no private rooms. AC is available only at the Haridwar hotel; other hotels are non-AC. Guests should carry their own water bottle. Early departures apply for Kedarnath and Yamunotri, with packed breakfast. The company may modify the itinerary due to conditions. Trekking distances, transport, hotel allocation, price, taxes, departure dates and availability must be reconfirmed before booking. The package details list package price ₹23,499 + 5% GST and a normal price ₹29,999; do not promise the offer is still active.",
       "thingsToCarry": [
         "Government ID printout",
         "Yatra Parchi printout",
@@ -92,7 +92,7 @@
         "what is included char dham",
         "char dham package includes"
       ],
-      "answer": "The brochure lists Delhi–Haridwar AC transport (AC does not operate on hills), round-trip sleeper train reservation subject to availability, group-sharing stays across the itinerary, 10 breakfasts, 10 dinners, sightseeing and darshans, a virtual travel manager, transport-related charges and travel insurance. Please reconfirm the current inclusions with our travel team before booking."
+      "answer": "The package details list Delhi–Haridwar AC transport (AC does not operate on hills), round-trip sleeper train reservation subject to availability, group-sharing stays across the itinerary, 10 breakfasts, 10 dinners, sightseeing and darshans, a virtual travel manager, transport-related charges and travel insurance. ."
     },
     {
       "question": "What is excluded from the Char Dham Yatra package?",
@@ -102,7 +102,7 @@
         "what is excluded char dham",
         "char dham package excludes"
       ],
-      "answer": "The brochure excludes personal expenses, pony/doli and trekking activity charges, tips, heater charges, hot water at Kedarnath, certain natural-calamity/roadblock costs and anything not listed in inclusions. Government shared transport to Gaurikund and luggage cloakroom charges are also described as at the traveller’s own cost. Our travel team can confirm the current details."
+      "answer": "Package lo include kaani items personal expenses, pony/doli and trekking activity charges, tips, heater charges, hot water at Kedarnath, certain natural-calamity/roadblock costs and anything not listed in inclusions. Government shared transport to Gaurikund and luggage cloakroom charges are also described as at the traveller’s own cost."
     },
     {
       "question": "What services do you provide?",
@@ -248,7 +248,7 @@
         "booking process",
         "how to book"
       ],
-      "answer": "Booking kosam ₹5,000 per person advance ani brochure lo undi; balance departure ki 7 days mundu pay cheyyali."
+      "answer": "Booking kosam ₹5,000 per person advance ani package details lo undi; balance departure ki 7 days mundu pay cheyyali."
     },
     {
       "question": "What is the cancellation policy?",
@@ -258,7 +258,7 @@
         "refund",
         "cancellation charges"
       ],
-      "answer": "Brochure prakaram registration charges non-refundable. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge."
+      "answer": "details prakaram registration charges non-refundable. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge."
     },
     {
       "question": "What are the upcoming batches?",
@@ -286,8 +286,8 @@
       "question": "Can I get the package details on WhatsApp?",
       "keywords": [
         "WhatsApp details",
-        "send brochure",
-        "share brochure",
+        "send package details",
+        "share package details",
         "send details"
       ],
       "answer": "Sure andi, WhatsApp lo details kavala? Mee WhatsApp number share cheyyandi; travel team ki details pampinchadaniki note chestha."
