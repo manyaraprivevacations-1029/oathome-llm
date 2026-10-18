@@ -133,6 +133,12 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
     if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
       return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
     }
+    if (includesAny(q, ["under 5", "below 5", "under five", "below five", "child below", "child under", "below 5 years", "under 5 years"])) {
+      return "5 years kanna takkuva age kids ki free andi.";
+    }
+    if (includesAny(q, ["5 to 11", "5-11", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "child", "children", "kid", "kids"])) {
+      return "5–11 years kids ki ₹15,399 per child. GST and current availability confirm cheyyali.";
+    }
     if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
       return `Char Dham package price **₹23,499 per person + 5% GST**. Current offer and seats availability confirm cheyyali.`;
     }
