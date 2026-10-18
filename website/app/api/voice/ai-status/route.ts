@@ -10,7 +10,7 @@ type ServiceResult = {
 };
 
 async function probe(url: string | undefined, path: string, token?: string): Promise<ServiceResult> {
-  const baseUrl = url?.trim().replace(/\/+$/, "");
+  let baseUrl = url?.trim() || ""; while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
   if (!baseUrl) return { configured: false, reachable: false, status: "not_configured" };
 
   try {
@@ -37,7 +37,7 @@ async function probe(url: string | undefined, path: string, token?: string): Pro
  * Never returns internal URLs, credentials, prompts, or customer data.
  */
 export async function GET() {
-  const llmUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\/+$/, "");
+  let llmUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || ""; while (llmUrl.endsWith("/")) llmUrl = llmUrl.slice(0, -1);
   const [llm, stt, tts] = await Promise.all([
     probe(llmUrl, "/api/version", process.env.OATHOME_LLM_UPSTREAM_TOKEN),
     probe(process.env.OATHOME_STT_BASE_URL, "/health", process.env.OATHOME_STT_TOKEN),
