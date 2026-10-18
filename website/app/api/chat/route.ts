@@ -59,8 +59,14 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
 
   const isShortFollowUp = q.split(" ").length <= 10;
   if (isShortFollowUp && contextPackage) {
-    if (includesAny(q, ["two sharing", "2 sharing", "double sharing", "twin sharing", "private room", "private rooms", "double room"])) {
-      return "The brochure says double-sharing is available as an upgrade for an additional ₹3,000 per person for 8 nights only. Kedarnath and Badrinath stays remain group-sharing. Please confirm the current option with our travel team.";
+    // Explicit requests for a day-by-day schedule must be checked before the generic "day/days" duration rule.
+    if (includesAny(q, ["itinerary", "day wise", "day by day", "schedule", "daily plan", "each day"])) {
+      return (contextPackage.itinerary || []).length
+        ? `**${contextPackage.name} — ${contextPackage.duration || ""}**\\n` + (contextPackage.itinerary || []).join("\\n")
+        : data.company.fallback;
+    }
+    if (includesAny(q, ["room sharing", "sharing room", "room type", "room basis", "sharing basis", "how many sharing", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation", "stay arrangement", "two sharing", "2 sharing", "double sharing", "twin sharing", "private room", "private rooms", "double room"])) {
+      return "The brochure says rooms are generally 3- or 4-sharing, based on group size and gender. Double-sharing is an upgrade costing an additional ₹3,000 per person for 8 nights only; Kedarnath and Badrinath remain group-sharing. Please confirm the current option with our travel team.";
     }
     if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
       return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
