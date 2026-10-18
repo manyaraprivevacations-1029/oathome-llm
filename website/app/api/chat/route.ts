@@ -128,7 +128,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
         : data.company.fallback;
     }
     if (includesAny(q, ["room sharing", "sharing room", "room type", "room basis", "sharing basis", "how many sharing", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation", "stay arrangement", "two sharing", "2 sharing", "double sharing", "twin sharing", "private room", "private rooms", "double room"])) {
-      return "2-sharing kavali ante ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath lo group sharing untundi. Mee dates ki availability confirm cheyyali.";
+      return "2-sharing kavali ante ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath lo group sharing untundi.";
     }
     if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
       return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
@@ -137,10 +137,10 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       return "5 years kanna takkuva age kids ki free andi.";
     }
     if (includesAny(q, ["5 to 11", "5-11", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "child", "children", "kid", "kids"])) {
-      return "5–11 years kids ki ₹15,399 per child. GST and current availability confirm cheyyali.";
+      return "5–11 years kids ki ₹15,399 per child + 5% GST.";
     }
     if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
-      return `Char Dham package price **₹23,499 per person + 5% GST**. Current offer and seats availability confirm cheyyali.`;
+      return `Char Dham package price **₹23,499 per person + 5% GST**.`;
     }
     if (includesAny(q, ["day", "days", "duration", "night", "nights", "how long"])) {
       return `It’s **${contextPackage.duration || "not listed"}**.`;
