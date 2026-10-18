@@ -50,7 +50,10 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
   const contextPackage = getPackageMentionedInContext(contextMessages);
 
   const pkg = contextPackage || data.packages.find((item) => normalize(item.name + " " + (item.destination || "")).includes("char dham"));
-  // Answer common customer FAQs directly and briefly; never repeat generic brochure disclaimers.
+  // Answer common customer FAQs directly and briefly; never mention the brochure to customers.
+  if (includesAny(q, ["gst", "tax extra", "is tax compulsory", "tax compulsory", "gst compulsory", "gst included", "including gst", "without gst"])) {
+    return "Avunu andi, 5% GST package price ki extra ga pay cheyyali.";
+  }
   if (includesAny(q, ["upcoming batches", "upcoming batch", "next batch", "departure dates", "next departure", "seats available"])) {
     return "Andi, next batch ki exact date approved package data lo confirm avvaledu. Date guess cheyyakunda travel team tho confirm cheyinchali.";
   }
@@ -77,7 +80,7 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
     return "Ee Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi andi. Train booking details mee boarding city batti travel team tho confirm cheyyandi.";
   }
   if (includesAny(q, ["which vehicle", "what vehicle", "vehicle type", "which bus", "bus type", "tempo traveller", "transport included", "transport"])) {
-    return "Transport arrange chestham andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Vehicle type group size batti untundi.";
+    return "Transport included andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Vehicle group size batti untundi.";
   }
   if (includesAny(q, ["senior citizen", "old age", "elderly", "parents can travel", "can old people"])) {
     return "Char Dham lo trekking and high-altitude travel untayi andi, especially Yamunotri and Kedarnath. Senior citizens health and walking ability batti doctor advice teesukoni, travel team tho suitability confirm cheskondi.";
@@ -179,7 +182,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       return "2-sharing kavali ante ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath lo group sharing untundi.";
     }
     if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
-      return "Transport arrange chestham andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Exact vehicle type group size batti untundi.";
+      return "Transport included andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Vehicle group size batti untundi.";
     }
     if (includesAny(q, ["under 5", "below 5", "under five", "below five", "child below", "child under", "below 5 years", "under 5 years"])) {
       return "5 years kanna takkuva age kids ki free andi.";
