@@ -134,7 +134,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
     }
     if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
-      return `The brochure price is **${contextPackage.price || "not listed"}**. Please confirm the current price and availability with our travel team.`;
+      return `Char Dham package price **₹23,499 per person + 5% GST**. Current offer and seats availability confirm cheyyali.`;
     }
     if (includesAny(q, ["day", "days", "duration", "night", "nights", "how long"])) {
       return `It’s **${contextPackage.duration || "not listed"}**.`;
@@ -171,7 +171,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       return `It’s **${pkg.duration || "not listed"}**.`;
     }
     if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount"])) {
-      return `The brochure price is **${pkg.price || "not listed"}**. Please confirm the current price and availability with our travel team.`;
+      return `Char Dham package price **₹23,499 per person + 5% GST**. Current offer and seats availability confirm cheyyali.`;
     }
     if (includesAny(q, ["include", "inclusions", "included"])) {
       return (pkg.inclusions || []).length
