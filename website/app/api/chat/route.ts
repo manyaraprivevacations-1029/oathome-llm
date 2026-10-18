@@ -128,7 +128,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
         : data.company.fallback;
     }
     if (includesAny(q, ["room sharing", "sharing room", "room type", "room basis", "sharing basis", "how many sharing", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation", "stay arrangement", "two sharing", "2 sharing", "double sharing", "twin sharing", "private room", "private rooms", "double room"])) {
-      return "The brochure says rooms are generally 3- or 4-sharing, based on group size and gender. Double-sharing is an upgrade costing an additional ₹3,000 per person for 8 nights only; Kedarnath and Badrinath remain group-sharing. Please confirm the current option with our travel team.";
+      return "2-sharing kavali ante ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath lo group sharing untundi. Mee dates ki availability confirm cheyyali.";
     }
     if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
       return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
