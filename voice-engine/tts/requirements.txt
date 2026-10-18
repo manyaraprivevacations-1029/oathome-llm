@@ -1,0 +1,9 @@
+fastapi==0.115.12
+uvicorn[standard]==0.34.0
+python-multipart==0.0.20
+numpy<2
+soundfile==0.13.1
+transformers==4.49.0
+accelerate>=1.2.1
+torch>=2.5.1
+git+https://github.com/ai4bharat/IndicF5.git
