@@ -134,6 +134,163 @@
         "payment"
       ],
       "answer": "Package prices and any applicable taxes must be checked against the specific package details. I won’t guess or promise an unverified price. If the amount isn’t listed, I’ll confirm with our travel team. A travel expert will let you know, sir."
+    },
+    {
+      "question": "How many days is the Char Dham trip?",
+      "keywords": [
+        "how many days",
+        "how long",
+        "duration",
+        "nights",
+        "10 nights",
+        "11 days"
+      ],
+      "answer": "Ee Char Dham trip 10 nights / 11 days andi. Delhi nunchi start ayi Delhi lone end avuthundi."
+    },
+    {
+      "question": "What is the package price per person?",
+      "keywords": [
+        "package price",
+        "price per person",
+        "cost",
+        "how much",
+        "gst"
+      ],
+      "answer": "Char Dham package ₹23,499 per person + 5% GST andi."
+    },
+    {
+      "question": "How much for a child below 5 years?",
+      "keywords": [
+        "child below 5",
+        "under 5",
+        "below five",
+        "under five"
+      ],
+      "answer": "5 years kanna takkuva age kids ki free andi."
+    },
+    {
+      "question": "How much for a child aged 5 to 11?",
+      "keywords": [
+        "5 to 11",
+        "5-11",
+        "8 year child",
+        "child price",
+        "kid price"
+      ],
+      "answer": "5–11 years kids ki ₹15,399 + 5% GST per child andi."
+    },
+    {
+      "question": "How does room sharing work?",
+      "keywords": [
+        "room sharing",
+        "3 sharing",
+        "4 sharing",
+        "group sharing"
+      ],
+      "answer": "Normal ga 3–4 sharing rooms untayi andi. Kedarnath camp lo common washrooms untayi; private room undadu."
+    },
+    {
+      "question": "Can I get a double-sharing room?",
+      "keywords": [
+        "2 sharing",
+        "double sharing",
+        "couple room",
+        "private room"
+      ],
+      "answer": "2-sharing upgrade ₹3,000 extra per person for 8 nights andi. Kedarnath, Badrinath lo group sharing untundi."
+    },
+    {
+      "question": "Are meals included?",
+      "keywords": [
+        "breakfast",
+        "dinner",
+        "lunch",
+        "food",
+        "meals"
+      ],
+      "answer": "Package lo 10 breakfasts and 10 dinners include ayyayi andi. Lunch include ani listed ledu."
+    },
+    {
+      "question": "Where does the trip start and end?",
+      "keywords": [
+        "Delhi to Delhi",
+        "pickup point",
+        "starting city",
+        "pickup from Hyderabad"
+      ],
+      "answer": "Ee Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi andi. Train booking details mee boarding city batti travel team tho confirm cheyyandi."
+    },
+    {
+      "question": "Which vehicle is provided?",
+      "keywords": [
+        "which vehicle",
+        "bus type",
+        "vehicle type",
+        "transport"
+      ],
+      "answer": "Transport package lo include undi andi. AC Delhi–Haridwar route lo matrame; hills lo AC undadu. Exact vehicle type group size batti confirm cheyyali."
+    },
+    {
+      "question": "Are senior citizens able to do this trip?",
+      "keywords": [
+        "senior citizen",
+        "old age",
+        "parents can travel",
+        "elderly"
+      ],
+      "answer": "Char Dham lo trekking and high-altitude travel untayi, especially Yamunotri and Kedarnath. Senior citizens health and walking ability batti doctor advice teesukoni travel plan cheyyandi."
+    },
+    {
+      "question": "How do I book and what is the advance?",
+      "keywords": [
+        "booking advance",
+        "advance amount",
+        "booking process",
+        "how to book"
+      ],
+      "answer": "Booking kosam ₹5,000 per person advance ani brochure lo undi; balance departure ki 7 days mundu pay cheyyali."
+    },
+    {
+      "question": "What is the cancellation policy?",
+      "keywords": [
+        "cancellation policy",
+        "cancel booking",
+        "refund",
+        "cancellation charges"
+      ],
+      "answer": "Brochure prakaram registration charges non-refundable. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge."
+    },
+    {
+      "question": "What are the upcoming batches?",
+      "keywords": [
+        "upcoming batches",
+        "next batch",
+        "departure dates",
+        "October batch",
+        "November batch",
+        "seats available"
+      ],
+      "answer": "Andi, next batch ki exact date approved package data lo confirm avvaledu. Date guess cheyyakunda travel team tho confirm cheyinchali."
+    },
+    {
+      "question": "What should I carry for Char Dham?",
+      "keywords": [
+        "things to carry",
+        "packing list",
+        "what to carry",
+        "what to bring"
+      ],
+      "answer": "ID proof, Yatra Parchi printout, medicines, trekking shoes, warm clothes, gloves, raincoat/umbrella, charger, power bank and water bottle carry cheyyandi."
+    },
+    {
+      "question": "Can I get the package details on WhatsApp?",
+      "keywords": [
+        "WhatsApp details",
+        "send brochure",
+        "share brochure",
+        "send details"
+      ],
+      "answer": "Sure andi, WhatsApp lo details kavala? Mee WhatsApp number share cheyyandi; travel team ki details pampinchadaniki note chestha."
     }
   ]
 }
