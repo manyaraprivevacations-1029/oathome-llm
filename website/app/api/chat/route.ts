@@ -77,16 +77,16 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
     return "Ee Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi andi. Train booking details mee boarding city batti travel team tho confirm cheyyandi.";
   }
   if (includesAny(q, ["which vehicle", "what vehicle", "vehicle type", "which bus", "bus type", "tempo traveller", "transport included", "transport"])) {
-    return "Transport package lo include undi andi. AC Delhi–Haridwar route lo matrame; hills lo AC undadu. Exact vehicle type group size batti confirm cheyyali.";
+    return "Transport arrange chestham andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Vehicle type group size batti untundi.";
   }
   if (includesAny(q, ["senior citizen", "old age", "elderly", "parents can travel", "can old people"])) {
     return "Char Dham lo trekking and high-altitude travel untayi andi, especially Yamunotri and Kedarnath. Senior citizens health and walking ability batti doctor advice teesukoni, travel team tho suitability confirm cheskondi.";
   }
   if (includesAny(q, ["booking advance", "advance amount", "how much advance", "booking amount", "how to book", "book this package", "booking process", "reserve this"])) {
-    return "Booking kosam ₹5,000 per person advance ani brochure lo undi; balance departure ki 7 days mundu pay cheyyali. Booking mundu travel team tho current batch confirm cheskondi.";
+    return "Booking ki ₹5,000 per person advance andi. Balance amount departure ki 7 days mundu pay cheyyali.";
   }
   if (includesAny(q, ["cancellation policy", "cancel booking", "refund", "money back", "cancellation charges"])) {
-    return "Brochure prakaram registration charges non-refundable. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge. Book chese mundu current policy confirm cheskondi.";
+    return "Registration amount refund avvadu andi. Trip start avvadaniki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge.";
   }
   if (includesAny(q, ["whatsapp", "send details", "send brochure", "share brochure", "brochure share"])) {
     return "Sure andi, WhatsApp lo details kavala? Mee WhatsApp number share cheyyandi; travel team ki details pampinchadaniki note chestha.";
@@ -179,7 +179,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
       return "2-sharing kavali ante ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath lo group sharing untundi.";
     }
     if (includesAny(q, ["vehicle", "which bus", "type of bus", "transport vehicle", "tempo traveller", "traveller", "coach"])) {
-      return "The brochure confirms transport for the trip, but it doesn’t specify the exact vehicle type. AC is available only from Delhi to Haridwar; AC does not operate on the hills. I’ll confirm the vehicle type with our travel team.";
+      return "Transport arrange chestham andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Exact vehicle type group size batti untundi.";
     }
     if (includesAny(q, ["under 5", "below 5", "under five", "below five", "child below", "child under", "below 5 years", "under 5 years"])) {
       return "5 years kanna takkuva age kids ki free andi.";
@@ -206,7 +206,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
         : data.company.fallback;
     }
     if (includesAny(q, ["upcoming batch", "upcoming batches", "next batch", "next available batch", "batch", "departure", "dates", "when"])) {
-      return "As of today, 18 October 2026, the brochure does not provide a verified future departure date—only August, September and October 2026. I won’t guess a date such as 26 October. I’ll confirm the next upcoming batch and seat availability with our travel team.";
+      return "Andi, next batch date inka confirm kaaledu. Confirm ayina date vachaka exact ga cheptham.";
     }
     if (includesAny(q, ["where", "destination", "places", "which places"])) {
       return contextPackage.destination || data.company.fallback;
