@@ -166,7 +166,7 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[])
 }
 
 export async function GET() {
-  const configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\\/+$/, "") || "";
+  const configuredUrl = (process.env.OATHOME_LLM_BASE_URL?.trim() || "").replace(/\/+$/, "");
   return NextResponse.json({
     service: "OATHome chat API",
     status: configuredUrl ? "llm_configured_not_yet_verified" : "knowledge_fallback_only",
