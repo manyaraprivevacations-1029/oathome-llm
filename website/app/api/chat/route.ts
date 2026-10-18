@@ -51,8 +51,11 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
 
   const pkg = contextPackage || data.packages.find((item) => normalize(item.name + " " + (item.destination || "")).includes("char dham"));
   // Answer common customer FAQs directly and briefly; never mention the brochure to customers.
-  if (includesAny(q, ["gst", "tax extra", "is tax compulsory", "tax compulsory", "gst compulsory", "gst included", "including gst", "without gst"])) {
-    return "Avunu andi, 5% GST package price ki extra ga pay cheyyali.";
+  if (includesAny(q, ["package price and gst total", "price with gst", "including gst", "total with gst", "gst total", "gst kalipi", "gst tho kalipi", "gst tho total", "gst add cheste", "gst add chesthe", "gst entha", "antey yentha", "total amount"])) {
+    return "Package ₹23,499 + 5% GST (₹1,175) andi. GST kalipi total approx ₹24,674 per person.";
+  }
+  if (includesAny(q, ["gst", "tax extra", "is tax compulsory", "tax compulsory", "gst compulsory", "gst included", "without gst"])) {
+    return "Avunu andi, 5% GST extra. ₹23,499 package ki GST approx ₹1,175 per person.";
   }
   if (includesAny(q, ["upcoming batches", "upcoming batch", "next batch", "departure dates", "next departure", "seats available"])) {
     return "Andi, next batch ki exact date approved package data lo confirm avvaledu. Date guess cheyyakunda travel team tho confirm cheyinchali.";
