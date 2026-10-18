@@ -49,6 +49,52 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
   const tokens = words(q);
   const contextPackage = getPackageMentionedInContext(contextMessages);
 
+  const pkg = contextPackage || data.packages.find((item) => normalize(item.name + " " + (item.destination || "")).includes("char dham"));
+  // Answer common customer FAQs directly and briefly; never repeat generic brochure disclaimers.
+  if (includesAny(q, ["upcoming batches", "upcoming batch", "next batch", "departure dates", "next departure", "seats available"])) {
+    return "Andi, next batch ki exact date approved package data lo confirm avvaledu. Date guess cheyyakunda travel team tho confirm cheyinchali.";
+  }
+  if (includesAny(q, ["below 5", "under 5", "under five", "below five", "below 5 years", "under 5 years", "child below 5", "child under 5"])) {
+    return "5 years kanna takkuva age kids ki free andi.";
+  }
+  if (includesAny(q, ["5 to 11", "5-11", "5 to 11 years", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "8 year", "8 years", "child price", "child cost", "kid price", "kids price"])) {
+    return "5–11 years kids ki ₹15,399 + 5% GST per child andi.";
+  }
+  if (includesAny(q, ["11 above", "above 11", "over 11", "12 year", "12 years", "age 12"])) {
+    return "11 years paina age unte adult package price apply avuthundi andi.";
+  }
+  if (includesAny(q, ["2 sharing", "two sharing", "double sharing", "couple room", "separate room", "private room"])) {
+    return "2-sharing upgrade ₹3,000 extra per person for 8 nights andi. Kedarnath, Badrinath lo group sharing untundi.";
+  }
+  if (includesAny(q, ["room sharing", "sharing room", "room type", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation"])) {
+    return "Normal ga 3–4 sharing rooms untayi andi. Kedarnath camp lo common washrooms untayi; private room undadu.";
+  }
+  if (includesAny(q, ["breakfast", "dinner", "lunch", "food", "meals", "vegetarian", "veg food"])) {
+    if (includesAny(q, ["lunch"])) return "Package lo 10 breakfasts and 10 dinners include ayyayi andi. Lunch package inclusions lo mention cheyyaledu.";
+    return "Package lo 10 breakfasts and 10 dinners include ayyayi andi. Lunch include ani listed ledu.";
+  }
+  if (includesAny(q, ["pickup point", "where pickup", "pickup from", "start from", "starting city", "from hyderabad", "from bangalore", "from vijayawada", "from vizag"])) {
+    return "Ee Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi andi. Train booking details mee boarding city batti travel team tho confirm cheyyandi.";
+  }
+  if (includesAny(q, ["which vehicle", "what vehicle", "vehicle type", "which bus", "bus type", "tempo traveller", "transport included", "transport"])) {
+    return "Transport package lo include undi andi. AC Delhi–Haridwar route lo matrame; hills lo AC undadu. Exact vehicle type group size batti confirm cheyyali.";
+  }
+  if (includesAny(q, ["senior citizen", "old age", "elderly", "parents can travel", "can old people"])) {
+    return "Char Dham lo trekking and high-altitude travel untayi andi, especially Yamunotri and Kedarnath. Senior citizens health and walking ability batti doctor advice teesukoni, travel team tho suitability confirm cheskondi.";
+  }
+  if (includesAny(q, ["booking advance", "advance amount", "how much advance", "booking amount", "how to book", "book this package", "booking process", "reserve this"])) {
+    return "Booking kosam ₹5,000 per person advance ani brochure lo undi; balance departure ki 7 days mundu pay cheyyali. Booking mundu travel team tho current batch confirm cheskondi.";
+  }
+  if (includesAny(q, ["cancellation policy", "cancel booking", "refund", "money back", "cancellation charges"])) {
+    return "Brochure prakaram registration charges non-refundable. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge. Book chese mundu current policy confirm cheskondi.";
+  }
+  if (includesAny(q, ["whatsapp", "send details", "send brochure", "share brochure", "brochure share"])) {
+    return "Sure andi, WhatsApp lo details kavala? Mee WhatsApp number share cheyyandi; travel team ki details pampinchadaniki note chestha.";
+  }
+  if (includesAny(q, ["how many days", "how long", "duration", "how many nights", "days is", "days trip", "nights"])) {
+    if (pkg) return `Ee Char Dham trip ${pkg.duration || "10 nights / 11 days"} andi. Delhi nunchi start ayi Delhi lone end avuthundi.`;
+  }
+
   // Handle packing questions before sales qualification so they never return a generic package pitch.
   if (includesAny(q, ["things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring"])) {
     const pkg = contextPackage || data.packages.find((item) => normalize(item.name + " " + (item.destination || "")).includes("char dham"));
