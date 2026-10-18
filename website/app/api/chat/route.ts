@@ -138,8 +138,8 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
         ? `**Main exclusions:** ${shortList.join("; ")}. Ask if you want the full list.`
         : data.company.fallback;
     }
-    if (includesAny(q, ["departure", "batch", "dates", "when"])) {
-      return `The brochure lists ${(contextPackage.departures || ["no dates"]).join("; ")} Please confirm the next available batch with our travel team.`;
+    if (includesAny(q, ["upcoming batch", "upcoming batches", "next batch", "next available batch", "batch", "departure", "dates", "when"])) {
+      return "As of today, 18 October 2026, the brochure does not provide a verified future departure date—only August, September and October 2026. I won’t guess a date such as 26 October. I’ll confirm the next upcoming batch and seat availability with our travel team.";
     }
     if (includesAny(q, ["where", "destination", "places", "which places"])) {
       return contextPackage.destination || data.company.fallback;
