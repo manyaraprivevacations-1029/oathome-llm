@@ -49,12 +49,52 @@ function answerQuestion(question: string, contextMessages: { role: string; conte
   const tokens = words(q);
   const contextPackage = getPackageMentionedInContext(contextMessages);
 
+function hasTravelDates(text: string): boolean {
+  const q = normalize(text);
+  return /\\b(jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|september|oct|october|nov|november|dec|december)\\b/.test(q)
+    || /\\b(next week|next month|this weekend|weekend|tomorrow|from \\d{1,2}|\\d{1,2}\\s*(to|-)\\s*\\d{1,2}|\\d{1,2}\\/\\d{1,2})\\b/.test(q);
+}
+function hasTravellerCount(text: string): boolean {
+  const q = normalize(text);
+  return /\\b(\\d+|one|two|three|four|five|six|seven|eight|nine|ten|couple|family)\\s*(people|persons|person|travellers|travelers|adults|members|pax)\\b/.test(q)
+    || /\\b(for a couple|for family|just me|solo trip|we are \\d+)\\b/.test(q);
+}
+function isPackageEnquiry(q: string): boolean {
+  return includesAny(q, ["package", "tour", "trip", "travel", "char dham", "chardham", "yatra", "holiday", "vacation", "itinerary", "price", "cost", "inclusions", "hotel", "destination"]);
+}
+function salesQuestion(contextMessages: { role: string; content: string }[], contextPackage: PackageRecord | undefined, q: string): string | undefined {
+  const priorText = contextMessages.map((m) => m.content).join(" ");
+  const userMessages = contextMessages.filter((m) => m.role === "user").map((m) => m.content);
+  const destinationKnown = !!contextPackage || userMessages.some((m) => {
+    const n = normalize(m);
+    return data.packages.some((pkg) => normalize(pkg.name + " " + (pkg.destination || "") + " char dham chardham").split(" ").some((w) => w.length > 3 && n.split(" ").includes(w)));
+  });
+  const datesKnown = hasTravelDates(priorText) || hasTravelDates(q);
+  const travellersKnown = hasTravellerCount(priorText) || hasTravellerCount(q);
+  const alreadyIntroduced = /radhika|రాధిక/.test(priorText.toLowerCase());
+  if (!isPackageEnquiry(q) && !contextPackage) return undefined;
+  if (!alreadyIntroduced && !contextPackage && !destinationKnown) {
+    return "నమస్కారం అండి, నేను రాధిక — On A Trip Holidays ట్రావెల్ టీమ్ నుంచి మాట్లాడుతున్నాను. మీరు ట్రావెల్ ప్యాకేజ్ గురించి ఆసక్తి చూపించారు. ఎక్కడికి లేదా ఎలాంటి ట్రిప్‌కి వెళ్లాలని చూస్తున్నారండి?";
+  }
+  if (!destinationKnown) return "సరే అండి, మీకు ఏ destination లేదా ఏ టైపు trip కావాలో చెప్పండి. దాని ప్రకారం సరిపోయే package సూచిస్తాను.";
+  if (!datesKnown) return "సరే అండి, ఆ ట్రిప్ కోసం ఏ తేదీల్లో లేదా ఏ నెలలో ప్రయాణించాలని అనుకుంటున్నారండి?";
+  if (!travellersKnown) return "అలాగే అండి. మీతో కలిపి మొత్తం ఎంతమంది ప్రయాణిస్తారండి?";
+  return "ధన్యవాదాలు అండి. మీ travel dates, travellers వివరాలు తీసుకున్నాను. ఇప్పుడు మీకు సరిపోయే package, price, inclusions వివరాలు చెప్తాను. పూర్తి వివరాలు WhatsApp‌లో పంపించాలా?";
+}
+
   if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
     return `Hello! Welcome to ${data.company.name}. What destination or package are you interested in?`;
   }
 
   if (includesAny(q, ["contact", "phone number", "call you", "contact number", "whatsapp"])) {
     return "Please visit " + data.company.website + " or ask me about a package. Our travel team can confirm contact details.";
+  }
+
+  // Qualify broad enquiries one step at a time; specific questions still receive factual answers.
+  const directDetailQuestion = includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount", "how many days", "how long", "duration", "nights", "include", "inclusions", "included", "exclude", "exclusions", "not included", "itinerary", "day wise", "day by day", "schedule", "room sharing", "sharing room", "vehicle", "which bus", "departure", "batch", "dates"]);
+  if (!directDetailQuestion) {
+    const leadPrompt = salesQuestion(contextMessages, contextPackage, q);
+    if (leadPrompt) return leadPrompt;
   }
 
   const isShortFollowUp = q.split(" ").length <= 10;
