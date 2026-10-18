@@ -100,7 +100,7 @@ function salesQuestion(contextMessages: { role: string; content: string }[], con
   }
 
   // Qualify broad enquiries one step at a time; specific questions still receive factual answers.
-  const directDetailQuestion = includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount", "how many days", "how long", "duration", "nights", "include", "inclusions", "included", "exclude", "exclusions", "not included", "itinerary", "day wise", "day by day", "schedule", "room sharing", "sharing room", "vehicle", "which bus", "departure", "batch", "dates"]);
+  const directDetailQuestion = includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount", "how many days", "how long", "duration", "nights", "include", "inclusions", "included", "exclude", "exclusions", "not included", "itinerary", "day wise", "day by day", "schedule", "room sharing", "sharing room", "vehicle", "which bus", "departure", "batch", "dates", "things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring"]);
   if (!directDetailQuestion) {
     const leadPrompt = salesQuestion(contextMessages, contextPackage, q);
     if (leadPrompt) return leadPrompt;
