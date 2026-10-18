@@ -166,14 +166,18 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[])
 }
 
 export async function GET() {
+  const configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\\/+$/, "") || "";
   return NextResponse.json({
-    models: [{ name: "OWN-Travel-Knowledge", details: { family: "rule-based", parameter_size: "local knowledge engine" } }],
-    defaultModel: "OWN-Travel-Knowledge",
-    runtime: "OWN deterministic travel knowledge engine",
-    externalAI: false,
-    apiKeysRequired: false,
-    configuredLLM: Boolean(process.env.OATHOME_LLM_BASE_URL?.trim()),
-    selectedLLM: process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b"
+    service: "OATHome chat API",
+    status: configuredUrl ? "llm_configured_not_yet_verified" : "knowledge_fallback_only",
+    configuredLLM: Boolean(configuredUrl),
+    selectedLLM: process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b",
+    inferenceVerified: false,
+    responseModes: configuredUrl ? ["configured-llm", "knowledge-fallback"] : ["knowledge-fallback"],
+    message: configuredUrl
+      ? "An LLM endpoint is configured. Successful inference must be verified by sending a chat request."
+      : "No LLM endpoint is configured. Chat currently uses the deterministic travel knowledge fallback; this endpoint is not itself an LLM.",
+    apiKeysRequired: false
   }, { headers: { "Cache-Control": "no-store" } });
 }
 
