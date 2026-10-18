@@ -116,7 +116,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
  * travel FAQ engine available during platform development.
  */
 async function answerWithConfiguredLLM(question: string, history: ChatMessage[]): Promise<string | null> {
-  const configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim().replace(/\/+$/, "");
+  let configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || ""; while (configuredUrl.endsWith("/")) configuredUrl = configuredUrl.slice(0, -1);
   if (!configuredUrl) return null;
 
   const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
