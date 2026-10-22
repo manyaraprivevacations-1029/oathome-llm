@@ -99,7 +99,15 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return "Super andi! Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi. Total 10 nights, 11 days. Yamunotri, Gangotri, Kedarnath, Badrinath darshan cover avuthayi. Day-wise itinerary cheppana, leka price and inclusions kavala?";
   }
 
-  if (includesAny(q, ["package", "tour", "trip", "travel", "holiday", "vacation", "destination"])) return "Okay andi, meeru ye destination ki vellali anukuntunnaru?";
+  // Avoid treating a negated or fictional mention of travel as a real travel enquiry.
+  const negatedTravelMention = includesAny(q, [
+    "do not discuss travel", "don't discuss travel", "do not discuss travel packages",
+    "don't discuss travel packages", "not about travel", "unrelated to travel",
+    "without discussing travel", "fictional planet", "invent a playful greeting"
+  ]);
+  if (!negatedTravelMention && includesAny(q, ["package", "tour", "trip", "travel", "holiday", "vacation", "destination"])) {
+    return "Okay andi, meeru ye destination ki vellali anukuntunnaru?";
+  }
 
   const faq = [...data.faqs].map((item) => {
     const terms = [item.question, ...(item.keywords || [])].flatMap((s) => normalize(s).split(" "));
