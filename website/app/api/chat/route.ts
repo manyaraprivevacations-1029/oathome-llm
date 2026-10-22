@@ -197,9 +197,15 @@ export async function POST(request: NextRequest) {
   if (!latest || !latest.content.trim()) return NextResponse.json({ error: "Enter a question." }, { status: 400 });
   if (latest.content.length > 4000) return NextResponse.json({ error: "Your message is too long." }, { status: 413 });
   const history = messages.slice(0, latestIndex).slice(-20);
-  const modelAnswer = await answerWithConfiguredLLM(latest.content, history);
-  const answer = modelAnswer || answerQuestion(latest.content, history);
-  const responseMode = modelAnswer ? "configured-llm" : "knowledge-fallback";
+  // Prefer verified deterministic knowledge for factual travel questions.
+  // Use the local LLM for open-ended conversation only when the knowledge
+  // engine has no specific answer, preventing it from contradicting prices,
+  // inclusions, dates, or policies already present in the approved data.
+  const knowledgeAnswer = answerQuestion(latest.content, history);
+  const hasVerifiedAnswer = knowledgeAnswer !== fallback;
+  const modelAnswer = hasVerifiedAnswer ? null : await answerWithConfiguredLLM(latest.content, history);
+  const answer = hasVerifiedAnswer ? knowledgeAnswer : (modelAnswer || knowledgeAnswer);
+  const responseMode = hasVerifiedAnswer ? "knowledge-fallback" : (modelAnswer ? "configured-llm" : "knowledge-fallback");
   const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\n";
   return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-OATHome-Response-Mode": responseMode } });
 }
