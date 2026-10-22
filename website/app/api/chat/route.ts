@@ -123,11 +123,11 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
  * When no private model runtime is configured, keep the existing deterministic
  * travel FAQ engine available during platform development.
  */
-async function answerWithConfiguredLLM(question: string, history: ChatMessage[]): Promise<string | null> {
+async function answerWithConfiguredLLM(question: string, history: ChatMessage[], requestedModel?: string): Promise<string | null> {
   let configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || ""; while (configuredUrl.endsWith("/")) configuredUrl = configuredUrl.slice(0, -1);
   if (!configuredUrl) return null;
 
-  const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
+  const model = requestedModel?.trim() || process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
   const systemPrompt = [
     "You are Radhika, a friendly sales assistant for On A Trip Holidays.",
     "Reply naturally in the language used by the customer. Telugu-English mix is welcome.",
@@ -174,26 +174,62 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[])
 }
 
 export async function GET() {
-  const configuredUrl = (process.env.OATHOME_LLM_BASE_URL?.trim() || "").replace(/\/+$/, "");
-  return NextResponse.json({
-    service: "OATHome chat API",
-    status: configuredUrl ? "llm_configured_not_yet_verified" : "knowledge_fallback_only",
-    configuredLLM: Boolean(configuredUrl),
-    selectedLLM: process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b",
-    inferenceVerified: false,
-    responseModes: configuredUrl ? ["configured-llm", "knowledge-fallback"] : ["knowledge-fallback"],
-    message: configuredUrl
-      ? "An LLM endpoint is configured. Successful inference must be verified by sending a chat request."
-      : "No LLM endpoint is configured. Chat currently uses the deterministic travel knowledge fallback; this endpoint is not itself an LLM.",
-    apiKeysRequired: false
-  }, { headers: { "Cache-Control": "no-store" } });
+  // The chat UI expects this route to provide a model list for its selector.
+  let configuredUrl = (process.env.OATHOME_LLM_BASE_URL?.trim() || "").replace(/\/+$/, "");
+  if (!configuredUrl && process.env.NODE_ENV !== "production") configuredUrl = "http://127.0.0.1:11434";
+  const selectedLLM = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
+
+  if (!configuredUrl) {
+    return NextResponse.json({
+      service: "OATHome chat API", status: "knowledge_fallback_only",
+      configuredLLM: false, selectedLLM, defaultModel: "", models: [],
+      inferenceVerified: false, responseModes: ["knowledge-fallback"],
+      message: "No cloud inference runtime is configured. The travel knowledge fallback is available, but this website is not itself an LLM.",
+      apiKeysRequired: false
+    }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  try {
+    const response = await fetch(`${configuredUrl}/api/tags`, {
+      cache: "no-store", signal: AbortSignal.timeout(5000)
+    });
+    if (!response.ok) throw new Error("Model list request failed");
+    const payload: unknown = await response.json();
+    const models = payload && typeof payload === "object" && Array.isArray((payload as { models?: unknown }).models)
+      ? (payload as { models: Array<{ name?: unknown; size?: unknown; details?: unknown }> }).models
+          .filter((item) => item && typeof item.name === "string")
+          .map((item) => ({
+            name: item.name as string,
+            ...(typeof item.size === "number" ? { size: item.size } : {}),
+            ...(item.details && typeof item.details === "object" ? { details: item.details } : {})
+          }))
+      : [];
+    return NextResponse.json({
+      service: "OATHome chat API",
+      status: models.length ? "runtime_connected" : "runtime_connected_no_models",
+      configuredLLM: true, selectedLLM,
+      defaultModel: models.some((item) => item.name === selectedLLM) ? selectedLLM : (models[0]?.name || ""),
+      models, inferenceVerified: false,
+      responseModes: ["configured-llm", "knowledge-fallback"],
+      message: models.length ? "Model runtime is reachable. A chat request is still required to verify inference." : "Ollama is reachable, but no models are installed.",
+      apiKeysRequired: false
+    }, { headers: { "Cache-Control": "no-store" } });
+  } catch {
+    return NextResponse.json({
+      service: "OATHome chat API", status: "runtime_unreachable",
+      configuredLLM: true, selectedLLM, defaultModel: "", models: [],
+      inferenceVerified: false, responseModes: ["knowledge-fallback"],
+      message: "The configured model runtime could not be reached from the website server.",
+      apiKeysRequired: false
+    }, { headers: { "Cache-Control": "no-store" } });
+  }
 }
 
 export async function POST(request: NextRequest) {
   let body: unknown;
   try { body = await request.json(); } catch { return NextResponse.json({ error: "Request body must be valid JSON." }, { status: 400 }); }
   if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
-  const payload = body as { messages?: unknown };
+  const payload = body as { messages?: unknown; model?: unknown };
   if (!Array.isArray(payload.messages) || payload.messages.length === 0) return NextResponse.json({ error: "Send a message to continue." }, { status: 400 });
   const messages = payload.messages.filter((item): item is ChatMessage =>
     !!item && typeof item === "object" &&
@@ -211,7 +247,8 @@ export async function POST(request: NextRequest) {
   // inclusions, dates, or policies already present in the approved data.
   const knowledgeAnswer = answerQuestion(latest.content, history);
   const hasVerifiedAnswer = knowledgeAnswer !== fallback;
-  const modelAnswer = hasVerifiedAnswer ? null : await answerWithConfiguredLLM(latest.content, history);
+  const requestedModel = typeof payload.model === "string" && /^[a-zA-Z0-9._:/-]{1,120}$/.test(payload.model) ? payload.model : undefined;
+  const modelAnswer = hasVerifiedAnswer ? null : await answerWithConfiguredLLM(latest.content, history, requestedModel);
   const answer = hasVerifiedAnswer ? knowledgeAnswer : (modelAnswer || knowledgeAnswer);
   const responseMode = hasVerifiedAnswer ? "knowledge-fallback" : (modelAnswer ? "configured-llm" : "knowledge-fallback");
   const ndjson = JSON.stringify({ message: { role: "assistant", content: answer }, done: true }) + "\n";
