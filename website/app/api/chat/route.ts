@@ -66,7 +66,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
       "- " + p.name + (p.duration ? " — " + p.duration : "") + (p.price ? " — " + p.price : "")
     );
     return packageLines.length
-      ? "On A Trip Holidays lo currently listed packages ivandi:\\n" + packageLines.join("\\n") + "\\n\\nMee interest ye package meeda undi? Details, itinerary, inclusions cheppagalanu."
+      ? "On A Trip Holidays lo currently listed packages ivandi:\n" + packageLines.join("\n") + "\n\nMee interest ye package meeda undi? Details, itinerary, inclusions cheppagalanu."
       : "Naa current package list lo details available levu andi. Travel team tho confirm chesi chepthanu.";
   }
 
