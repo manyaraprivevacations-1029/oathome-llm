@@ -20,9 +20,10 @@ const fallback = "Ee detail na daggara clear ga ledu andi. Nenu travel team tho 
 function findPackage(s: string): PackageRecord | undefined {
   const q = normalize(s);
   return data.packages.find((p) => {
-    const n = normalize(p.name);
-    if (n.includes("char dham") && includesAny(q, ["char dham", "chardham", "char dham yatra", "chardham yatra"])) return true;
-    return n.split(" ").some((w) => w.length > 4 && q.split(" ").includes(w));
+    const searchable = [p.name, p.destination || "", ...(((p as PackageRecord & { aliases?: string[] }).aliases) || [])].map(normalize);
+    if (searchable.some((n) => n && (q === n || q.includes(n) || n.includes(q)))) return true;
+    if (searchable.some((n) => n.includes("char dham")) && includesAny(q, ["char dham", "chardham", "char dham yatra", "chardham yatra"])) return true;
+    return searchable.some((n) => n.split(" ").some((w) => w.length > 4 && q.split(" ").includes(w)));
   });
 }
 function packageFromHistory(history: ChatMessage[]): PackageRecord | undefined {
@@ -40,6 +41,12 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const prevA = lastAssistant(history);
   const pkg = findPackage(question) || packageFromHistory(history) || data.packages[0];
   const charDham = !!pkg && normalize(pkg.name).includes("char dham");
+
+  // If the customer selects a destination/package by name, respond with that package's own details.
+  const selectedPackage = findPackage(question);
+  if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
+    return "**" + selectedPackage.name + "**\\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\\n\\nWould you like the itinerary or package inclusions?";
+  }
 
   // Common general-knowledge questions must never be answered by an unrelated travel FAQ.
   if (includesAny(q, [
@@ -68,7 +75,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
 
   // For a general package question, offer the two categories first.
   if (includesAny(q, [
-    "which packages do you have", "what packages do you have", "which packages are available",
+    "which packages do you have", "which package do you have", "what packages do you have", "what package do you have", "which packages are available", "what package do you offer",
     "what packages are available", "show me your packages", "list your packages",
     "what tours do you offer", "which tours do you have", "what trips do you offer",
     "mee packages enti", "em packages unnayi", "ye packages unnayi", "packages em unnayi",
