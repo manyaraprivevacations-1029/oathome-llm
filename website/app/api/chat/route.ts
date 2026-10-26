@@ -135,7 +135,10 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
  * travel FAQ engine available during platform development.
  */
 async function answerWithConfiguredLLM(question: string, history: ChatMessage[], requestedModel?: string): Promise<string | null> {
-  let configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || ""; while (configuredUrl.endsWith("/")) configuredUrl = configuredUrl.slice(0, -1);
+  let configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || "";
+  // Match GET /api/chat and /api/runtime: in local development, use the standard Ollama endpoint by default.
+  if (!configuredUrl && process.env.NODE_ENV !== "production") configuredUrl = "http://127.0.0.1:11434";
+  while (configuredUrl.endsWith("/")) configuredUrl = configuredUrl.slice(0, -1);
   if (!configuredUrl) return null;
 
   const model = requestedModel?.trim() || process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
