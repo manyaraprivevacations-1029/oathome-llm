@@ -46,6 +46,17 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   }
 
   // Direct factual answers take priority over sales prompts.
+  // Answer common package questions directly from the verified itinerary before generic FAQ matching.
+  if (includesAny(q, ["kedarnath trek how many km", "kedarnath trek distance", "kedarnath trek kitna km", "kedarnath track how many km", "how many km kedarnath", "kedarnath trekking distance"])) {
+    return "Kedarnath trek approximately 22 km andi. Package itinerary prakaram Day 7 early morning trek start chestharu; darshan tarvatha camp lo night stay untundi. Pony/doli charges extra.";
+  }
+  if (includesAny(q, ["when to reach yamunotri", "when do we reach yamunotri", "which day yamunotri", "yamunotri which day", "yamunotri day", "yamunotri eppudu", "when is yamunotri"])) {
+    return "Package itinerary prakaram Day 3 Yamunotri darshan untundi andi. Lakhamandal nunchi Janki Chatti ki velli, akkadi nunchi trek chestharu. Exact timings road/weather conditions batti marachu.";
+  }
+  if (includesAny(q, ["where is your office", "where is you office located", "office location", "office address", "where are you located", "your office located"])) {
+    return "On A Trip Holidays office Malakpet, Hyderabad, Telangana lo undi andi. Visit cheyyadaniki mundu phone lo confirm chesukondi.";
+  }
+
   if (includesAny(q, ["things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring", "carry for this trip"])) {
     const items = pkg?.thingsToCarry || [];
     return "Char Dham trip ki ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : "ID proof, medicines, trekking shoes, warm clothes, raincoat, charger and water bottle") + ".";
