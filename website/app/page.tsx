@@ -87,8 +87,9 @@ export default function Home() {
       const available: Model[] = Array.isArray(data.models) ? data.models : [];
       setModels(available);
       setModel((current) => current && available.some((item) => item.name === current) ? current : (data.defaultModel || available[0]?.name || ""));
-      setStatus(available.length ? "online" : "offline");
-      setError(available.length ? "" : "OWN travel knowledge is ready.");
+      // A cloud model is optional: the approved travel knowledge engine must remain usable without Ollama.
+      setStatus("online");
+      setError("");
     } catch (err) {
       setStatus("offline");
       setError(err instanceof Error ? err.message : "Could not load OWN travel knowledge.");
@@ -133,10 +134,6 @@ export default function Home() {
   const sendMessage = async (text = draft) => {
     const content = text.trim();
     if (!content || loading) return;
-    if (!model) {
-      setError("OWN is loading its travel knowledge. Please try again in a moment.");
-      return;
-    }
     const next: Message[] = [...messages, { role: "user", content }];
     setMessages([...next, { role: "assistant", content: "" }]);
     setDraft("");
@@ -265,7 +262,7 @@ export default function Home() {
         <div className="sidebar-bottom">
           <div className="runtime-card">
             <div className="runtime-heading"><span className={`status-dot ${status}`}></span><strong>Runtime status</strong></div>
-            <p>{status === "online" ? "OWN knowledge engine ready" : status === "checking" ? "Loading travel knowledge…" : "Knowledge engine unavailable"}</p>
+            <p>{status === "online" ? (models.length ? "OWN knowledge engine and model ready" : "Travel knowledge ready · model optional") : status === "checking" ? "Connecting to OWN…" : "Checking knowledge mode…"}</p>
             <button onClick={() => void loadModels()}>{status === "online" ? "Refresh knowledge ↻" : "Retry ↻"}</button>
           </div>
           <div className="profile"><div className="profile-avatar">O</div><div><strong>OWN Workspace</strong><span>Personal AI lab</span></div><span className="profile-menu">•••</span></div>
@@ -278,14 +275,14 @@ export default function Home() {
           <div className="topbar-right">
             <label className="model-select-label" htmlFor="model-select">MODEL</label>
             <select id="model-select" value={model} onChange={(event) => setModel(event.target.value)} disabled={!models.length} aria-label="Choose model">
-              {!models.length && <option value="">No models found</option>}
+              {!models.length && <option value="">Knowledge mode (no model needed)</option>}
               {models.map((item) => <option key={item.name} value={item.name}>{item.name}</option>)}
             </select>
             {accessToken && <button className="icon-button" onClick={clearToken} title="Lock runtime" aria-label="Lock runtime">⌑</button>}
             <button className="icon-button" onClick={() => void loadModels()} title="Refresh runtime" aria-label="Refresh runtime">↻</button>
           </div>
         </header>
-        {modelsOpen ? <div className="model-manager"><div className="model-manager-head"><div><div className="conversation-label"><span className="blue-pip"></span> YOUR MODEL LIBRARY</div><h1>Models</h1><p>OWN answers using approved travel information. No external AI model or AI API is used.</p></div><button className="icon-button" onClick={() => void loadModels()} aria-label="Refresh models">↻</button></div><div className="model-pull-form"><strong>Knowledge-based mode</strong><p>Package information is maintained in the approved travel knowledge file. No model downloads, API keys, or AI credits are required.</p></div>{modelNotice && <div className="model-notice" role="status">{modelBusy && <span className="status-dot checking" />} {modelNotice}</div>}<div className="model-list-head"><strong>Installed models</strong><span>{models.length} available</span></div>{models.length ? <div className="model-grid">{models.map((item) => <article className="model-card" key={item.name}><div className="model-card-icon">⬡</div><div className="model-card-info"><strong>{item.name}</strong><span>{item.details?.parameter_size || item.details?.family || "Local model"}{item.size ? ` · ${(item.size / 1_000_000_000).toFixed(1)} GB` : ""}</span></div><button className="model-use" onClick={() => { setModel(item.name); setModelsOpen(false); }} disabled={model === item.name}>{model === item.name ? "Selected" : "Use model"}</button><button className="model-delete" onClick={() => void manageModel("delete", item.name)} disabled={modelBusy} aria-label={`Remove ${item.name}`} title="Remove model">×</button></article>)}</div> : <div className="model-empty">No travel packages have been added to the knowledge file yet. Add approved package details to enable package-specific answers.</div>}<p className="model-safety-note">Downloads can be large and use disk space. Removing a model permanently deletes its local files.</p></div> : <div className="chat-scroll">
+        {modelsOpen ? <div className="model-manager"><div className="model-manager-head"><div><div className="conversation-label"><span className="blue-pip"></span> YOUR MODEL LIBRARY</div><h1>Models</h1><p>OWN answers using approved travel information. No external AI model or AI API is used.</p></div><button className="icon-button" onClick={() => void loadModels()} aria-label="Refresh models">↻</button></div><div className="model-pull-form"><strong>Knowledge-based mode</strong><p>Package information is maintained in the approved travel knowledge file. No model downloads, API keys, or AI credits are required.</p></div>{modelNotice && <div className="model-notice" role="status">{modelBusy && <span className="status-dot checking" />} {modelNotice}</div>}<div className="model-list-head"><strong>Installed models</strong><span>{models.length} available</span></div>{models.length ? <div className="model-grid">{models.map((item) => <article className="model-card" key={item.name}><div className="model-card-icon">⬡</div><div className="model-card-info"><strong>{item.name}</strong><span>{item.details?.parameter_size || item.details?.family || "Local model"}{item.size ? ` · ${(item.size / 1_000_000_000).toFixed(1)} GB` : ""}</span></div><button className="model-use" onClick={() => { setModel(item.name); setModelsOpen(false); }} disabled={model === item.name}>{model === item.name ? "Selected" : "Use model"}</button><button className="model-delete" onClick={() => void manageModel("delete", item.name)} disabled={modelBusy} aria-label={`Remove ${item.name}`} title="Remove model">×</button></article>)}</div> : <div className="model-empty">No local/cloud model is connected. OWN can still answer package questions from the approved travel knowledge file; general-purpose AI responses need a model runtime.</div>}<p className="model-safety-note">Downloads can be large and use disk space. Removing a model permanently deletes its local files.</p></div> : <div className="chat-scroll">
           {messages.length === 0 ? (
             <div className="welcome">
               <div className="welcome-symbol"><div className="symbol-core">O</div><span className="symbol-orbit orbit-one"></span><span className="symbol-orbit orbit-two"></span></div>
@@ -294,7 +291,7 @@ export default function Home() {
               <p className="welcome-description">A home for your ideas, powered by models you choose.<br className="desktop-break" /> Private by design. Built by you. Growing with you.</p>
               {status === "offline" && <div className="connection-warning"><span>!</span><div><strong>{needsAuth ? "Unlock your OWN runtime" : "Connect your model runtime"}</strong><p>{error || (needsAuth ? "Enter the access token configured by your runtime administrator." : "Start Ollama and make sure the OATHome server can reach it.")}</p>{needsAuth ? <form className="token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="OATHome access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock ↗</button></form> : <button onClick={() => void loadModels()}>Try again ↗</button>}</div></div>}
               {status === "online" && <div className="connected-note"><span className="status-dot online"></span> OWN knowledge engine · no AI API</div>}
-              <div className="starter-grid">{starters.map((starter, index) => <button className="starter-card" key={starter.title} onClick={() => void sendMessage(starter.prompt)} disabled={!model || loading}><span className={`starter-icon starter-icon-${index}`}>{["✳", "⌘", "↗", "◇"][index]}</span><strong>{starter.title}</strong><span>{starter.prompt}</span><b>↗</b></button>)}</div>
+              <div className="starter-grid">{starters.map((starter, index) => <button className="starter-card" key={starter.title} onClick={() => void sendMessage(starter.prompt)} disabled={loading}><span className={`starter-icon starter-icon-${index}`}>{["✳", "⌘", "↗", "◇"][index]}</span><strong>{starter.title}</strong><span>{starter.prompt}</span><b>↗</b></button>)}</div>
             </div>
           ) : (
             <div className="conversation">
@@ -310,8 +307,8 @@ export default function Home() {
         {!modelsOpen && <>{error && messages.length > 0 && <div className="inline-error">{error}{needsAuth && <form className="inline-token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="Access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock</button></form>}<button onClick={() => setError("")}>×</button></div>}
         <div className="composer-area">
           <form className="composer" onSubmit={submit}>
-            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} placeholder={model ? "Ask about a tour package…" : "Loading OWN travel knowledge…"} rows={1} disabled={!model || loading} aria-label="Message OWN" />
-            <div className="composer-toolbar"><div className="composer-tools"><span className="web-search-toggle">Answers from approved travel data</span><span className="composer-hint"><span>↵</span> Send <span className="hint-divider">·</span> Shift + ↵ for new line</span></div><div className="composer-actions"><span className="runtime-mini"><i className={`status-dot ${status}`}></i> {"OWN Travel Knowledge"}</span>{loading ? <button type="button" className="send-button stop-button" onClick={() => abortRef.current?.abort()} aria-label="Stop generation">■</button> : <button type="submit" className="send-button" disabled={!draft.trim() || !model} aria-label="Send message">↑</button>}</div></div>
+            <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={onComposerKeyDown} placeholder={models.length ? "Ask OWN anything about your trip…" : "Ask about packages, prices, inclusions or itineraries…"} rows={1} disabled={loading} aria-label="Message OWN" />
+            <div className="composer-toolbar"><div className="composer-tools"><span className="web-search-toggle">Answers from approved travel data</span><span className="composer-hint"><span>↵</span> Send <span className="hint-divider">·</span> Shift + ↵ for new line</span></div><div className="composer-actions"><span className="runtime-mini"><i className={`status-dot ${status}`}></i> {"OWN Travel Knowledge"}</span>{loading ? <button type="button" className="send-button stop-button" onClick={() => abortRef.current?.abort()} aria-label="Stop generation">■</button> : <button type="submit" className="send-button" disabled={!draft.trim()} aria-label="Send message">↑</button>}</div></div>
           </form>
           <p className="disclaimer">OWN can make mistakes. Verify important information. <span>·</span> Your interface, your choice of models.</p>
         </div></>}
