@@ -2,8 +2,8 @@
   "company": {
     "name": "On A Trip Holidays",
     "website": "https://onatripholidays.in",
-    "greeting": "Hello! Welcome to On A Trip Holidays.",
-    "fallback": "I can help with On A Trip Holidays packages and travel services. For this question, I’ll confirm with our travel team. A travel expert will let you know, sir."
+    "greeting": "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye destination ki trip plan chesthunnaru?",
+    "fallback": "Ee detail brochure lo clear ga mention kaaledu andi. Wrong information ivvakunda travel team tho confirm chesi cheptham."
   },
   "services": [
     "Tour packages",
@@ -81,6 +81,369 @@
         "age11plus": "Adult price applies"
       },
       "doubleSharing": "Double-sharing costs ₹3,000 extra per person for 8 nights. Kedarnath and Badrinath stays remain group-sharing."
+    },
+    {
+      "name": "Kullu Manali 4 Nights / 5 Days — Delhi to Delhi",
+      "aliases": [
+        "Kullu Manali",
+        "Manali",
+        "Solang Valley",
+        "Kasol"
+      ],
+      "destination": "Delhi, Manali, Kullu Valley, Solang Valley, Kasol, Manikaran Sahib",
+      "duration": "4 nights / 5 days (Delhi to Delhi)",
+      "price": "₹9,500 per person + 5% GST (as printed on uploaded brochure; confirm current price before booking)",
+      "departures": [
+        "Departure date and seat availability must be confirmed by the travel team."
+      ],
+      "itinerary": [
+        "Day 1 — Delhi to Manali: Assemble at the Delhi pickup point and board the overnight AC Volvo/coach to Manali. Scenic route may pass Bilaspur and Mandi. Overnight journey.",
+        "Day 2 — Manali local sightseeing: Arrive in Manali, check in and freshen up. Visit Hadimba Devi Temple, Old Manali, Van Vihar, Tibetan Monastery and Mall Road. Evening free for shopping and cafés. Overnight in Manali.",
+        "Day 3 — Kullu and Solang Valley: Breakfast at hotel. Drive along the Beas River to Kullu Valley, visit a Kullu shawl factory/local market, then proceed to Solang Valley for mountain views, photography and sightseeing. Paragliding, ATV rides, ropeway and snow activities are optional, at own cost and subject to weather. Return to Manali for overnight stay.",
+        "Day 4 — Manali to Kasol to Delhi: Check out early and travel to Kasol. Explore the village, Parvati River, cafés and local market; visit Manikaran Sahib Gurudwara and hot springs. Depart towards Delhi in the evening by overnight bus.",
+        "Day 5 — Delhi arrival: Arrive in Delhi in the morning. Trip concludes."
+      ],
+      "inclusions": [
+        "Accommodation in Manali as stated in the brochure (the inclusions page appears to repeat one Manali night; confirm exact hotel-night allocation before sale)",
+        "Overnight bus journey from Manali to Delhi and the brochure's stated overnight bus journey from Kasol to Delhi; itinerary timing is inconsistent and must be reconfirmed",
+        "Transportation pickup and drop as per the confirmed itinerary",
+        "Morning tea, breakfasts and dinners at hotel only, as stated in the brochure",
+        "Inner Line Permit, tolls, parking, driver charges and fuel costs",
+        "Triple or quad sharing according to group size"
+      ],
+      "exclusions": [
+        "5% GST",
+        "Personal expenses, optional tours and extra meals",
+        "Rafting, paragliding, ropeway, zipline and other paid adventure activities",
+        "Tips, insurance, laundry, heater and phone calls",
+        "Alcoholic, mineral and aerated drinks",
+        "Extra costs caused by bad weather, road closures, strikes, breakdowns or natural calamities",
+        "Additional sightseeing or vehicle use outside the itinerary"
+      ],
+      "thingsToCarry": [
+        "Original ID proof",
+        "Down jacket/main jacket",
+        "Inner thermals",
+        "Fleece or light woollens",
+        "Trekking shoes/boots",
+        "Backpack",
+        "Body lotion and sunscreen",
+        "Personal medicines",
+        "Woollen cap and gloves",
+        "Sunglasses",
+        "Power bank and charger",
+        "Water bottle"
+      ],
+      "notes": "The uploaded brochure cover shows ₹9,500 + 5% GST, while an earlier discussed marketing price may differ. Confirm current offer and clarify the apparent mismatch between the day-wise itinerary and bus inclusions before quoting."
+    },
+    {
+      "name": "Shimla Kullu Manali Kasol 5 Nights / 6 Days — From Delhi",
+      "aliases": [
+        "Shimla Kullu Manali",
+        "Shimla Manali Kasol",
+        "Grand Himachal short trip"
+      ],
+      "destination": "Delhi, Shimla, Kufri, Green Valley, Jakhoo Temple, Christ Church, The Ridge, Mall Road, Kullu Valley, Manali, Solang Valley, Jogini Waterfall, Kasol, Manikaran Sahib",
+      "duration": "5 nights / 6 days (from Delhi)",
+      "price": "₹14,999 per person + 5% GST (GST is listed under exclusions; confirm current offer)",
+      "departures": [
+        "Departure dates and availability are subject to confirmation."
+      ],
+      "itinerary": [
+        "Day 1 — Delhi to Shimla: 9:00 AM pickup from Delhi Railway Station. Drive approximately 350 km / 8–9 hours to Shimla. Hotel check-in, dinner and overnight stay in Shimla.",
+        "Day 2 — Shimla sightseeing: Breakfast. Visit Kufri, Green Valley, Jakhoo Temple, Christ Church, The Ridge, Mall Road and Scandal Point. Return to hotel for dinner and overnight stay in Shimla.",
+        "Day 3 — Shimla to Manali: Breakfast and check-out around 7:00 AM. Drive approximately 260 km / 8–9 hours via Sunder Nagar Lake, Hanogi Mata Temple, Pandoh Dam, Vaishno Mata Temple and Kullu Valley. On arrival, visit Tibetan Monastery, Van Vihar Park and Mall Road. Dinner and overnight stay in Manali.",
+        "Day 4 — Manali and Solang Valley: Breakfast. Visit Solang Valley and Jogini Waterfall. Optional paragliding, zorbing, ropeway and zipline are at own cost. Return to hotel for dinner and overnight stay. If Atal Tunnel and Rohtang Pass are open and requested, brochure notes an additional ₹1,000 per person; reconfirm applicability and access rules.",
+        "Day 5 — Manali to Kasol and Manikaran: Breakfast. Visit Hadimba Temple, travel to Kasol and Manikaran, and enjoy the evening campsite, bonfire and music. Dinner and overnight stay at Kasol campsite; hotel may be provided if camps are unavailable.",
+        "Day 6 — Kasol to Delhi: Early check-out around 4:00 AM. Breakfast en route, drive approximately 480 km / 10–11 hours via Kullu Valley and shawl factory shopping. Reach Delhi by evening; timing may change due to traffic or weather."
+      ],
+      "inclusions": [
+        "2 nights accommodation in Shimla",
+        "2 nights accommodation in Manali",
+        "1 night accommodation at a Kasol camp; hotel alternative if camps are unavailable",
+        "Transportation pickup and drop as per itinerary",
+        "Morning tea, 5 breakfasts and dinners as stated in brochure",
+        "Tolls, parking, driver charges, fuel costs and Inner Line Permit",
+        "Triple or quad sharing according to group size"
+      ],
+      "exclusions": [
+        "GST at 5%",
+        "Airfare/train fare unless separately confirmed",
+        "Personal expenses, optional tours and extra meals",
+        "Rafting, paragliding, ropeway, zipline and other paid activities",
+        "Tips, insurance, laundry, heater, phone calls and drinks",
+        "Additional sightseeing/vehicle use outside itinerary",
+        "Costs caused by bad weather, roadblocks, strikes or natural calamities"
+      ],
+      "optionalAddOns": [
+        "Delhi local sightseeing with hotel stay, breakfast/dinner and private AC vehicle: ₹2,000–₹2,500 per person; includes India Gate, Rashtrapati Bhavan, Lotus Temple, Qutub Minar, Akshardham and Chandni Chowk, subject to timing.",
+        "Amritsar sightseeing with hotel stay, breakfast/dinner and private AC vehicle: ₹2,200–₹2,700 per person; Golden Temple, Jallianwala Bagh, Partition Museum, Durgiana Temple and Wagah Border Parade.",
+        "Taj Mahal + Mathura–Vrindavan tour ex-Delhi with Delhi hotel stay and private AC vehicle: ₹3,000–₹3,500 per person; Taj Mahal, Agra Fort, Shri Krishna Janmabhoomi, Prem Mandir and Banke Bihari Temple."
+      ],
+      "thingsToCarry": [
+        "Original ID proof",
+        "Down jacket and inner thermals",
+        "Fleece/light woollens",
+        "Trekking shoes",
+        "Backpack",
+        "Sunscreen/body lotion",
+        "Personal medicines",
+        "Woollen cap and gloves",
+        "Sunglasses",
+        "Power bank, charger and water bottle"
+      ],
+      "notes": "Hotel check-in is normally 11:00 AM; early check-in depends on availability. AC may not operate on hill roads. Confirm transport arrangement and departure details. Cancellation terms printed in the brochure state 50% charge after travel voucher issuance and 100% if cancelled within 7 days of departure; confirm the signed booking terms."
+    },
+    {
+      "name": "Kerala 4 Nights / 5 Days",
+      "aliases": [
+        "Kerala",
+        "Munnar",
+        "Thekkady",
+        "Alleppey",
+        "Kochi"
+      ],
+      "destination": "Kochi, Athirappally Waterfalls, Munnar, Thekkady, Periyar Lake, Alleppey, Marari Beach, Fort Kochi",
+      "duration": "4 nights / 5 days",
+      "price": "₹13,499 per person + 5% GST",
+      "departures": [
+        "Dates and availability to be confirmed."
+      ],
+      "itinerary": [
+        "Day 1 — Kochi to Munnar: Pickup from Kochi Airport or Railway Station. Travel approximately 130 km / 4.5 hours towards Munnar. Visit Athirappally Waterfalls en route, then hotel check-in and leisure time among tea plantations. Dinner and overnight stay in Munnar.",
+        "Day 2 — Munnar sightseeing: After breakfast, visit Flower Garden, Echo Point, Mattupetty Dam, Lockhart Gap, Shooting Point and a spice garden. Return to hotel. Breakfast and dinner; overnight in Munnar.",
+        "Day 3 — Munnar to Thekkady: Travel approximately 90 km / 3 hours after breakfast. Visit Periyar Wildlife Sanctuary and Periyar Lake; boating and wildlife viewing are described in the itinerary. In the evening, optional/subject-to-availability Kathakali and Kalaripayattu cultural shows. Breakfast and dinner; overnight in Thekkady.",
+        "Day 4 — Thekkady to Alleppey: Travel approximately 140 km / 4 hours. Enjoy a Vembanad Lake backwater boat ride, paddy fields and lagoons, then visit Alleppey Beach for sunset. Breakfast and dinner; overnight in Alleppey.",
+        "Day 5 — Alleppey to Kochi: After breakfast, visit Marari Beach, Fort Kochi, Paradesi Jewish Synagogue and Chinese Fishing Nets. Drop at Kochi Airport or Railway Station for onward travel. Sightseeing may change due to traffic or natural conditions."
+      ],
+      "inclusions": [
+        "2-star or 3-star hotel accommodation as stated in brochure",
+        "Breakfast and dinner during the tour",
+        "Group vehicle such as Swift Dzire, Innova or Tempo Traveller according to group size for transportation and sightseeing",
+        "Tolls, taxes and parking as stated in inclusions",
+        "Driver-cum-tour-guide as stated",
+        "Triple or quad sharing for group package"
+      ],
+      "exclusions": [
+        "5% GST",
+        "Personal expenses, optional tours and extra meals",
+        "Rafting, paragliding and other activities not specified as included",
+        "Tips, insurance, laundry, heater, phone calls and drinks",
+        "Extra costs due to itinerary changes, bad weather, road closure, strikes, breakdowns or natural calamities",
+        "Additional sightseeing or extra vehicle use beyond itinerary"
+      ],
+      "optionalAddOns": [
+        "Trivandrum add-on: Sree Anantha Padmanabhaswamy Temple, Napier Museum & Art Gallery, Kuthiramalika Palace, Padmatheerthan Tank and Kovalam Beach. Includes hotel stay, breakfast/dinner and private AC vehicle as described; ₹1,800–₹2,500 per person. Confirm whether this add-on is compatible with the booked route."
+      ],
+      "thingsToCarry": [
+        "Original ID proof",
+        "Comfortable walking shoes",
+        "Light cotton clothes and a light jacket",
+        "Personal medicines",
+        "Sunscreen and insect repellent",
+        "Umbrella or raincoat",
+        "Water bottle",
+        "Charger and power bank"
+      ],
+      "notes": "The brochure advertises ₹13,499 + 5% GST. Confirm hotel category, exact boat ride/entry ticket inclusions, the number of nights at each location, and the optional Trivandrum add-on before payment. Cancellation sheet says 50% after voucher issuance and 100% if cancelled within one week of travel; booking-specific terms prevail."
+    },
+    {
+      "name": "Kashmir 5 Nights / 6 Days — Ex Srinagar",
+      "aliases": [
+        "Kashmir",
+        "Srinagar",
+        "Gulmarg",
+        "Pahalgam",
+        "Sonamarg"
+      ],
+      "destination": "Srinagar, Dal Lake, Mughal Gardens, Gulmarg, Pahalgam, Sonamarg and Thajiwas Glacier area",
+      "duration": "5 nights / 6 days (5N/6D)",
+      "price": "₹15,999 per person + 5% GST (brochure states pricing for Indian citizens)",
+      "departures": [
+        "Travel dates, hotel category and availability to be confirmed."
+      ],
+      "itinerary": [
+        "Day 1 — Arrival in Srinagar: Airport pickup, transfer to hotel/houseboat as confirmed, check-in and leisure. Exact first-day sightseeing depends on arrival time.",
+        "Day 2 — Srinagar and Mughal Gardens: Sightseeing at Mughal Gardens and Dal Lake area. Any shikara ride or garden entry fee should be confirmed; entry fees are listed as excluded.",
+        "Day 3 — Gulmarg excursion: Full-day excursion to Gulmarg. Pony rides, sledging and optional activities are paid locally and are not included.",
+        "Day 4 — Pahalgam excursion: Full-day excursion to Pahalgam. Local taxi trips to Aru, Betaab Valley and Chandanwari are paid separately.",
+        "Day 5 — Sonamarg excursion: Visit Sonamarg. Taxi/pony trips to Thajiwas Glacier are extra and paid locally. Itinerary may change according to weather and road conditions.",
+        "Day 6 — Departure from Srinagar: Transfer to Srinagar Airport for departure. Exact sightseeing and overnight allocation should be reconfirmed with the travel team."
+      ],
+      "inclusions": [
+        "Five hotel nights, as per selected category",
+        "MAPAI accommodation: room, breakfast and dinner",
+        "Srinagar Airport pickup and drop-off",
+        "Transfers and sightseeing by non-AC Etios, Tavera or Tempo as stated",
+        "Mughal Gardens sightseeing",
+        "Full-day excursions to Gulmarg and Pahalgam",
+        "Taxes/service charges are described as included in one section, but the exclusions section lists 5% GST extra; resolve this discrepancy before quoting"
+      ],
+      "exclusions": [
+        "Airfare and train tickets",
+        "5% GST according to the exclusions sheet; tax status conflicts with inclusions sheet and must be confirmed",
+        "Pony rides and sledging",
+        "Personal expenses, optional tours, extra meals, rafting/paragliding, tips, insurance and laundry",
+        "Heater, phone calls, alcoholic/mineral/aerated drinks",
+        "Monument and garden entry fees",
+        "Sonamarg taxi/pony trips to Thajiwas Glacier",
+        "Pahalgam local taxi trips to Aru, Betaab Valley and Chandanwari",
+        "Additional sightseeing/vehicle use outside itinerary",
+        "Extra costs caused by flight cancellations, bad weather, illness, roadblocks, natural calamities or itinerary/stay changes"
+      ],
+      "notes": "Per-person price is stated for Indian citizens. Solo travellers may be paired with same-gender solo travellers. Double occupancy is stated to cost ₹3,000 extra. Customized/private trips and airfare deals may be available. Brochure tax details conflict: one section says taxes/service charges included while another lists 5% GST excluded. Do not promise tax-inclusive total until team confirms. Hotel/houseboat allocation may change with availability."
+    },
+    {
+      "name": "Thailand Bangkok Pattaya Coral Island 4 Nights / 5 Days",
+      "aliases": [
+        "Thailand",
+        "Bangkok",
+        "Pattaya",
+        "Coral Island",
+        "Tiger Park"
+      ],
+      "destination": "Bangkok, Pattaya, Coral Island",
+      "duration": "4 nights / 5 days",
+      "price": "₹16,999 per person + 5% GST",
+      "departures": [
+        "Dates, flight schedules, room availability and entry requirements must be confirmed."
+      ],
+      "itinerary": [
+        "Day 1 — Arrive in Bangkok and transfer to Pattaya: Complete immigration and baggage claim, private transfer to Pattaya, visit Tiger Park subject to park schedule, lunch en route at a suitable Indian restaurant, hotel check-in and evening at leisure. Overnight in Pattaya.",
+        "Day 2 — Pattaya city tour and Floating Market: Breakfast, Pattaya panoramic viewpoint, Big Buddha Temple, Indian lunch and Pattaya Floating Market. Evening at leisure. Overnight in Pattaya.",
+        "Day 3 — Coral Island: Breakfast and shared speedboat transfer to Coral Island. Snorkelling, parasailing, banana boat and other water activities are at own cost. Island lunch, return to Pattaya and overnight stay.",
+        "Day 4 — Transfer to Bangkok and city tour: Breakfast and checkout, private transfer to Bangkok, Golden Buddha Temple, Gems Gallery and city sightseeing. Optional Safari World & Marine Park at own cost. Overnight in Bangkok.",
+        "Day 5 — Bangkok shopping and departure: Breakfast and checkout. Shopping at MBK Center, Platinum Fashion Mall or Indra Market subject to time, then transfer to Bangkok International Airport for return flight."
+      ],
+      "inclusions": [
+        "4 nights hotel accommodation or similar",
+        "Daily breakfast",
+        "Airport and local transfers as per itinerary",
+        "Coral Island tour",
+        "Bangkok city tour",
+        "Tour assistance",
+        "The itinerary mentions some lunches; confirm exactly which meals are included in the final quotation"
+      ],
+      "exclusions": [
+        "International and domestic airfare",
+        "Thailand visa charges, if applicable",
+        "Travel insurance",
+        "Water sports and optional activities",
+        "Safari World & Marine Park",
+        "Optional Chao Phraya dinner cruise",
+        "Personal expenses and meals/drinks not specifically listed",
+        "GST is added to the advertised price at 5%"
+      ],
+      "notes": "The brochure cover advertises ₹16,999 + 5% GST. It mentions hotel stay, daily breakfast, transfers, Coral Island tour, Bangkok city tour and shopping time. Confirm airport transfers, lunch/dinner inclusions, Tiger Park admission/experience fees, travel documents/visa requirements and final price before booking."
+    },
+    {
+      "name": "Vietnam 7 Nights / 8 Days — Hanoi, Da Nang and Ho Chi Minh City",
+      "aliases": [
+        "Vietnam",
+        "Hanoi",
+        "Da Nang",
+        "Ho Chi Minh City",
+        "Ha Long Bay",
+        "Ninh Binh",
+        "Ba Na Hills",
+        "Mekong Delta"
+      ],
+      "destination": "Hanoi, Ha Long Bay, Ninh Binh, Da Nang, Hoi An, Ba Na Hills, Ho Chi Minh City, Mekong Delta",
+      "duration": "7 nights / 8 days",
+      "price": "₹69,999 per person + 5% GST (TCS, if applicable, should be confirmed)",
+      "departures": [
+        "Group departure dates and flight schedules must be confirmed."
+      ],
+      "itinerary": [
+        "Day 1 — Hanoi arrival: Airport pickup and hotel transfer/check-in. Free time to explore Train Street independently, or optional Grand Mega World Venice-style experience at extra cost. Dinner and overnight stay at hotel.",
+        "Day 2 — Ha Long Bay day cruise: Transfer to Tuan Chau International Marina. Cruise with lunch, visit Thien Cung Cave or Sung Sot Cave, kayaking or bamboo boat ride, Ti Top Island swim/hike subject to weather, and sunset party. Return to hotel. Meals listed: breakfast, local lunch and Indian dinner; route may change with weather.",
+        "Day 3 — Ninh Binh: Visit Hoa Lu ancient capital and Dinh/Le Emperor temples, Trang An boat ride, local lunch, Hang Mua Cave/Viewpoint and Ngoa Long Mountain. Return to hotel.",
+        "Day 4 — Hanoi to Da Nang via flight: Transfer to Hanoi Airport, fly to Da Nang, airport pickup, Coconut Forest basket boat ride, explore Hoi An Ancient Town and lantern-lit streets. Overnight in Da Nang.",
+        "Day 5 — Ba Na Hills and Golden Bridge: Full-day Ba Na Hills tour including Golden Bridge, gardens, French Village, Linh Ung Pagoda, Loc Uyen Garden and Quan Am Pavilion. Fantasy Park and Wax Statue Museum are listed, but tickets/activities may be excluded. Overnight at hotel.",
+        "Day 6 — Da Nang to Ho Chi Minh City: Breakfast, airport transfer and flight to Ho Chi Minh City. Pickup, hotel check-in and evening at leisure. Overnight in Ho Chi Minh City.",
+        "Day 7 — Mekong Delta: Visit My Tho and Vinh Trang Pagoda, cruise on the Mekong River and islands, tropical fruit and folk music, sampan ride, honey-bee farm, coconut candy making and Ben Tre village. Return to Ho Chi Minh City. Breakfast and local lunch listed.",
+        "Day 8 — Departure: Breakfast, checkout and airport transfer according to flight schedule."
+      ],
+      "inclusions": [
+        "7 nights in 3-star/4-star hotels as per itinerary; exact city-night split to be confirmed",
+        "Meals as per itinerary; brochure says daily breakfast, lunch and dinner, with specific day-by-day variations",
+        "Airport pickup/drop and local transfers",
+        "Ha Long Bay cruise, described as 1 night/2 days cruise with meals onboard in inclusion panel; this conflicts with day-wise itinerary showing a day cruise, so confirm cruise type and overnight arrangement",
+        "Sightseeing and entrance fees as per itinerary in inclusion panel",
+        "English-speaking guide and tour coordinator for group departures",
+        "Onboard/travel assistance and stated 24/7 support"
+      ],
+      "exclusions": [
+        "International airfare to/from Vietnam",
+        "Vietnam visa charges are listed as excluded in the exclusions section, although the cover lists Vietnam e-visa under package includes; confirm in writing",
+        "Travel insurance",
+        "Personal expenses, shopping, snacks, drinks, laundry and telephone",
+        "Optional activities not specifically included, including water sports, Ba Na Hills cable-car upgrades/Fantasy Park where applicable",
+        "Meals/beverages not specified",
+        "GST and TCS as applicable",
+        "Tips/gratuities for guide, driver and hotel staff"
+      ],
+      "thingsToCarry": [
+        "Passport valid for at least 6 months as stated in brochure",
+        "Visa/entry approval documents as applicable",
+        "Comfortable walking shoes",
+        "Light clothing and rain protection",
+        "Personal medicines",
+        "Travel insurance details",
+        "Power bank and universal travel adapter"
+      ],
+      "notes": "Major discrepancy to resolve before sale: the cover lists Vietnam e-visa as included, while the exclusions page says Vietnam visa charges are not included. Another discrepancy: inclusion panel describes a 1-night/2-day Ha Long Bay cruise, while day 2 describes a day cruise and the itinerary stays at hotel. Do not promise either until supplier confirms. International flights are excluded; the itinerary mentions domestic flights Hanoi–Da Nang and Da Nang–Ho Chi Minh City, which should be confirmed as included in the quoted price."
+    },
+    {
+      "name": "Gokarna and Dandeli 2 Nights / 3 Days — Hubli to Hubli",
+      "aliases": [
+        "Gokarna",
+        "Dandeli",
+        "Vibhuthi Falls",
+        "Murdeshwar",
+        "Om Beach",
+        "River rafting"
+      ],
+      "destination": "Hubli, Vibhuthi Falls, Murdeshwar Temple, Kumta, Gokarna, Kudle Beach, Apsarkonda Falls, Mirjan Fort, Om Beach, Mahabaleshwar Temple, Honnavar Forest, Dandeli and Hubli",
+      "duration": "2 nights / 3 days (Hubli to Hubli)",
+      "price": "₹8,499 per person + 5% GST",
+      "departures": [
+        "Every Friday, subject to confirmation and seat availability."
+      ],
+      "itinerary": [
+        "Day 1 — Hubli, Vibhuthi Falls, Murdeshwar and Kumta: Start at Hubli. Travel around 120 km / 3 hours to Vibhuthi Falls; freshen up and swim. Continue around 55 km / 1.5 hours to Murdeshwar Temple and statue. Lunch en route is at own expense. Travel around 60 km / 1.5 hours to Prakruti Resort in Kumta, stay in hut camps, dinner and campfire/music night subject to weather.",
+        "Day 2 — Gokarna beaches, falls, fort and Dandeli: Early start around 6:00 AM and short trek to Kudle Beach. Return for breakfast, visit Apsarkonda Falls and Mirjan Fort, then Om Beach and Mahabaleshwar Temple in Gokarna. Travel via Honnavar Forest to Dandeli. Dinner, overnight at Kings Resort Dandeli and campfire/DJ night subject to conditions.",
+        "Day 3 — Dandeli water activities and return to Hubli: Freshen up and breakfast at resort. Included activities listed include boating, kayaking, zorbing, zipline and river swimming, with resort lunch. Travel around 110 km / 3 hours back to Hubli and drop at Hubli Railway Station by evening."
+      ],
+      "inclusions": [
+        "2 nights stay: Prakruti Resort/Kumta hut camps and Kings Resort Dandeli as per itinerary",
+        "Meals as listed in brochure: breakfast/dinner at Kumta, breakfast/dinner at Dandeli and breakfast/lunch on Day 3; Day 1 breakfast is listed and Day 1 lunch is at own expense",
+        "Specified Dandeli activities: boating, kayaking, zorbing, zipline and river swimming",
+        "Resort indoor activities may include infinity pool, baby pool, rain dance/music, jungle nature walk, carrom and badminton/archery as available",
+        "Campfire/music is weather-dependent",
+        "Train ticket booking can be arranged from Hyderabad, Vijayawada or Bengaluru at additional cost and subject to availability"
+      ],
+      "exclusions": [
+        "5% GST",
+        "Train tickets unless booked separately; ticket booking is available at additional cost",
+        "Day 1 lunch and personal expenses",
+        "Optional tours, extra meals and activities not specifically listed as included",
+        "Tips, insurance, laundry, heater, phone calls and alcoholic/mineral/aerated drinks",
+        "Costs due to bad weather, roadblocks, strikes, illness, cancellations or natural calamities",
+        "Additional sightseeing/vehicle use outside itinerary"
+      ],
+      "thingsToCarry": [
+        "Original ID proof",
+        "Comfortable shoes/sandals",
+        "Swimwear and change of clothes",
+        "Towel and personal toiletries",
+        "Personal medicines",
+        "Sunscreen and insect repellent",
+        "Power bank and charger",
+        "Waterproof pouch for phone",
+        "Light rain jacket"
+      ],
+      "notes": "Advertised price ₹8,499 + 5% GST, every Friday, Hubli to Hubli. Train tickets from Hyderabad/Vijayawada/Bengaluru can be arranged at extra cost. Water activities and campfire are subject to weather and operator availability. Confirm exact activity inclusions, meals and departure time before booking."
     }
   ],
   "faqs": [
@@ -291,6 +654,41 @@
         "send details"
       ],
       "answer": "Sure andi, WhatsApp lo details kavala? Mee WhatsApp number share cheyyandi; travel team ki details pampinchadaniki note chestha."
+    },
+    {
+      "question": "Which packages are currently listed?",
+      "keywords": [
+        "list packages",
+        "available packages",
+        "what packages",
+        "packages available",
+        "mee packages enti",
+        "em packages unnayi"
+      ],
+      "answer": "Our current catalogue includes Char Dham Yatra, Kullu Manali 4N/5D, Shimla–Kullu–Manali–Kasol 5N/6D, Kerala 4N/5D, Kashmir 5N/6D, Thailand 4N/5D, Vietnam 7N/8D, and Gokarna–Dandeli 2N/3D. Prices and dates should be reconfirmed before booking."
+    },
+    {
+      "question": "How should package prices be quoted?",
+      "keywords": [
+        "gst",
+        "final price",
+        "price with tax",
+        "total cost",
+        "package price"
+      ],
+      "answer": "Quote the brochure price and GST separately when GST is listed as extra. Before taking payment, confirm current price, dates, inclusions and tax treatment with the travel team. Do not assume airfare, visa, optional activities or entry tickets are included unless the specific package confirms it."
+    },
+    {
+      "question": "How do I contact On A Trip Holidays?",
+      "keywords": [
+        "contact",
+        "phone number",
+        "call",
+        "office",
+        "address",
+        "whatsapp"
+      ],
+      "answer": "On A Trip Holidays, Malakpet, Hyderabad. Call +91 91828 94146 or +91 81252 48909. Email: travel@onatripholidays.com. Website details in the brochures vary, so use the official current website configured by the company."
     }
   ]
 }
