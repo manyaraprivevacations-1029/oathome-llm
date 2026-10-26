@@ -154,24 +154,50 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[],
   const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
   if (upstreamToken) headers.Authorization = `Bearer ${upstreamToken}`;
 
+  const callOllama = async (path: string, body: unknown): Promise<Response> => fetch(`${configuredUrl}${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    cache: "no-store",
+    signal: AbortSignal.timeout(90000)
+  });
+
   try {
-    const response = await fetch(`${configuredUrl}/api/chat`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({ model, messages, stream: false }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(90000)
-    });
-    if (!response.ok) {
+    // First try Ollama's chat endpoint.
+    const response = await callOllama("/api/chat", { model, messages, stream: false });
+    if (response.ok) {
+      const payload: unknown = await response.json().catch(() => null);
+      const message = payload && typeof payload === "object"
+        ? (payload as { message?: { content?: unknown } }).message : undefined;
+      if (typeof message?.content === "string" && message.content.trim()) {
+        return message.content.trim().slice(0, 6000);
+      }
+      console.warn("[OWN chat] Ollama /api/chat returned no message content.");
+    } else {
       const detail = (await response.text().catch(() => "")).slice(0, 1000);
-      console.warn("[OWN chat] Ollama returned HTTP", response.status, detail);
+      console.warn("[OWN chat] Ollama /api/chat returned HTTP", response.status, detail);
+    }
+
+    // Compatibility fallback for Ollama-compatible runtimes that expose
+    // /api/generate reliably but not /api/chat.
+    const prompt = [
+      systemPrompt,
+      ...priorMessages.map((m) => `${m.role.toUpperCase()}: ${m.content}`),
+      `USER: ${question}`,
+      "ASSISTANT:"
+    ].join("\\n\\n");
+    const generateResponse = await callOllama("/api/generate", { model, prompt, stream: false });
+    if (!generateResponse.ok) {
+      const detail = (await generateResponse.text().catch(() => "")).slice(0, 1000);
+      console.warn("[OWN chat] Ollama /api/generate returned HTTP", generateResponse.status, detail);
       return null;
     }
-    const payload: unknown = await response.json().catch(() => null);
-    if (!payload || typeof payload !== "object") return null;
-    const message = (payload as { message?: { content?: unknown } }).message;
-    if (typeof message?.content !== "string" || !message.content.trim()) return null;
-    return message.content.trim().slice(0, 6000);
+    const generated: unknown = await generateResponse.json().catch(() => null);
+    const text = generated && typeof generated === "object"
+      ? (generated as { response?: unknown }).response : undefined;
+    if (typeof text === "string" && text.trim()) return text.trim().slice(0, 6000);
+    console.warn("[OWN chat] Ollama /api/generate returned no response text.");
+    return null;
   } catch (error) {
     console.warn("[OWN chat] Ollama inference request failed:", error instanceof Error ? error.message : String(error));
     return null;
