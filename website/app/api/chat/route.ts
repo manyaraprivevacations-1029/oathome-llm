@@ -59,11 +59,11 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const internationalPackages = data.packages.filter((p) => /thailand|vietnam|dubai|bali|singapore|malaysia|international/i.test(p.name + " " + (p.destination || "")));
   if (includesAny(q, ["domestic", "within india", "india packages", "indian packages", "domestic packages"])) {
     const lines = domesticPackages.map((p) => "- **" + p.name + "** — " + (p.duration || "duration to be confirmed") + " — " + (p.price || "price to be confirmed"));
-    return lines.length ? "Our domestic packages:\\n\\n" + lines.join("\\n") + "\\n\\nWhich package would you like details for?" : "Domestic package list needs confirmation.";
+    return lines.length ? "Our domestic packages:\n\n" + lines.join("\n") + "\n\nWhich package would you like details for?" : "Domestic package list needs confirmation.";
   }
   if (includesAny(q, ["international", "outside india", "abroad packages", "foreign packages", "international packages"])) {
     const lines = internationalPackages.map((p) => "- **" + p.name + "** — " + (p.duration || "duration to be confirmed") + " — " + (p.price || "price to be confirmed"));
-    return lines.length ? "Our international packages:\\n\\n" + lines.join("\\n") + "\\n\\nWhich package would you like details for?" : "Our international package list is being updated. Please ask our travel team to confirm current options.";
+    return lines.length ? "Our international packages:\n\n" + lines.join("\n") + "\n\nWhich package would you like details for?" : "Our international package list is being updated. Please ask our travel team to confirm current options.";
   }
 
   // For a general package question, offer the two categories first.
@@ -78,7 +78,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
       "- " + p.name + (p.duration ? " — " + p.duration : "") + (p.price ? " — " + p.price : "")
     );
     return packageLines.length
-      ? "We have both domestic and international tour packages.\\n\\n- **Domestic packages** — tours within India\\n- **International packages** — tours abroad\\n\\nWhich would you like to explore: domestic or international?"
+      ? "We have both domestic and international tour packages.\n\n- **Domestic packages** — tours within India\n- **International packages** — tours abroad\n\nWhich would you like to explore: domestic or international?"
       : "Our package list is being updated. Please ask our travel team to confirm current options.";
   }
 
