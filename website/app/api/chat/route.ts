@@ -185,7 +185,7 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[],
       ...priorMessages.map((m) => `${m.role.toUpperCase()}: ${m.content}`),
       `USER: ${question}`,
       "ASSISTANT:"
-    ].join("\\n\\n");
+    ].join("\n\n");
     const generateResponse = await callOllama("/api/generate", { model, prompt, stream: false });
     if (!generateResponse.ok) {
       const detail = (await generateResponse.text().catch(() => "")).slice(0, 1000);
