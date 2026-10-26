@@ -41,6 +41,15 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const pkg = findPackage(question) || packageFromHistory(history) || data.packages[0];
   const charDham = !!pkg && normalize(pkg.name).includes("char dham");
 
+  // Common general-knowledge questions must never be answered by an unrelated travel FAQ.
+  if (includesAny(q, [
+    "what does llm stand for", "what is an llm", "what is llm",
+    "llm meaning in artificial intelligence", "llm in artificial intelligence",
+    "large language model", "what does ai stand for", "what is artificial intelligence"
+  ])) {
+    return "LLM stands for Large Language Model. It is an AI model trained on large amounts of text so it can understand and generate language, answer questions, summarize information, and help with writing. Examples include models used in chatbots.";
+  }
+
   if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
     return "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
   }
@@ -125,7 +134,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     const overlap = new Set(normalize(question).split(" ").filter((token) => token.length > 2 && terms.includes(token))).size;
     return { item, overlap };
   }).sort((a, b) => b.overlap - a.overlap)[0];
-  if (faq && faq.overlap >= 2) return faq.item.answer;
+  if (faq && faq.overlap >= 3) return faq.item.answer;
   return fallback;
 }
 
