@@ -54,6 +54,22 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
   }
 
+  // If the customer asks what packages are available, list the packages in the approved knowledge base first.
+  if (includesAny(q, [
+    "which packages do you have", "what packages do you have", "which packages are available",
+    "what packages are available", "show me your packages", "list your packages",
+    "what tours do you offer", "which tours do you have", "what trips do you offer",
+    "mee packages enti", "em packages unnayi", "ye packages unnayi", "packages em unnayi",
+    "package list", "available packages"
+  ])) {
+    const packageLines = data.packages.map((p) =>
+      "- " + p.name + (p.duration ? " — " + p.duration : "") + (p.price ? " — " + p.price : "")
+    );
+    return packageLines.length
+      ? "On A Trip Holidays lo currently listed packages ivandi:\\n" + packageLines.join("\\n") + "\\n\\nMee interest ye package meeda undi? Details, itinerary, inclusions cheppagalanu."
+      : "Naa current package list lo details available levu andi. Travel team tho confirm chesi chepthanu.";
+  }
+
   // Direct factual answers take priority over sales prompts.
   // Answer common package questions directly from the verified itinerary before generic FAQ matching.
   if (includesAny(q, ["kedarnath trek how many km", "kedarnath trek distance", "kedarnath trek kitna km", "kedarnath track how many km", "how many km kedarnath", "kedarnath trekking distance"])) {
