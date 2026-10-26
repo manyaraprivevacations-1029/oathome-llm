@@ -45,7 +45,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   // If the customer selects a destination/package by name, respond with that package's own details.
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
-    return "**" + selectedPackage.name + "**\\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\\n\\nWould you like the itinerary or package inclusions?";
+    return "**" + selectedPackage.name + "**\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\n\nWould you like the itinerary or package inclusions?";
   }
 
   // Common general-knowledge questions must never be answered by an unrelated travel FAQ.
