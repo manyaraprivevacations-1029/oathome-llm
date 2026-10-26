@@ -160,15 +160,20 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[],
       headers,
       body: JSON.stringify({ model, messages, stream: false }),
       cache: "no-store",
-      signal: AbortSignal.timeout(25000)
+      signal: AbortSignal.timeout(90000)
     });
-    if (!response.ok) return null;
+    if (!response.ok) {
+      const detail = (await response.text().catch(() => "")).slice(0, 1000);
+      console.warn("[OWN chat] Ollama returned HTTP", response.status, detail);
+      return null;
+    }
     const payload: unknown = await response.json().catch(() => null);
     if (!payload || typeof payload !== "object") return null;
     const message = (payload as { message?: { content?: unknown } }).message;
     if (typeof message?.content !== "string" || !message.content.trim()) return null;
     return message.content.trim().slice(0, 6000);
-  } catch {
+  } catch (error) {
+    console.warn("[OWN chat] Ollama inference request failed:", error instanceof Error ? error.message : String(error));
     return null;
   }
 }
