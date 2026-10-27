@@ -339,10 +339,10 @@ export async function POST(request: NextRequest) {
   const history = messages.slice(0, latestIndex).slice(-20);
 
   // Hard-stop greetings before package matching, FAQ scoring, or model fallback.
-  const greetingText = latest.content.toLowerCase().trim().replace(/[!.?,]+$/g, "").replace(/\\s+/g, " ");
+  const greetingText = latest.content.toLowerCase().trim().replace(/[!.?,]+$/g, "").replace(/\s+/g, " ");
   if (/^(hi|hii+|hlo|helo|hello|hey|heyy+|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(greetingText)) {
     const greeting = "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
-    const ndjson = JSON.stringify({ message: { role: "assistant", content: greeting }, done: true }) + "\\n";
+    const ndjson = JSON.stringify({ message: { role: "assistant", content: greeting }, done: true }) + "\n";
     return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-OATHome-Response-Mode": "greeting-rule" } });
   }
 
