@@ -44,7 +44,7 @@ function lastAssistant(history: ChatMessage[]): string {
 function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const q = normalize(question);
   const prevA = lastAssistant(history);
-  const pkg = findPackage(question) || packageFromHistory(history) || data.packages[0];
+  const pkg = findPackage(question) || packageFromHistory(history);
   const charDham = !!pkg && normalize(pkg.name).includes("char dham");
 
   if (/^(hi|hii+|hlo|helo|hello|hey|heyy+|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
@@ -67,8 +67,8 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   }
 
   // Keep package discovery short and split domestic vs international.
-  const domesticPackages = data.packages.filter((p) => /char dham|kullu manali|shimla|kerala|kashmir|gokarna|dandeli|spiti|himachal|jyotirlinga/i.test(p.name + " " + (p.destination || "")));
-  const internationalPackages = data.packages.filter((p) => /thailand|vietnam|dubai|bali|singapore|malaysia|international/i.test(p.name + " " + (p.destination || "")));
+  const domesticPackages = data.packages.filter((p) => /char dham|kullu manali|shimla|kerala|kashmir|gokarna|dandeli|spiti|himachal|jyotirlinga/i.test([p.name, p.destination || "", ...(((p as PackageRecord & { aliases?: string[] }).aliases) || [])].join(" ")));
+  const internationalPackages = data.packages.filter((p) => /thailand|vietnam|dubai|bali|singapore|malaysia|international/i.test([p.name, p.destination || "", ...(((p as PackageRecord & { aliases?: string[] }).aliases) || [])].join(" ")));
   if (includesAny(q, ["domestic", "within india", "india packages", "indian packages", "domestic packages"])) {
     const lines = domesticPackages.map((p) => "- **" + p.name + "** — " + (p.duration || "duration to be confirmed") + " — " + (p.price || "price to be confirmed"));
     return lines.length ? "Our domestic packages:\n\n" + lines.join("\n") + "\n\nWhich package would you like details for?" : "Domestic package list needs confirmation.";
@@ -337,6 +337,15 @@ export async function POST(request: NextRequest) {
   if (!latest || !latest.content.trim()) return NextResponse.json({ error: "Enter a question." }, { status: 400 });
   if (latest.content.length > 4000) return NextResponse.json({ error: "Your message is too long." }, { status: 413 });
   const history = messages.slice(0, latestIndex).slice(-20);
+
+  // Hard-stop greetings before package matching, FAQ scoring, or model fallback.
+  const greetingText = latest.content.toLowerCase().trim().replace(/[!.?,]+$/g, "").replace(/\\s+/g, " ");
+  if (/^(hi|hii+|hlo|helo|hello|hey|heyy+|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(greetingText)) {
+    const greeting = "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
+    const ndjson = JSON.stringify({ message: { role: "assistant", content: greeting }, done: true }) + "\\n";
+    return new Response(ndjson, { status: 200, headers: { "Content-Type": "application/x-ndjson; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", "X-OATHome-Response-Mode": "greeting-rule" } });
+  }
+
   // Prefer verified deterministic knowledge for factual travel questions.
   // Use the local LLM for open-ended conversation only when the knowledge
   // engine has no specific answer, preventing it from contradicting prices,
