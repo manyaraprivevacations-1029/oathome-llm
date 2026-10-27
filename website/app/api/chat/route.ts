@@ -13,17 +13,22 @@ type FAQ = { question: string; answer: string; keywords?: string[] };
 type Knowledge = { company: { name: string; website: string; greeting: string; fallback: string }; services: string[]; packages: PackageRecord[]; faqs: FAQ[] };
 type ChatMessage = { role: string; content: string };
 const data = knowledge as Knowledge;
-const normalize = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+const normalize = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
 const includesAny = (s: string, list: string[]) => list.some((v) => s.includes(normalize(v)));
 const fallback = "Ee detail na daggara clear ga ledu andi. Nenu travel team tho confirm cheyinchi chepthanu.";
 
 function findPackage(s: string): PackageRecord | undefined {
   const q = normalize(s);
+  const tokens = q.split(" ").filter(Boolean);
+  // Never match tiny greetings/words (e.g. "hi") inside a destination such as "Shimla".
+  if (tokens.length === 1 && tokens[0].length < 4) return undefined;
   return data.packages.find((p) => {
-    const searchable = [p.name, p.destination || "", ...(((p as PackageRecord & { aliases?: string[] }).aliases) || [])].map(normalize);
-    if (searchable.some((n) => n && (q === n || q.includes(n) || n.includes(q)))) return true;
+    const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
+    const searchable = [p.name, ...aliases].map(normalize).filter(Boolean);
+    if (searchable.some((n) => q === n || (n.length >= 4 && q.includes(n)))) return true;
     if (searchable.some((n) => n.includes("char dham")) && includesAny(q, ["char dham", "chardham", "char dham yatra", "chardham yatra"])) return true;
-    return searchable.some((n) => n.split(" ").some((w) => w.length > 4 && q.split(" ").includes(w)));
+    // Match a known package alias/name token only when it is a complete word.
+    return searchable.some((n) => n.split(" ").some((w) => w.length >= 5 && tokens.includes(w)));
   });
 }
 function packageFromHistory(history: ChatMessage[]): PackageRecord | undefined {
@@ -42,6 +47,10 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const pkg = findPackage(question) || packageFromHistory(history) || data.packages[0];
   const charDham = !!pkg && normalize(pkg.name).includes("char dham");
 
+  if (/^(hi|hii+|hlo|helo|hello|hey|heyy+|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
+    return "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
+  }
+
   // If the customer selects a destination/package by name, respond with that package's own details.
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
@@ -55,10 +64,6 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     "large language model", "what does ai stand for", "what is artificial intelligence"
   ])) {
     return "LLM stands for Large Language Model. It is an AI model trained on large amounts of text so it can understand and generate language, answer questions, summarize information, and help with writing. Examples include models used in chatbots.";
-  }
-
-  if (/^(hi|hello|hey|good morning|good afternoon|good evening|namaste|namaskaram)$/.test(q)) {
-    return "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
   }
 
   // Keep package discovery short and split domestic vs international.
