@@ -82,15 +82,28 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   // Handle short confirmations in context instead of sending "yes"/"ok" to the fallback.
   const isYes = /^(yes|yeah|yep|ok|okay|sure|ha|haa|avunu|sare|alright|fine|cheppu|cheppandi)$/.test(q);
   if (isYes && pkg && (prevA.includes("would you like the itinerary or package inclusions") || prevA.includes("itinerary or package inclusions"))) {
-    return "Sure andi! " + pkg.name + " ki day-wise itinerary kavala, leka package lo em include avuthayo cheppala?";
+    if (pkg.itinerary?.length) {
+      const overview = pkg.itinerary.slice(0, 3).join("\n");
+      return "Sure andi! " + pkg.name + " itinerary overview:\n" + overview + "\n\nFull day-wise itinerary or inclusions kuda chepthanu. Edi kavali?";
+    }
+    const items = (pkg.inclusions || []).slice(0, 5);
+    return items.length
+      ? "Sure andi! " + pkg.name + " lo main inclusions: " + items.join("; ") + ". Full itinerary kuda cheppana?"
+      : "Sure andi! " + pkg.name + " details kosam itinerary, inclusions, price, leka departure dates lo edi first kavalo cheppandi.";
   }
   if (isYes && pkg && (prevA.includes("confirm") || prevA.includes("departure") || prevA.includes("batch"))) {
     return "Okay andi! " + pkg.name + " departure dates ippudu approved data lo confirm kaaledu. Wrong date cheppakunda travel team confirmation tarvatha share cheyyali. Inthalo itinerary or inclusions kavala?";
   }
-  if (/^(ok|okay|alright|fine|sare|thanks|thank you|thankyou|got it|understood)$/.test(q)) {
+  if (/^(ok|okay|alright|fine|sare|thanks|thank you|thankyou|got it|understood|hmm|hmmm)$/.test(q)) {
+    if (prevA.includes("which destination") || prevA.includes("ye destination") || prevA.includes("what trip plan")) {
+      return "Sure andi! Meeru ye place ki vellali anukuntunnaru — Manali, Kashmir, Kerala, Char Dham, leka vere destination aa?";
+    }
+    if (prevA.includes("domestic or international")) {
+      return "Okay andi! Domestic trips ante India lopala, international ante abroad. Mee preference edi?";
+    }
     return pkg
-      ? "Sure andi! " + pkg.name + " gurinchi inka em details kavali — itinerary, inclusions, price, leka departure dates?"
-      : "Sure andi! Inka emaina help kavala? Package details, itinerary, price, inclusions gurinchi adagochu.";
+      ? "Sure andi! " + pkg.name + " gurinchi continue cheddam. Itinerary, inclusions, price, leka departure dates — first edi cheppali?"
+      : "Sure andi! Mee trip gurinchi help chestha. Destination cheppandi, lekapothe package price, itinerary, inclusions gurinchi direct ga adagachu.";
   }
 
   // Common general-knowledge questions must never be answered by an unrelated travel FAQ.
@@ -144,14 +157,28 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
 
   if (includesAny(q, ["things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring", "carry for this trip"])) {
     const items = pkg?.thingsToCarry || [];
-    return "Char Dham trip ki ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : "ID proof, medicines, trekking shoes, warm clothes, raincoat, charger and water bottle") + ".";
+    const defaultItems = /char dham|kedarnath|badrinath/i.test(pkg?.name || "")
+      ? "ID proof, medicines, trekking shoes, warm clothes, raincoat, charger and water bottle"
+      : "valid ID, comfortable clothes and shoes, personal medicines, charger and weather-appropriate essentials";
+    return (pkg ? pkg.name + " trip ki" : "Ee trip ki") + " ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : defaultItems) + ".";
   }
   if (includesAny(q, ["package price and gst total", "price with gst", "including gst", "total with gst", "gst total", "gst kalipi", "gst tho kalipi", "gst tho total", "gst add cheste", "gst add chesthe", "gst entha total", "package price gst", "gst kalipi entha", "total amount"]) ||
-      (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price")))) {
-    return "Package ₹23,499 + 5% GST (approx ₹1,175) andi. GST kalipi total approx ₹24,674 per person.";
+      (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price"))) {
+    const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);
+    if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
+      const base = Number(priceMatch[1].replace(/,/g, ""));
+      const gst = Math.round(base * 0.05);
+      return pkg.name + " price " + pkg.price + ". GST approx ₹" + gst.toLocaleString("en-IN") + "; total approx ₹" + (base + gst).toLocaleString("en-IN") + " per person andi.";
+    }
+    return pkg ? pkg.name + " price details: " + (pkg.price || "travel team tho confirm cheyyali") + ". Final GST-inclusive total travel team tho confirm chesi cheptham andi." : fallback;
   }
   if (includesAny(q, ["gst", "tax extra", "is tax compulsory", "tax compulsory", "gst compulsory", "gst included", "without gst"])) {
-    return "Avunu andi, 5% GST extra. ₹23,499 package ki GST approx ₹1,175 per person.";
+    const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);
+    if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
+      const base = Number(priceMatch[1].replace(/,/g, ""));
+      return "Avunu andi, " + pkg.name + " price " + pkg.price + ". 5% GST approx ₹" + Math.round(base * 0.05).toLocaleString("en-IN") + " extra per person.";
+    }
+    return pkg ? pkg.name + " price details: " + (pkg.price || "travel team tho confirm cheyyali") + ". GST treatment confirm chesi cheptham andi." : fallback;
   }
   if (includesAny(q, ["below 5", "under 5", "under five", "below five", "below 5 years", "under 5 years", "child below 5", "child under 5", "less than 5"])) return "5 years kanna takkuva age kids ki free andi.";
   if (includesAny(q, ["5 to 11", "5-11", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "8 year", "8 years", "child price", "child cost", "kid price", "kids price"])) return "5–11 years kids ki ₹15,399 + 5% GST per child andi.";
