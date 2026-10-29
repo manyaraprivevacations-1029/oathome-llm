@@ -19,12 +19,20 @@ const fallback = "Ee detail na daggara clear ga ledu andi. Nenu travel team tho 
 
 function editDistance(a: string, b: string): number {
   if (Math.abs(a.length - b.length) > 2) return 3;
+  // Damerau-Levenshtein-style adjacent transposition support handles common
+  // typing slips such as "shmila" for "shimla", not just insertions/deletions.
+  let previousPrevious: number[] | undefined;
   let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
     const current = [i];
     for (let j = 1; j <= b.length; j++) {
       current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      if (i > 1 && j > 1 && previousPrevious &&
+          a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) {
+        current[j] = Math.min(current[j], previousPrevious[j - 2] + 1);
+      }
     }
+    previousPrevious = previous;
     previous = current;
   }
   return previous[b.length];
