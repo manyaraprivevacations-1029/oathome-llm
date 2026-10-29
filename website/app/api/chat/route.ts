@@ -13,7 +13,7 @@ type FAQ = { question: string; answer: string; keywords?: string[] };
 type Knowledge = { company: { name: string; website: string; greeting: string; fallback: string }; services: string[]; packages: PackageRecord[]; faqs: FAQ[] };
 type ChatMessage = { role: string; content: string };
 const data = knowledge as Knowledge;
-const normalize = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+const normalize = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
 const includesAny = (s: string, list: string[]) => list.some((v) => s.includes(normalize(v)));
 const fallback = "Ee detail na daggara clear ga ledu andi. Nenu travel team tho confirm cheyinchi chepthanu.";
 
