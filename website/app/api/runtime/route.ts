@@ -30,9 +30,12 @@ export async function GET() {
   }
 
   try {
+    const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
+    const headers: Record<string, string> = {};
+    if (upstreamToken) headers.Authorization = `Bearer ${upstreamToken}`;
     const [versionResponse, tagsResponse] = await Promise.all([
-      fetch(`${baseUrl}/api/version`, { cache: "no-store", signal: AbortSignal.timeout(8000) }),
-      fetch(`${baseUrl}/api/tags`, { cache: "no-store", signal: AbortSignal.timeout(8000) }),
+      fetch(`${baseUrl}/api/version`, { headers, cache: "no-store", signal: AbortSignal.timeout(8000) }),
+      fetch(`${baseUrl}/api/tags`, { headers, cache: "no-store", signal: AbortSignal.timeout(8000) }),
     ]);
     if (!versionResponse.ok || !tagsResponse.ok) {
       return NextResponse.json({
