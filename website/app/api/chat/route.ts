@@ -87,6 +87,29 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return "**" + selectedPackage.name + "**\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\n\nWould you like the itinerary or package inclusions?";
   }
 
+  // Identify the assistant when customers ask who they are talking to.
+  if (/^(who|who are you|who r u|your name|what is your name|mee peru enti|evaru nuvvu|nuvvu evaru|meeru evaru)$/.test(q)) {
+    return "Nenu Radhika andi 😊 On A Trip Holidays travel team nunchi. Mee trip plan cheyyadaniki help chesthanu. Ye destination gurinchi telusukovali?";
+  }
+
+  // Handle explicit rejection in context. Never repeat the same sales prompt after "no".
+  const isNo = /^(no|nope|nah|not really|don't|dont| వద్దు|ledu|ledhu|kaadu|kadhu|oddu|vaddu|not now|no thanks|no thank you)$/.test(q);
+  if (isNo) {
+    if (prevA.includes("itinerary") || prevA.includes("inclusions") || prevA.includes("departure") || prevA.includes("dates")) {
+      return "Parledhu andi 😊 Mee preference prakaram vere detail chepthanu. Price, itinerary, inclusions, booking process, leka vere destination gurinchi adagandi.";
+    }
+    if (prevA.includes("destination") || prevA.includes("trip plan")) {
+      return "No problem andi. Inka destination decide cheyyakapoyina parledhu. Mee budget, travel month, leka trip type chepthe suitable options suggest chesthanu.";
+    }
+    return "Okay andi, no problem 😊 Meeku vere emaina telusukovala? Package details, price, itinerary, booking process, leka vere question adagandi.";
+  }
+
+  // A hesitation like "hm" should invite the customer to continue, not repeat the previous package pitch.
+  if (/^(hm|hmm|hmmm|umm|um|acha|accha)$/.test(q)) {
+    if (pkg) return "Take your time andi 😊 " + pkg.name + " gurinchi edaina doubt unte adagandi. Price, itinerary, inclusions, stay, transport, or booking process explain chesthanu.";
+    return "Cheppandi andi 😊 Em doubt undi? Mee question ki answer chesthanu, lekapothe suitable trip options suggest chesthanu.";
+  }
+
   // Handle short confirmations in context instead of sending "yes"/"ok" to the fallback.
   const isYes = /^(yes|yeah|yep|ok|okay|sure|ha|haa|avunu|sare|alright|fine|cheppu|cheppandi)$/.test(q);
   if (isYes && pkg && (prevA.includes("would you like the itinerary or package inclusions") || prevA.includes("itinerary or package inclusions"))) {
