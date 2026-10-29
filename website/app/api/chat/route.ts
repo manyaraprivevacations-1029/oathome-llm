@@ -17,19 +17,41 @@ const normalize = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^\p
 const includesAny = (s: string, list: string[]) => list.some((v) => s.includes(normalize(v)));
 const fallback = "Ee detail na daggara clear ga ledu andi. Nenu travel team tho confirm cheyinchi chepthanu.";
 
+function editDistance(a: string, b: string): number {
+  if (Math.abs(a.length - b.length) > 2) return 3;
+  let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const current = [i];
+    for (let j = 1; j <= b.length; j++) {
+      current[j] = Math.min(current[j - 1] + 1, previous[j] + 1, previous[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    previous = current;
+  }
+  return previous[b.length];
+}
 function findPackage(s: string): PackageRecord | undefined {
   const q = normalize(s);
   const tokens = q.split(" ").filter(Boolean);
   // Never match tiny greetings/words (e.g. "hi") inside a destination such as "Shimla".
   if (tokens.length === 1 && tokens[0].length < 4) return undefined;
-  return data.packages.find((p) => {
+  const exact = data.packages.find((p) => {
     const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
     const searchable = [p.name, ...aliases].map(normalize).filter(Boolean);
     if (searchable.some((n) => q === n || (n.length >= 4 && q.includes(n)))) return true;
     if (searchable.some((n) => n.includes("char dham")) && includesAny(q, ["char dham", "chardham", "char dham yatra", "chardham yatra"])) return true;
-    // Match a known package alias/name token only when it is a complete word.
     return searchable.some((n) => n.split(" ").some((w) => w.length >= 5 && tokens.includes(w)));
   });
+  if (exact) return exact;
+  // Tolerate common one-character typos in destination names (e.g. "shmila", "kerla").
+  // Only fuzzy-match meaningful tokens and only if exactly one package is a close match.
+  const candidates = data.packages.filter((p) => {
+    const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
+    const words = [p.name, ...aliases].map(normalize).flatMap((n) => n.split(" "));
+    return tokens.some((token) => token.length >= 5 && words.some((word) =>
+      word.length >= 5 && Math.abs(word.length - token.length) <= 1 && editDistance(token, word) <= 1
+    ));
+  });
+  return candidates.length === 1 ? candidates[0] : undefined;
 }
 function packageFromHistory(history: ChatMessage[]): PackageRecord | undefined {
   for (const m of [...history].reverse()) {
@@ -55,6 +77,20 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
     return "**" + selectedPackage.name + "**\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\n\nWould you like the itinerary or package inclusions?";
+  }
+
+  // Handle short confirmations in context instead of sending "yes"/"ok" to the fallback.
+  const isYes = /^(yes|yeah|yep|ok|okay|sure|ha|haa|avunu|sare|alright|fine|cheppu|cheppandi)$/.test(q);
+  if (isYes && pkg && (prevA.includes("would you like the itinerary or package inclusions") || prevA.includes("itinerary or package inclusions"))) {
+    return "Sure andi! " + pkg.name + " ki day-wise itinerary kavala, leka package lo em include avuthayo cheppala?";
+  }
+  if (isYes && pkg && (prevA.includes("confirm") || prevA.includes("departure") || prevA.includes("batch"))) {
+    return "Okay andi! " + pkg.name + " departure dates ippudu approved data lo confirm kaaledu. Wrong date cheppakunda travel team confirmation tarvatha share cheyyali. Inthalo itinerary or inclusions kavala?";
+  }
+  if (/^(ok|okay|alright|fine|sare|thanks|thank you|thankyou|got it|understood)$/.test(q)) {
+    return pkg
+      ? "Sure andi! " + pkg.name + " gurinchi inka em details kavali — itinerary, inclusions, price, leka departure dates?"
+      : "Sure andi! Inka emaina help kavala? Package details, itinerary, price, inclusions gurinchi adagochu.";
   }
 
   // Common general-knowledge questions must never be answered by an unrelated travel FAQ.
@@ -128,7 +164,14 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   if (includesAny(q, ["senior citizen", "old age", "elderly", "parents can travel", "can old people"])) return "Yamunotri, Kedarnath lo trekking and high-altitude travel untayi andi. Senior citizens doctor advice teesukoni plan cheyyandi.";
   if (includesAny(q, ["booking advance", "advance amount", "how much advance", "booking amount", "how to book", "book this package", "booking process", "reserve this"])) return "Booking ki ₹5,000 per person advance andi. Balance amount departure ki 7 days mundu pay cheyyali.";
   if (includesAny(q, ["cancellation policy", "cancel booking", "refund", "money back", "cancellation charges"])) return "Registration charges refund avvavu andi. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge.";
-  if (includesAny(q, ["upcoming batches", "upcoming batch", "next batch", "departure dates", "next departure", "seats available", "october batch", "november batch"])) return "Next batch date inka confirm kaaledu andi. Confirm ayina date vachaka exact ga cheptham.";
+  if (includesAny(q, ["upcoming batches", "upcoming batch", "next batch", "departure dates", "next departure", "which dates", "what dates", "batch dates", "seats available", "october batch", "november batch"])) {
+    const batchPackage = pkg || packageFromHistory(history);
+    const name = batchPackage?.name || "Ee package";
+    const departures = batchPackage?.departures || [];
+    const publishedDates = departures.filter((d) => !/confirm|update|subject to confirmation|need updating/i.test(d));
+    if (publishedDates.length) return name + " departure details: " + publishedDates.join("; ") + ". Seats and dates final cheyyadaniki booking mundu confirm cheskondi andi.";
+    return name + " ki approved departure dates ippudu available data lo levu andi. Guess chesi wrong date cheppanu; travel team tho confirm cheyyali. Inthalo itinerary or inclusions cheppana?";
+  }
   if (includesAny(q, ["whatsapp", "send details", "send brochure", "share brochure", "brochure share"])) return "Sure andi, WhatsApp lo details pampinchadaniki note chestha. Mee WhatsApp number share chesthara?";
   if (includesAny(q, ["price", "cost", "rate", "how much", "per person", "amount", "package rate"])) return charDham ? "Char Dham package ₹23,499 per person + 5% GST andi." : (pkg?.price ? pkg.name + " price " + pkg.price + " andi." : fallback);
   if (includesAny(q, ["how many days", "how long", "duration", "how many nights", "days is", "days trip", "nights"])) return pkg ? "Ee trip " + (pkg.duration || "duration details available levu") + " andi. " + (charDham ? "Delhi nunchi start ayi Delhi lone end avuthundi." : "") : fallback;
@@ -175,6 +218,10 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return { item, overlap };
   }).sort((a, b) => b.overlap - a.overlap)[0];
   if (faq && faq.overlap >= 3) return faq.item.answer;
+  // If the customer continues a package conversation, keep the sales flow helpful.
+  if (pkg) {
+    return "Andi, " + pkg.name + " gurinchi adugutunnara? Naa daggara verified ga unna details — duration " + (pkg.duration || "confirm cheyyali") + ", price " + (pkg.price || "confirm cheyyali") + ". Itinerary, inclusions, exclusions, leka departure dates lo edi kavalo cheppandi.";
+  }
   return fallback;
 }
 
