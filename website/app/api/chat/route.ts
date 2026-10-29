@@ -163,11 +163,22 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return (pkg ? pkg.name + " trip ki" : "Ee trip ki") + " ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : defaultItems) + ".";
   }
   if (includesAny(q, ["package price and gst total", "price with gst", "including gst", "total with gst", "gst total", "gst kalipi", "gst tho kalipi", "gst tho total", "gst add cheste", "gst add chesthe", "gst entha total", "package price gst", "gst kalipi entha", "total amount"]) ||
-      (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price")))) {
-    return "Package ₹23,499 + 5% GST (approx ₹1,175) andi. GST kalipi total approx ₹24,674 per person.";
+      (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price"))) {
+    const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);
+    if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
+      const base = Number(priceMatch[1].replace(/,/g, ""));
+      const gst = Math.round(base * 0.05);
+      return pkg.name + " price " + pkg.price + ". GST approx ₹" + gst.toLocaleString("en-IN") + "; total approx ₹" + (base + gst).toLocaleString("en-IN") + " per person andi.";
+    }
+    return pkg ? pkg.name + " price details: " + (pkg.price || "travel team tho confirm cheyyali") + ". Final GST-inclusive total travel team tho confirm chesi cheptham andi." : fallback;
   }
   if (includesAny(q, ["gst", "tax extra", "is tax compulsory", "tax compulsory", "gst compulsory", "gst included", "without gst"])) {
-    return "Avunu andi, 5% GST extra. ₹23,499 package ki GST approx ₹1,175 per person.";
+    const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);
+    if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
+      const base = Number(priceMatch[1].replace(/,/g, ""));
+      return "Avunu andi, " + pkg.name + " price " + pkg.price + ". 5% GST approx ₹" + Math.round(base * 0.05).toLocaleString("en-IN") + " extra per person.";
+    }
+    return pkg ? pkg.name + " price details: " + (pkg.price || "travel team tho confirm cheyyali") + ". GST treatment confirm chesi cheptham andi." : fallback;
   }
   if (includesAny(q, ["below 5", "under 5", "under five", "below five", "below 5 years", "under 5 years", "child below 5", "child under 5", "less than 5"])) return "5 years kanna takkuva age kids ki free andi.";
   if (includesAny(q, ["5 to 11", "5-11", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "8 year", "8 years", "child price", "child cost", "kid price", "kids price"])) return "5–11 years kids ki ₹15,399 + 5% GST per child andi.";
