@@ -171,7 +171,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return (pkg ? pkg.name + " trip ki" : "Ee trip ki") + " ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : defaultItems) + ".";
   }
   if (includesAny(q, ["package price and gst total", "price with gst", "including gst", "total with gst", "gst total", "gst kalipi", "gst tho kalipi", "gst tho total", "gst add cheste", "gst add chesthe", "gst entha total", "package price gst", "gst kalipi entha", "total amount"]) ||
-      (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price"))) {
+      (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price")))) {
     const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);
     if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
       const base = Number(priceMatch[1].replace(/,/g, ""));
