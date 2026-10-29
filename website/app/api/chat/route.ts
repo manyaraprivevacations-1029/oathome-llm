@@ -83,8 +83,8 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const isYes = /^(yes|yeah|yep|ok|okay|sure|ha|haa|avunu|sare|alright|fine|cheppu|cheppandi)$/.test(q);
   if (isYes && pkg && (prevA.includes("would you like the itinerary or package inclusions") || prevA.includes("itinerary or package inclusions"))) {
     if (pkg.itinerary?.length) {
-      const overview = pkg.itinerary.slice(0, 3).join("\\n");
-      return "Sure andi! " + pkg.name + " itinerary overview:\\n" + overview + "\\n\\nFull day-wise itinerary or inclusions kuda chepthanu. Edi kavali?";
+      const overview = pkg.itinerary.slice(0, 3).join("\n");
+      return "Sure andi! " + pkg.name + " itinerary overview:\n" + overview + "\n\nFull day-wise itinerary or inclusions kuda chepthanu. Edi kavali?";
     }
     const items = (pkg.inclusions || []).slice(0, 5);
     return items.length
