@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type PackageRecord = {
-  name: string; destination?: string; duration?: string; price?: string;
+  name: string; destination?: string; duration?: string; price?: string; departures?: string[];
   inclusions?: string[]; exclusions?: string[]; itinerary?: string[];
   thingsToCarry?: string[]; childPricing?: { under5?: string; age5to11?: string; age11plus?: string };
 };
