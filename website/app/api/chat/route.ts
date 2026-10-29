@@ -82,15 +82,28 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   // Handle short confirmations in context instead of sending "yes"/"ok" to the fallback.
   const isYes = /^(yes|yeah|yep|ok|okay|sure|ha|haa|avunu|sare|alright|fine|cheppu|cheppandi)$/.test(q);
   if (isYes && pkg && (prevA.includes("would you like the itinerary or package inclusions") || prevA.includes("itinerary or package inclusions"))) {
-    return "Sure andi! " + pkg.name + " ki day-wise itinerary kavala, leka package lo em include avuthayo cheppala?";
+    if (pkg.itinerary?.length) {
+      const overview = pkg.itinerary.slice(0, 3).join("\\n");
+      return "Sure andi! " + pkg.name + " itinerary overview:\\n" + overview + "\\n\\nFull day-wise itinerary or inclusions kuda chepthanu. Edi kavali?";
+    }
+    const items = (pkg.inclusions || []).slice(0, 5);
+    return items.length
+      ? "Sure andi! " + pkg.name + " lo main inclusions: " + items.join("; ") + ". Full itinerary kuda cheppana?"
+      : "Sure andi! " + pkg.name + " details kosam itinerary, inclusions, price, leka departure dates lo edi first kavalo cheppandi.";
   }
   if (isYes && pkg && (prevA.includes("confirm") || prevA.includes("departure") || prevA.includes("batch"))) {
     return "Okay andi! " + pkg.name + " departure dates ippudu approved data lo confirm kaaledu. Wrong date cheppakunda travel team confirmation tarvatha share cheyyali. Inthalo itinerary or inclusions kavala?";
   }
-  if (/^(ok|okay|alright|fine|sare|thanks|thank you|thankyou|got it|understood)$/.test(q)) {
+  if (/^(ok|okay|alright|fine|sare|thanks|thank you|thankyou|got it|understood|hmm|hmmm)$/.test(q)) {
+    if (prevA.includes("which destination") || prevA.includes("ye destination") || prevA.includes("what trip plan")) {
+      return "Sure andi! Meeru ye place ki vellali anukuntunnaru — Manali, Kashmir, Kerala, Char Dham, leka vere destination aa?";
+    }
+    if (prevA.includes("domestic or international")) {
+      return "Okay andi! Domestic trips ante India lopala, international ante abroad. Mee preference edi?";
+    }
     return pkg
-      ? "Sure andi! " + pkg.name + " gurinchi inka em details kavali — itinerary, inclusions, price, leka departure dates?"
-      : "Sure andi! Inka emaina help kavala? Package details, itinerary, price, inclusions gurinchi adagochu.";
+      ? "Sure andi! " + pkg.name + " gurinchi continue cheddam. Itinerary, inclusions, price, leka departure dates — first edi cheppali?"
+      : "Sure andi! Mee trip gurinchi help chestha. Destination cheppandi, lekapothe package price, itinerary, inclusions gurinchi direct ga adagachu.";
   }
 
   // Common general-knowledge questions must never be answered by an unrelated travel FAQ.
@@ -144,7 +157,10 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
 
   if (includesAny(q, ["things to carry", "what to carry", "packing list", "packing", "what should i take", "what to take", "items to carry", "required things", "things to bring", "what should i bring", "carry for this trip"])) {
     const items = pkg?.thingsToCarry || [];
-    return "Char Dham trip ki ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : "ID proof, medicines, trekking shoes, warm clothes, raincoat, charger and water bottle") + ".";
+    const defaultItems = /char dham|kedarnath|badrinath/i.test(pkg?.name || "")
+      ? "ID proof, medicines, trekking shoes, warm clothes, raincoat, charger and water bottle"
+      : "valid ID, comfortable clothes and shoes, personal medicines, charger and weather-appropriate essentials";
+    return (pkg ? pkg.name + " trip ki" : "Ee trip ki") + " ivvi carry cheyyandi andi: " + (items.length ? items.join(", ") : defaultItems) + ".";
   }
   if (includesAny(q, ["package price and gst total", "price with gst", "including gst", "total with gst", "gst total", "gst kalipi", "gst tho kalipi", "gst tho total", "gst add cheste", "gst add chesthe", "gst entha total", "package price gst", "gst kalipi entha", "total amount"]) ||
       (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price")))) {
