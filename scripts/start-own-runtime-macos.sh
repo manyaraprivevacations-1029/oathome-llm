@@ -22,7 +22,7 @@ if ! xcode-select -p >/dev/null 2>&1; then
 fi
 
 GO_VERSION="$(go env GOVERSION | sed 's/^go//')"
-if [[ "$(printf '%s\n' "1.26.0" "$GO_VERSION" | sort -V | head -n1)" != "1.26.0" ]]; then
+if ! printf '%s\n' "$GO_VERSION" | awk -F. '{ if ($1 > 1 || ($1 == 1 && $2 >= 26)) exit 0; exit 1 }'; then
   echo "OWN requires Go 1.26 or newer; detected $GO_VERSION"
   exit 1
 fi
