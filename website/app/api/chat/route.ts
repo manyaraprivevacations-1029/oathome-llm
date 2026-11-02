@@ -59,8 +59,9 @@ function findPackage(s: string): PackageRecord | undefined {
     // Fuzzy-match only explicit destination aliases, never generic words from
     // long package titles (e.g. "nights", "Delhi", or unrelated prose).
     const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
+    const genericAliasWords = new Set(["short", "grand", "trip", "tour", "package", "special", "offer", "nights", "night", "days", "day", "from", "delhi", "ex"]);
     const words = aliases.map(normalize).flatMap((n) => n.split(" "))
-      .filter((word) => word.length >= 5);
+      .filter((word) => word.length >= 5 && !genericAliasWords.has(word));
     return tokens.some((token) => token.length >= 5 && words.some((word) => {
       if (Math.abs(word.length - token.length) > 1) return false;
       // Permit a single typo only; general questions should not trigger a trip.
