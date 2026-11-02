@@ -98,10 +98,25 @@ function shortConversationalItinerary(pkg: PackageRecord): string {
       (highlights ? " – " + highlights + " visit chestham" : "") +
       (stay ? "; night stay " + stay : "") + ".";
   });
-  return days.length
-    ? pkg.name + " itinerary short ga chepthanu andi 😊\\n" + days.join("\\n") +
-      "\\n\\nIdi quick overview; detailed stops and timings traffic/local conditions batti marachu."
-    : fallback;
+  if (!days.length) return fallback;
+  const inclusions = pkg.inclusions || [];
+  const stay = inclusions.filter((v) => /accommodation|hotel|resort|camp|stay|sharing|night/i.test(v)).slice(0, 2);
+  const transport = inclusions.filter((v) => /transport|vehicle|transfer|pickup|drop|bus|train|airport/i.test(v)).slice(0, 2);
+  const food = inclusions.filter((v) => /breakfast|dinner|lunch|meal|food/i.test(v)).slice(0, 2);
+  const shortItems = (items: string[]) => items.map((v) => v
+    .replace(/according to group size and gender/ig, "group size prakaram")
+    .replace(/according to group size/ig, "group size prakaram")
+    .replace(/as stated in the brochure/ig, "")
+    .replace(/as per itinerary/ig, "itinerary prakaram")
+    .replace(/as per the confirmed itinerary/ig, "confirmed itinerary prakaram")
+    .replace(/such as /ig, "")
+    .replace(/\\s+/g, " ")
+    .trim()).join("; ");
+  return pkg.name + " itinerary short ga chepthanu andi 😊\\n" + days.join("\\n") +
+    (stay.length ? "\\n\\n**Stay:** " + shortItems(stay) + "." : "") +
+    (transport.length ? "\\n**Transport:** " + shortItems(transport) + "." : "") +
+    (food.length ? "\\n**Food:** " + shortItems(food) + "." : "") +
+    "\\n\\nInkemaina details kavala andi? 😊";
 }
 
 function answerQuestion(question: string, history: ChatMessage[] = []): string {
