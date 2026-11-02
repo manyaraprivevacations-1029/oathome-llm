@@ -211,17 +211,57 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     }
     return pkg ? pkg.name + " price details: " + (pkg.price || "travel team tho confirm cheyyali") + ". GST treatment confirm chesi cheptham andi." : fallback;
   }
-  if (includesAny(q, ["below 5", "under 5", "under five", "below five", "below 5 years", "under 5 years", "child below 5", "child under 5", "less than 5"])) return "5 years kanna takkuva age kids ki free andi.";
-  if (includesAny(q, ["5 to 11", "5-11", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "8 year", "8 years", "child price", "child cost", "kid price", "kids price"])) return "5–11 years kids ki ₹15,399 + 5% GST per child andi.";
-  if (includesAny(q, ["11 above", "above 11", "over 11", "12 year", "12 years", "age 12"])) return "11 years paina age unte adult package price apply avuthundi andi.";
-  if (includesAny(q, ["2 sharing", "two sharing", "double sharing", "couple room", "separate room", "private room", "twin sharing"])) return "2-sharing upgrade ₹3,000 extra per person for 8 nights andi. Kedarnath, Badrinath lo group sharing untundi.";
-  if (includesAny(q, ["room sharing", "sharing room", "room type", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation", "room basis"])) return "Normal ga 3–4 sharing rooms untayi andi. Kedarnath camp lo common washrooms untayi; private room undadu.";
-  if (includesAny(q, ["breakfast", "dinner", "lunch", "food", "meals", "vegetarian", "veg food"])) return includesAny(q, ["lunch"]) ? "10 breakfasts and 10 dinners include avuthayi andi. Lunch include kaaledu." : "10 breakfasts and 10 dinners include avuthayi andi.";
-  if (includesAny(q, ["which vehicle", "what vehicle", "vehicle type", "which bus", "bus type", "tempo traveller", "transport included", "transport"])) return "Transport included andi. AC Delhi–Haridwar varake untundi; hills lo AC undadu. Vehicle group size batti untundi.";
-  if (includesAny(q, ["pickup point", "where pickup", "pickup from", "starting city", "from hyderabad", "from bangalore", "from vijayawada", "from vizag", "where does the trip start", "start and end", "delhi to delhi"])) return "Ee Char Dham trip Delhi nunchi start ayi Delhi lone end avuthundi andi. Hyderabad nunchi Delhi varaku train booking assistance untundi.";
-  if (includesAny(q, ["senior citizen", "old age", "elderly", "parents can travel", "can old people"])) return "Yamunotri, Kedarnath lo trekking and high-altitude travel untayi andi. Senior citizens doctor advice teesukoni plan cheyyandi.";
-  if (includesAny(q, ["booking advance", "advance amount", "how much advance", "booking amount", "how to book", "book this package", "booking process", "reserve this"])) return "Booking ki ₹5,000 per person advance andi. Balance amount departure ki 7 days mundu pay cheyyali.";
-  if (includesAny(q, ["cancellation policy", "cancel booking", "refund", "money back", "cancellation charges"])) return "Registration charges refund avvavu andi. Start date ki 15 days mundu cancel chesthe 50% charge; 7 days lopu cancel chesthe 100% charge.";
+  if (includesAny(q, ["below 5", "under 5", "under five", "below five", "below 5 years", "under 5 years", "child below 5", "child under 5", "less than 5"])) {
+    return pkg?.childPricing?.under5
+      ? "Ee package lo 5 years kanna takkuva kids pricing: " + pkg.childPricing.under5 + " andi."
+      : "Ee package ki under-5 child pricing approved data lo clear ga ledu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
+  if (includesAny(q, ["5 to 11", "5-11", "age 5", "age 6", "age 7", "age 8", "age 9", "age 10", "age 11", "8 year", "8 years", "child price", "child cost", "kid price", "kids price"])) {
+    return pkg?.childPricing?.age5to11
+      ? "Ee package lo 5–11 years child price: " + pkg.childPricing.age5to11 + " andi."
+      : "Ee package ki child pricing approved data lo clear ga ledu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
+  if (includesAny(q, ["11 above", "above 11", "over 11", "12 year", "12 years", "age 12"])) {
+    return pkg?.childPricing?.age11plus
+      ? "Ee package lo 11 years paina: " + pkg.childPricing.age11plus + " andi."
+      : "Ee package ki 11+ age pricing approved data lo clear ga ledu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
+  if (includesAny(q, ["2 sharing", "two sharing", "double sharing", "couple room", "separate room", "private room", "twin sharing"])) {
+    const detail = (pkg as PackageRecord & { doubleSharing?: string } | undefined)?.doubleSharing;
+    const evidence = [...(pkg?.inclusions || []), ...(pkg?.exclusions || [])].filter((item) => /sharing|private room|double occupancy|room upgrade/i.test(item));
+    return detail || (evidence.length ? "Ee package room options: " + evidence.slice(0, 3).join("; ") : "Ee package ki double-sharing/private-room charges approved data lo clear ga levu andi. Travel team tho confirm cheyinchi chepthanu.");
+  }
+  if (includesAny(q, ["room sharing", "sharing room", "room type", "triple sharing", "four sharing", "3 sharing", "4 sharing", "group sharing", "accommodation", "room basis"])) {
+    const evidence = [...(pkg?.inclusions || []), ...(pkg?.exclusions || [])].filter((item) => /sharing|room|accommodation|camp|hotel/i.test(item));
+    return evidence.length ? "Ee package accommodation details: " + evidence.slice(0, 5).join("; ") : "Ee package room-sharing details approved data lo clear ga levu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
+  if (includesAny(q, ["breakfast", "dinner", "lunch", "food", "meals", "vegetarian", "veg food"])) {
+    const meals = (pkg?.inclusions || []).filter((item) => /breakfast|dinner|lunch|meal|food/i.test(item));
+    if (!meals.length) return "Ee package meals details approved data lo clear ga levu andi. Travel team tho confirm cheyinchi chepthanu.";
+    if (includesAny(q, ["lunch"]) && !meals.some((item) => /lunch/i.test(item))) return "Approved package details lo lunch inclusion mention kaaledu andi. Booking mundu travel team tho confirm cheyyandi.";
+    return "Ee package meal details: " + meals.slice(0, 5).join("; ") + ".";
+  }
+  if (includesAny(q, ["which vehicle", "what vehicle", "vehicle type", "which bus", "bus type", "tempo traveller", "transport included", "transport"])) {
+    const transport = (pkg?.inclusions || []).filter((item) => /transport|vehicle|transfer|bus|coach|pickup|drop|AC/i.test(item));
+    return transport.length ? "Ee package transport details: " + transport.slice(0, 5).join("; ") + "." : "Ee package transport/vehicle details approved data lo clear ga levu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
+  if (includesAny(q, ["pickup point", "where pickup", "pickup from", "starting city", "from hyderabad", "from bangalore", "from vijayawada", "from vizag", "where does the trip start", "start and end", "delhi to delhi"])) {
+    const first = pkg?.itinerary?.[0];
+    const last = pkg?.itinerary?.[pkg.itinerary.length - 1];
+    return first && last ? "Ee package start details: " + first + "\nReturn details: " + last : "Ee package pickup and drop point approved data lo clear ga levu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
+  if (includesAny(q, ["senior citizen", "old age", "elderly", "parents can travel", "can old people"])) {
+    const notes = pkg?.notes || "";
+    const trekEvidence = [...(pkg?.itinerary || []), notes].filter((item) => /trek|high altitude|walking|stairs/i.test(item));
+    return trekEvidence.length ? "Ee package lo physical activity gurinchi note: " + trekEvidence.slice(0, 2).join(" ") + " Senior citizens doctor advice teesukoni, fitness batti plan cheyyandi." : "Senior citizens travel suitability ee package data lo specifically confirm kaaledu andi. Health/fitness and route details travel team tho discuss chesi doctor advice tho plan cheyyandi.";
+  }
+  if (includesAny(q, ["booking advance", "advance amount", "how much advance", "booking amount", "how to book", "book this package", "booking process", "reserve this"])) {
+    return "Booking interest ki thanks andi! Mee travel dates, travellers count share cheyyandi. Dates, seats, advance amount and payment schedule ni travel team confirm chesi booking steps share chestharu.";
+  }
+  if (includesAny(q, ["cancellation policy", "cancel booking", "refund", "money back", "cancellation charges"])) {
+    const cancellation = data.faqs.find((item) => /cancel|refund/i.test(item.question + " " + item.answer));
+    return cancellation?.answer || "Cancellation/refund terms package batti maruthayi andi. Mee package booking terms travel team tho confirm chesi chepthanu.";
+  }
   if (includesAny(q, ["upcoming batches", "upcoming batch", "next batch", "departure dates", "next departure", "which dates", "what dates", "batch dates", "seats available", "october batch", "november batch"])) {
     const batchPackage = pkg || packageFromHistory(history);
     const name = batchPackage?.name || "Ee package";
@@ -245,7 +285,10 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     const items = (pkg?.inclusions || []).slice(0, 6);
     return items.length ? "Package lo main ga " + items.join("; ") + " include avuthayi andi." : fallback;
   }
-  if (includesAny(q, ["exclusions", "what is excluded", "not included", "exclude"])) return "Extra ga personal expenses, pony/doli charges, tips, heater charges and package lo mention cheyyani items ki pay cheyyali andi.";
+  if (includesAny(q, ["exclusions", "what is excluded", "not included", "exclude"])) {
+    const items = (pkg?.exclusions || []).slice(0, 8);
+    return items.length ? "Ee package exclusions: " + items.join("; ") + "." : "Ee package exclusions approved data lo clear ga levu andi. Travel team tho confirm cheyinchi chepthanu.";
+  }
 
   if (includesAny(q, ["char dham", "chardham", "char dham yatra", "chardham yatra"])) {
     return "Okay andi! Mee group lo entha mandi untaru? Meeru ye city nunchi start avutharu?";
