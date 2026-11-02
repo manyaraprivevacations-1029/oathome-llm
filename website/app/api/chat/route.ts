@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 type PackageRecord = {
   name: string; destination?: string; duration?: string; price?: string; departures?: string[];
   inclusions?: string[]; exclusions?: string[]; itinerary?: string[];
-  thingsToCarry?: string[]; childPricing?: { under5?: string; age5to11?: string; age11plus?: string };
+  thingsToCarry?: string[]; notes?: string; doubleSharing?: string; childPricing?: { under5?: string; age5to11?: string; age11plus?: string };
 };
 type FAQ = { question: string; answer: string; keywords?: string[] };
 type Knowledge = { company: { name: string; website: string; greeting: string; fallback: string }; services: string[]; packages: PackageRecord[]; faqs: FAQ[] };
