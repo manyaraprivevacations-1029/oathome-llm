@@ -374,16 +374,16 @@ export default function Home() {
           {messages.length === 0 ? (
             <div className="welcome">
               <div className="welcome-symbol"><div className="symbol-core">O</div><span className="symbol-orbit orbit-one"></span><span className="symbol-orbit orbit-two"></span></div>
-              <div className="welcome-kicker"><span className="blue-pip"></span> YOUR SPACE. YOUR MODELS. YOUR AI.</div>
-              <h1>Intelligence,<br /><span>on your terms.</span></h1>
-              <p className="welcome-description">A home for your ideas, powered by models you choose.<br className="desktop-break" /> Private by design. Built by you. Growing with you.</p>
+              <div className="welcome-kicker"><span className="blue-pip"></span> OWN AI ASSISTANT</div>
+              <h1>What can I help with?</h1>
+              <p className="welcome-description">Ask anything, get help with your work, or plan your next trip.</p>
               {status === "offline" && <div className="connection-warning"><span>!</span><div><strong>{needsAuth ? "Unlock your OWN runtime" : "Connect your model runtime"}</strong><p>{error || (needsAuth ? "Enter the access token configured by your runtime administrator." : "Start Ollama and make sure the OATHome server can reach it.")}</p>{needsAuth ? <form className="token-form" onSubmit={submitToken}><input type="password" autoComplete="current-password" value={tokenDraft} onChange={(event) => setTokenDraft(event.target.value)} placeholder="OATHome access token" aria-label="OATHome access token" /><button type="submit" disabled={!tokenDraft.trim()}>Unlock ↗</button></form> : <button onClick={() => void loadModels()}>Try again ↗</button>}</div></div>}
               {status === "online" && <div className="connected-note"><span className="status-dot online"></span> OWN AI connected · local model + verified travel data</div>}
               <div className="starter-grid">{starters.map((starter, index) => <button className="starter-card" key={starter.title} onClick={() => void sendMessage(starter.prompt)} disabled={loading}><span className={`starter-icon starter-icon-${index}`}>{["✳", "⌘", "↗", "◇"][index]}</span><strong>{starter.title}</strong><span>{starter.prompt}</span><b>↗</b></button>)}</div>
             </div>
           ) : (
             <div className="conversation">
-              <div className="conversation-label"><span className="blue-pip"></span> CONVERSATION</div>
+              
               {messages.map((message, index) => <article className={`message ${message.role}`} key={index}>
                 <div className={`message-avatar ${message.role}`}>{message.role === "user" ? "Y" : "O"}</div>
                 <div className="message-body"><div className="message-author">{message.role === "user" ? "You" : "OWN"} <span>{message.role === "assistant" && index === messages.length - 1 && loading ? "· generating" : ""}</span></div><div className="message-content">{message.content ? renderMarkdown(message.content) : (loading && index === messages.length - 1 ? <span className="typing"><i></i><i></i><i></i></span> : "")}</div></div>
