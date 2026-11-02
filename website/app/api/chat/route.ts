@@ -217,7 +217,8 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   }
   if (includesAny(q, ["package price and gst total", "price with gst", "including gst", "total with gst", "gst total", "gst kalipi", "gst tho kalipi", "gst tho total", "gst add cheste", "gst add chesthe", "gst entha total", "package price gst", "gst kalipi entha", "total amount"]) ||
       (includesAny(q, ["antey yentha", "ante entha", "total entha", "how much then"]) && (prevA.includes("gst") || prevA.includes("price")))) {
-    const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);    if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
+    const priceMatch = (pkg?.price || "").match(/₹\s*([\d,]+)/);
+    if (pkg && priceMatch && /5%\s*GST/i.test(pkg.price || "")) {
       const base = Number(priceMatch[1].replace(/,/g, ""));
       const gst = Math.round(base * 0.05);
       return pkg.name + " price " + pkg.price + ". GST approx ₹" + gst.toLocaleString("en-IN") + "; total approx ₹" + (base + gst).toLocaleString("en-IN") + " per person andi.";
@@ -353,10 +354,13 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
  * travel FAQ engine available during platform development.
  */
 async function answerWithConfiguredLLM(question: string, history: ChatMessage[], requestedModel?: string): Promise<string | null> {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  if (!apiKey) return null;
+  let configuredUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || "";
+  // Match GET /api/chat and /api/runtime: in local development, use the standard Ollama endpoint by default.
+  if (!configuredUrl && process.env.NODE_ENV !== "production") configuredUrl = "http://127.0.0.1:11434";
+  while (configuredUrl.endsWith("/")) configuredUrl = configuredUrl.slice(0, -1);
+  if (!configuredUrl) return null;
 
-  const model = requestedModel?.trim() || process.env.OATHOME_LLM_MODEL?.trim() || "openai/gpt-oss-20b";
+  const model = requestedModel?.trim() || process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
   const systemPrompt = [
     "You are OWN, a helpful general-purpose AI assistant. You can answer ordinary educational, writing, reasoning, technology, and everyday questions, not only travel questions.",
     "For On A Trip Holidays travel/package questions, act as Radhika, a friendly sales assistant. Reply naturally in the customer's language; Telugu-English mix is welcome.",
@@ -381,76 +385,108 @@ async function answerWithConfiguredLLM(question: string, history: ChatMessage[],
     { role: "user", content: question }
   ];
 
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
+  if (upstreamToken) headers.Authorization = `Bearer ${upstreamToken}`;
+
+  const callOllama = async (path: string, body: unknown): Promise<Response> => fetch(`${configuredUrl}${path}`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(body),
+    cache: "no-store",
+    signal: AbortSignal.timeout(90000)
+  });
+
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({ model, messages, temperature: 0.4, max_completion_tokens: 1200 }),
-      cache: "no-store",
-      signal: AbortSignal.timeout(45000)
-    });
-    if (!response.ok) {
+    // First try Ollama's chat endpoint.
+    const response = await callOllama("/api/chat", { model, messages, stream: false });
+    if (response.ok) {
+      const payload: unknown = await response.json().catch(() => null);
+      const message = payload && typeof payload === "object"
+        ? (payload as { message?: { content?: unknown } }).message : undefined;
+      if (typeof message?.content === "string" && message.content.trim()) {
+        return message.content.trim().slice(0, 6000);
+      }
+      console.warn("[OWN chat] Ollama /api/chat returned no message content.");
+    } else {
       const detail = (await response.text().catch(() => "")).slice(0, 1000);
-      console.warn("[OWN chat] Groq API returned HTTP", response.status, detail);
+      console.warn("[OWN chat] Ollama /api/chat returned HTTP", response.status, detail);
+    }
+
+    // Compatibility fallback for Ollama-compatible runtimes that expose
+    // /api/generate reliably but not /api/chat.
+    const prompt = [
+      systemPrompt,
+      ...priorMessages.map((m) => `${m.role.toUpperCase()}: ${m.content}`),
+      `USER: ${question}`,
+      "ASSISTANT:"
+    ].join("\n\n");
+    const generateResponse = await callOllama("/api/generate", { model, prompt, stream: false });
+    if (!generateResponse.ok) {
+      const detail = (await generateResponse.text().catch(() => "")).slice(0, 1000);
+      console.warn("[OWN chat] Ollama /api/generate returned HTTP", generateResponse.status, detail);
       return null;
     }
-    const payload: unknown = await response.json().catch(() => null);
-    const choices = payload && typeof payload === "object" ? (payload as { choices?: unknown }).choices : undefined;
-    const first = Array.isArray(choices) ? choices[0] : undefined;
-    const message = first && typeof first === "object" ? (first as { message?: { content?: unknown } }).message : undefined;
-    return typeof message?.content === "string" && message.content.trim()
-      ? message.content.trim().slice(0, 6000)
-      : null;
+    const generated: unknown = await generateResponse.json().catch(() => null);
+    const text = generated && typeof generated === "object"
+      ? (generated as { response?: unknown }).response : undefined;
+    if (typeof text === "string" && text.trim()) return text.trim().slice(0, 6000);
+    console.warn("[OWN chat] Ollama /api/generate returned no response text.");
+    return null;
   } catch (error) {
-    console.warn("[OWN chat] Groq inference request failed:", error instanceof Error ? error.message : String(error));
+    console.warn("[OWN chat] Ollama inference request failed:", error instanceof Error ? error.message : String(error));
     return null;
   }
 }
 
 export async function GET() {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  const selectedLLM = process.env.OATHOME_LLM_MODEL?.trim() || "openai/gpt-oss-20b";
-  if (!apiKey) {
+  // The chat UI expects this route to provide a model list for its selector.
+  let configuredUrl = (process.env.OATHOME_LLM_BASE_URL?.trim() || "").replace(/\/+$/, "");
+  if (!configuredUrl && process.env.NODE_ENV !== "production") configuredUrl = "http://127.0.0.1:11434";
+  const selectedLLM = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
+
+  if (!configuredUrl) {
     return NextResponse.json({
-      service: "OATHome chat API", status: "not_configured",
+      service: "OATHome chat API", status: "knowledge_fallback_only",
       configuredLLM: false, selectedLLM, defaultModel: "", models: [],
       inferenceVerified: false, responseModes: ["knowledge-fallback"],
-      message: "Groq API key is not configured. The verified travel knowledge fallback remains available.",
-      apiKeysRequired: true
+      message: "No cloud inference runtime is configured. The travel knowledge fallback is available, but this website is not itself an LLM.",
+      apiKeysRequired: false
     }, { headers: { "Cache-Control": "no-store" } });
   }
+
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/models", {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000)
+    const response = await fetch(`${configuredUrl}/api/tags`, {
+      cache: "no-store", signal: AbortSignal.timeout(5000)
     });
-    if (!response.ok) throw new Error(`Groq model list returned HTTP ${response.status}`);
+    if (!response.ok) throw new Error("Model list request failed");
     const payload: unknown = await response.json();
-    const models = payload && typeof payload === "object" && Array.isArray((payload as { data?: unknown }).data)
-      ? (payload as { data: Array<{ id?: unknown }> }).data
-          .filter((item) => item && typeof item.id === "string")
-          .map((item) => ({ name: item.id as string }))
+    const models = payload && typeof payload === "object" && Array.isArray((payload as { models?: unknown }).models)
+      ? (payload as { models: Array<{ name?: unknown; size?: unknown; details?: unknown }> }).models
+          .filter((item) => item && typeof item.name === "string")
+          .map((item) => ({
+            name: item.name as string,
+            ...(typeof item.size === "number" ? { size: item.size } : {}),
+            ...(item.details && typeof item.details === "object" ? { details: item.details } : {})
+          }))
       : [];
     return NextResponse.json({
-      service: "OATHome chat API", status: "runtime_connected",
+      service: "OATHome chat API",
+      status: models.length ? "runtime_connected" : "runtime_connected_no_models",
       configuredLLM: true, selectedLLM,
       defaultModel: models.some((item) => item.name === selectedLLM) ? selectedLLM : (models[0]?.name || ""),
       models, inferenceVerified: false,
       responseModes: ["configured-llm", "knowledge-fallback"],
-      message: "Groq API is reachable. A chat request is still required to verify inference.",
-      apiKeysRequired: true
+      message: models.length ? "Model runtime is reachable. A chat request is still required to verify inference." : "Ollama is reachable, but no models are installed.",
+      apiKeysRequired: false
     }, { headers: { "Cache-Control": "no-store" } });
-  } catch (error) {
+  } catch {
     return NextResponse.json({
       service: "OATHome chat API", status: "runtime_unreachable",
       configuredLLM: true, selectedLLM, defaultModel: "", models: [],
       inferenceVerified: false, responseModes: ["knowledge-fallback"],
-      message: error instanceof Error ? error.message : "Groq API could not be reached.",
-      apiKeysRequired: true
+      message: "The configured model runtime could not be reached from the website server.",
+      apiKeysRequired: false
     }, { headers: { "Cache-Control": "no-store" } });
   }
 }
