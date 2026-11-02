@@ -80,6 +80,30 @@ function packageFromHistory(history: ChatMessage[]): PackageRecord | undefined {
 function lastAssistant(history: ChatMessage[]): string {
   return normalize([...history].reverse().find((m) => m.role === "assistant")?.content || "");
 }
+function shortConversationalItinerary(pkg: PackageRecord): string {
+  const days = (pkg.itinerary || []).slice(0, 10).map((entry, index) => {
+    const clean = entry.replace(/^Day\\s+\\d+\\s*[—–-]\\s*/i, "").trim();
+    const split = clean.split(":");
+    const route = (split[0] || "").trim();
+    const detail = split.slice(1).join(":");
+    const places = [...detail.matchAll(/\\b(?:visit|enjoy|cover)\\s+([^.;]+)/gi)]
+      .map((m) => m[1].replace(/\\s+(?:then|and then)\\s+.*$/i, "").trim())
+      .filter(Boolean);
+    const highlights = places.length
+      ? places[0].split(/,|\\band\\b/i).map((v) => v.trim()).filter(Boolean).slice(0, 3).join(", ")
+      : "";
+    const stay = detail.match(/(?:overnight stay in|overnight in)\\s+([^.;]+)/i)?.[1]?.trim();
+    const routeText = route ? route.replace(/\\s+to\\s+/i, " nunchi ") : "sightseeing";
+    return "Day " + (index + 1) + ": " + routeText +
+      (highlights ? " – " + highlights + " visit chestham" : "") +
+      (stay ? "; night stay " + stay : "") + ".";
+  });
+  return days.length
+    ? pkg.name + " itinerary short ga chepthanu andi 😊\\n" + days.join("\\n") +
+      "\\n\\nIdi quick overview; detailed stops and timings traffic/local conditions batti marachu."
+    : fallback;
+}
+
 function answerQuestion(question: string, history: ChatMessage[] = []): string {
   const q = normalize(question);
   const prevA = lastAssistant(history);
@@ -311,10 +335,14 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
 
   if (includesAny(q, ["itinerary", "day wise", "day by day", "daily plan", "each day", "schedule", "day 1", "day one", "first day"])) {
     if (!pkg?.itinerary?.length) return fallback;
-    const match = q.match(/day\s*(\d{1,2})/);
-    if (match) return pkg.itinerary[Number(match[1]) - 1] || "Aa day details na daggara levu andi.";
-    if (includesAny(q, ["day 1", "day one", "first day"])) return pkg.itinerary[0];
-    return pkg.itinerary.join("\n");
+    const match = q.match(/day\\s*(\\d{1,2})/);
+    if (match) {
+      const entry = pkg.itinerary[Number(match[1]) - 1];
+      if (!entry) return "Aa day details na daggara levu andi.";
+      const shortLine = shortConversationalItinerary({ ...pkg, itinerary: [entry] });
+      return shortLine.replace("Day 1:", "Day " + match[1] + ":");
+    }
+    return shortConversationalItinerary(pkg);
   }
   if (includesAny(q, ["inclusions", "what is included", "what's included", "included in package", "include"])) {
     const items = (pkg?.inclusions || []).slice(0, 6);
