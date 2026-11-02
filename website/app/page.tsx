@@ -3,6 +3,7 @@
 import { FormEvent, KeyboardEvent, ReactNode, useCallback, useEffect, useRef, useState } from "react";
 
 type Message = { role: "user" | "assistant"; content: string };
+type Conversation = { id: string; title: string; messages: Message[]; updatedAt: number };
 type Model = { name: string; size?: number; details?: { parameter_size?: string; family?: string } };
 
 
@@ -52,6 +53,8 @@ const starters = [
 
 export default function Home() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [activeConversationId, setActiveConversationId] = useState("");
   const [draft, setDraft] = useState("");
   const [models, setModels] = useState<Model[]>([]);
   const [model, setModel] = useState("");
@@ -107,28 +110,79 @@ export default function Home() {
   }, [loadModels]);
   useEffect(() => {
     try {
-      const saved = window.localStorage.getItem("own_current_conversation");
+      const saved = window.localStorage.getItem("own_conversations");
+      let restored: Conversation[] = [];
       if (saved) {
         const parsed: unknown = JSON.parse(saved);
         if (Array.isArray(parsed)) {
-          const restored = parsed.filter((item): item is Message =>
+          restored = parsed.filter((item): item is Conversation =>
             !!item && typeof item === "object" &&
-            ((item as Message).role === "user" || (item as Message).role === "assistant") &&
-            typeof (item as Message).content === "string"
-          );
-          setMessages(restored.slice(-40));
+            typeof (item as Conversation).id === "string" &&
+            typeof (item as Conversation).title === "string" &&
+            Array.isArray((item as Conversation).messages) &&
+            typeof (item as Conversation).updatedAt === "number"
+          ).map((item) => ({
+            ...item,
+            messages: item.messages.filter((message): message is Message =>
+              !!message && typeof message === "object" &&
+              ((message as Message).role === "user" || (message as Message).role === "assistant") &&
+              typeof (message as Message).content === "string"
+            ).slice(-40)
+          })).slice(0, 30);
         }
       }
+      // Migrate the previous single-chat save so existing conversation history is not lost.
+      if (!restored.length) {
+        const legacy = window.localStorage.getItem("own_current_conversation");
+        if (legacy) {
+          const parsed: unknown = JSON.parse(legacy);
+          if (Array.isArray(parsed)) {
+            const oldMessages = parsed.filter((item): item is Message =>
+              !!item && typeof item === "object" &&
+              ((item as Message).role === "user" || (item as Message).role === "assistant") &&
+              typeof (item as Message).content === "string"
+            ).slice(-40);
+            if (oldMessages.length) restored = [{
+              id: window.crypto.randomUUID(),
+              title: oldMessages.find((message) => message.role === "user")?.content.slice(0, 48) || "Previous chat",
+              messages: oldMessages,
+              updatedAt: Date.now()
+            }];
+          }
+        }
+      }
+      restored.sort((a, b) => b.updatedAt - a.updatedAt);
+      setConversations(restored);
+      if (restored.length) {
+        setActiveConversationId(restored[0].id);
+        setMessages(restored[0].messages);
+      } else {
+        setActiveConversationId(window.crypto.randomUUID());
+      }
     } catch {
-      window.localStorage.removeItem("own_current_conversation");
+      window.localStorage.removeItem("own_conversations");
+      setActiveConversationId(window.crypto.randomUUID());
     } finally {
       setHistoryReady(true);
     }
   }, []);
   useEffect(() => {
-    if (!historyReady) return;
-    try { window.localStorage.setItem("own_current_conversation", JSON.stringify(messages.slice(-40))); } catch { /* Storage may be disabled or full. */ }
-  }, [messages, historyReady]);
+    if (!historyReady || !activeConversationId || !messages.length) return;
+    const title = messages.find((message) => message.role === "user")?.content.trim().slice(0, 48) || "New chat";
+    const updatedAt = Date.now();
+    setConversations((current) => {
+      const next = [{
+        id: activeConversationId,
+        title,
+        messages: messages.slice(-40),
+        updatedAt
+      }, ...current.filter((conversation) => conversation.id !== activeConversationId)]
+        .sort((a, b) => b.updatedAt - a.updatedAt)
+        .slice(0, 30);
+      try { window.localStorage.setItem("own_conversations", JSON.stringify(next)); } catch { /* Storage may be disabled or full. */ }
+      return next;
+    });
+  }, [messages, activeConversationId, historyReady]);
   useEffect(() => { endRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, loading]);
 
   const sendMessage = async (text = draft) => {
@@ -229,7 +283,26 @@ export default function Home() {
   const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); void sendMessage(); }
   };
-  const newChat = () => { abortRef.current?.abort(); setMessages([]); setDraft(""); setError(""); setLoading(false); setSidebarOpen(false); setModelsOpen(false); };
+  const newChat = () => {
+    abortRef.current?.abort();
+    setActiveConversationId(window.crypto.randomUUID());
+    setMessages([]);
+    setDraft("");
+    setError("");
+    setLoading(false);
+    setSidebarOpen(false);
+    setModelsOpen(false);
+  };
+  const openConversation = (conversation: Conversation) => {
+    abortRef.current?.abort();
+    setActiveConversationId(conversation.id);
+    setMessages(conversation.messages);
+    setDraft("");
+    setError("");
+    setLoading(false);
+    setSidebarOpen(false);
+    setModelsOpen(false);
+  };
   const manageModel = async (action: "pull" | "delete", name: string) => {
     if (!name.trim() || modelBusy) return;
     if (action === "delete" && !window.confirm(`Remove model "${name}" from this machine? This cannot be undone.`)) return;
@@ -258,6 +331,23 @@ export default function Home() {
         <button className="new-chat" onClick={newChat}><span className="plus">＋</span> New chat <span className="shortcut">⌘ K</span></button>
         <div className="side-label">YOUR WORKSPACE</div>
         <button className="side-link selected"><span className="side-icon">◈</span> Chat</button>
+        <div className="side-label" style={{ marginTop: 22 }}>RECENT CHATS</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, padding: "0 12px 16px", maxHeight: "34vh", overflowY: "auto" }}>
+          {conversations.length ? conversations.map((conversation) => (
+            <button
+              key={conversation.id}
+              onClick={() => openConversation(conversation)}
+              title={conversation.title}
+              style={{
+                width: "100%", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap",
+                textAlign: "left", padding: "9px 11px", border: 0, borderRadius: 8, cursor: "pointer",
+                color: activeConversationId === conversation.id ? "var(--foreground, #f5f5f5)" : "var(--muted, #a1a1aa)",
+                background: activeConversationId === conversation.id ? "rgba(255,255,255,.09)" : "transparent",
+                fontSize: 13
+              }}
+            >{conversation.title}</button>
+          )) : <span style={{ padding: "4px 11px", color: "#8b8b95", fontSize: 12 }}>Your chats will appear here.</span>}
+        </div>
         
         <div className="sidebar-bottom">
           <div className="runtime-card">
