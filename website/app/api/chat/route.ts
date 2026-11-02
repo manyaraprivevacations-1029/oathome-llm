@@ -53,13 +53,15 @@ function findPackage(s: string): PackageRecord | undefined {
   // Tolerate common one-character typos in destination names (e.g. "shmila", "kerla").
   // Only fuzzy-match meaningful tokens and only if exactly one package is a close match.
   const candidates = data.packages.filter((p) => {
+    // Fuzzy-match only explicit destination aliases, never generic words from
+    // long package titles (e.g. "nights", "Delhi", or unrelated prose).
     const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
-    const words = [p.name, ...aliases].map(normalize).flatMap((n) => n.split(" "));
+    const words = aliases.map(normalize).flatMap((n) => n.split(" "))
+      .filter((word) => word.length >= 5);
     return tokens.some((token) => token.length >= 5 && words.some((word) => {
-      if (word.length < 5 || Math.abs(word.length - token.length) > 2) return false;
-      // One typo for shorter words; allow two for longer destination names.
-      const allowedDistance = token.length >= 7 && word.length >= 7 ? 2 : 1;
-      return editDistance(token, word) <= allowedDistance;
+      if (Math.abs(word.length - token.length) > 1) return false;
+      // Permit a single typo only; general questions should not trigger a trip.
+      return editDistance(token, word) <= 1;
     }));
   });
   return candidates.length === 1 ? candidates[0] : undefined;
@@ -456,8 +458,13 @@ export async function GET() {
   }
 
   try {
+    // The local gateway is protected; use the same private bearer token as the
+    // runtime diagnostics and inference requests.
+    const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
+    const headers: Record<string, string> = {};
+    if (upstreamToken) headers.Authorization = `Bearer ${upstreamToken}`;
     const response = await fetch(`${configuredUrl}/api/tags`, {
-      cache: "no-store", signal: AbortSignal.timeout(5000)
+      headers, cache: "no-store", signal: AbortSignal.timeout(8000)
     });
     if (!response.ok) throw new Error("Model list request failed");
     const payload: unknown = await response.json();
