@@ -93,7 +93,8 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   // If the customer selects a destination/package by name, respond with that package's own details.
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
-    return "**" + selectedPackage.name + "**\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\n\nWhen are you planning to travel?";
+    const shortName = selectedPackage.name.split(/\\s+(?:\\d+\\s+)?(?:nights?|days?)\\b/i)[0].replace(/\\s+[—-].*$/, "").trim() || selectedPackage.name;
+    return "Okay sir 😊 " + shortName + " package undi! Idi " + (selectedPackage.duration || "duration travel team tho confirm cheyyali") + ". Price " + (selectedPackage.price || "current price travel team tho confirm cheyyali") + ". Meeru entha mandi travel cheyyalanukuntunnaru sir? Eppudu travel plan chesthunnaru?";
   }
 
   // Identify the assistant when customers ask who they are talking to.
