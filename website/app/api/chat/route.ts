@@ -133,17 +133,20 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   }
 
   // Natural conversation endings: acknowledge gratitude and farewells instead of restarting the sales pitch.
-  if (/^(thanks|thank you|thanks a lot|thank you so much|ok thanks|okay thanks|ok thank you|okay thank you|thank u|thx|dhanyavad|dhanyavaad|chala thanks)$/.test(q)) {
-    return "You're welcome andi 😊 On A Trip Holidays ni contact chesinanduku thanks! Meeku eppudaina trip plan unte nenu help chesthanu. Have a nice day!";
+  if (/^(bye|goodbye|good bye|bye bye|ok bye|okay bye|thanks bye|thank you bye|see you|see ya|take care|tata|vellostha|vellostanu)$/.test(q)) {
+    return "Okay andi 😊 On A Trip Holidays ni contact chesinanduku thanks! Have a great day. Malli trip plan unte tappakunda message cheyyandi.";
   }
-  if (/^(bye|goodbye|good bye|bye bye|see you|see ya|take care| tata|tata|vellostha|vellostanu)$/.test(q)) {
-    return "Okay andi 😊 Thank you for choosing On A Trip Holidays. Have a great day! Malli trip plan unte tappakunda message cheyyandi.";
+  if (/^(thanks|thank you|thanks a lot|thank you so much|ok thanks|okay thanks|ok thank you|okay thank you|thank u|thx|dhanyavad|dhanyavaad|chala thanks)$/.test(q)) {
+    return "You're welcome andi 😊 On A Trip Holidays ni contact chesinanduku thanks! Meeku eppudaina trip plan unte nenu help chesthanu.";
+  }
+  if (/^(not interested|no more|stop|dont message|don't message|not required|no need|no thanks|no thank you)$/.test(q)) {
+    return "Ardham ayyindi andi 😊 Mee decision ni respect chesthanu. Thank you for considering On A Trip Holidays. Have a nice day!";
   }
 
   // If the customer selects a destination/package by name, respond with that package's own details.
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
-    const shortName = selectedPackage.name.split(/\\s+(?:\\d+\\s+)?(?:nights?|days?)\\b/i)[0].replace(/\\s+[—-].*$/, "").trim() || selectedPackage.name;
+    const shortName = selectedPackage.name.split(/\s+(?:\d+\s+)?(?:nights?|days?)\b/i)[0].replace(/\s+[—-].*$/, "").trim() || selectedPackage.name;
     return "Okay sir 😊 " + shortName + " package undi! Idi " + (selectedPackage.duration || "duration travel team tho confirm cheyyali") + ". Price " + (selectedPackage.price || "current price travel team tho confirm cheyyali") + ". Meeru entha mandi travel cheyyalanukuntunnaru sir? Eppudu travel plan chesthunnaru?";
   }
 
@@ -155,8 +158,11 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   // Handle explicit rejection in context. Never repeat the same sales prompt after "no".
   const isNo = /^(no|nope|nah|not really|don't|dont| వద్దు|ledu|ledhu|kaadu|kadhu|oddu|vaddu|not now|no thanks|no thank you)$/.test(q);
   if (isNo) {
+    if (prevA.includes("inkemaina details kavala") || prevA.includes("anything else") || prevA.includes("any other details")) {
+      return "Parledhu andi 😊 Thank you for contacting On A Trip Holidays. Mee trip ki all the best! Inka help kavali ante eppudaina message cheyyandi.";
+    }
     if (prevA.includes("itinerary") || prevA.includes("inclusions") || prevA.includes("departure") || prevA.includes("dates")) {
-      return "Parledhu andi 😊 Mee preference prakaram vere detail chepthanu. Price, itinerary, inclusions, booking process, leka vere destination gurinchi adagandi.";
+      return "Parledhu andi 😊 Aa detail vadileyandi. Meeku vere specific doubt unte adugandi; lekapothe ikkade stop cheddam.";
     }
     if (prevA.includes("destination") || prevA.includes("trip plan")) {
       return "No problem andi. Inka destination decide cheyyakapoyina parledhu. Mee budget, travel month, leka trip type chepthe suitable options suggest chesthanu.";
