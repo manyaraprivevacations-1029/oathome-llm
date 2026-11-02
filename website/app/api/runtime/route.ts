@@ -3,90 +3,92 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+function getRuntimeBaseUrl() {
+  const configured = process.env.OATHOME_LLM_BASE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, "");
+  return process.env.NODE_ENV !== "production" ? "http://127.0.0.1:11434" : "";
+}
+
 /**
- * Public, non-secret Groq diagnostics.
- * Never return the API key or upstream credentials.
+ * Public, non-secret runtime diagnostics.
+ * Never return the configured URL, access tokens, or upstream credentials.
  */
 export async function GET() {
-  const apiKey = process.env.GROQ_API_KEY?.trim();
-  const selectedModel = process.env.OATHOME_LLM_MODEL?.trim() || "openai/gpt-oss-20b";
-
-  if (!apiKey) {
+  const baseUrl = getRuntimeBaseUrl();
+  if (!baseUrl) {
     return NextResponse.json({
       service: "OATHome Runtime Gateway",
-      provider: "Groq",
       status: "not_configured",
       runtimeConfigured: false,
       reachable: false,
       modelCount: 0,
       inferenceReady: false,
-      selectedModel,
-      message: "Groq API key is not configured. Add GROQ_API_KEY in the Render environment.",
-      externalAIRequired: true,
-      apiKeysRequired: true,
+      message: "No cloud inference runtime is connected yet. The OWN website is online, but model inference is not hosted by this service.",
+      externalAIRequired: false,
+      apiKeysRequired: false,
     }, { headers: { "Cache-Control": "no-store" } });
   }
 
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/models", {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      cache: "no-store",
-      signal: AbortSignal.timeout(8000),
-    });
-    if (!response.ok) {
+    const upstreamToken = process.env.OATHOME_LLM_UPSTREAM_TOKEN?.trim();
+    const headers: Record<string, string> = {};
+    if (upstreamToken) headers.Authorization = `Bearer ${upstreamToken}`;
+    const [versionResponse, tagsResponse] = await Promise.all([
+      fetch(`${baseUrl}/api/version`, { headers, cache: "no-store", signal: AbortSignal.timeout(8000) }),
+      fetch(`${baseUrl}/api/tags`, { headers, cache: "no-store", signal: AbortSignal.timeout(8000) }),
+    ]);
+    if (!versionResponse.ok || !tagsResponse.ok) {
       return NextResponse.json({
         service: "OATHome Runtime Gateway",
-        provider: "Groq",
         status: "unhealthy",
         runtimeConfigured: true,
         reachable: false,
         modelCount: 0,
         inferenceReady: false,
-        selectedModel,
-        message: `Groq returned HTTP ${response.status}. Check the API key and Groq account.`,
-        externalAIRequired: true,
-        apiKeysRequired: true,
+        message: "The configured runtime did not return a healthy response.",
+        externalAIRequired: false,
+        apiKeysRequired: false,
       }, { headers: { "Cache-Control": "no-store" }, status: 502 });
     }
-
-    const payload: unknown = await response.json();
-    const models = payload && typeof payload === "object" && Array.isArray((payload as { data?: unknown }).data)
-      ? (payload as { data: Array<{ id?: unknown }> }).data
-          .filter((item) => item && typeof item.id === "string")
-          .map((item) => ({ name: item.id as string }))
+    const versionData: unknown = await versionResponse.json().catch(() => ({}));
+    const tagsData: unknown = await tagsResponse.json().catch(() => ({}));
+    const models = tagsData && typeof tagsData === "object" && Array.isArray((tagsData as { models?: unknown }).models)
+      ? (tagsData as { models: unknown[] }).models
       : [];
-    const selectedAvailable = models.some((item) => item.name === selectedModel);
-
     return NextResponse.json({
       service: "OATHome Runtime Gateway",
-      provider: "Groq",
       status: "connected",
       runtimeConfigured: true,
       reachable: true,
+      runtimeVersion: versionData && typeof versionData === "object" && typeof (versionData as { version?: unknown }).version === "string"
+        ? (versionData as { version: string }).version
+        : "unknown",
       modelCount: models.length,
-      models,
-      selectedModel,
-      selectedModelAvailable: selectedAvailable,
-      inferenceReady: selectedAvailable,
-      message: selectedAvailable
-        ? "Groq is reachable and the selected model is available."
-        : "Groq is reachable, but the selected model was not found in the account's model list.",
-      externalAIRequired: true,
-      apiKeysRequired: true,
+      models: models.map((item) => {
+        if (!item || typeof item !== "object") return { name: "unknown" };
+        const model = item as { name?: unknown; size?: unknown; modified_at?: unknown };
+        return {
+          name: typeof model.name === "string" ? model.name : "unknown",
+          ...(typeof model.size === "number" ? { size: model.size } : {}),
+          ...(typeof model.modified_at === "string" ? { modified_at: model.modified_at } : {}),
+        };
+      }),
+      inferenceReady: models.length > 0,
+      message: models.length > 0 ? "Runtime reachable and at least one model is installed." : "Runtime reachable, but no model is installed.",
+      externalAIRequired: false,
+      apiKeysRequired: false,
     }, { headers: { "Cache-Control": "no-store" } });
   } catch {
     return NextResponse.json({
       service: "OATHome Runtime Gateway",
-      provider: "Groq",
       status: "unreachable",
       runtimeConfigured: true,
       reachable: false,
       modelCount: 0,
       inferenceReady: false,
-      selectedModel,
-      message: "The Groq API could not be reached from the website server.",
-      externalAIRequired: true,
-      apiKeysRequired: true,
+      message: "The configured runtime could not be reached. Check the private runtime service and its network access.",
+      externalAIRequired: false,
+      apiKeysRequired: false,
     }, { headers: { "Cache-Control": "no-store" }, status: 502 });
   }
 }
