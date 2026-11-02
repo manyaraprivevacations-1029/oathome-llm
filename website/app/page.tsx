@@ -152,13 +152,11 @@ export default function Home() {
         }
       }
       restored.sort((a, b) => b.updatedAt - a.updatedAt);
+      // A hard refresh should always open a fresh blank chat. Keep previous
+      // conversations in the sidebar so the user can reopen them intentionally.
       setConversations(restored);
-      if (restored.length) {
-        setActiveConversationId(restored[0].id);
-        setMessages(restored[0].messages);
-      } else {
-        setActiveConversationId(window.crypto.randomUUID());
-      }
+      setMessages([]);
+      setActiveConversationId(window.crypto.randomUUID());
     } catch {
       window.localStorage.removeItem("own_conversations");
       setActiveConversationId(window.crypto.randomUUID());
