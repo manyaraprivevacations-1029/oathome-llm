@@ -45,9 +45,12 @@ function findPackage(s: string): PackageRecord | undefined {
   const exact = data.packages.find((p) => {
     const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
     const searchable = [p.name, ...aliases].map(normalize).filter(Boolean);
+    // Match complete aliases/phrases only. Never match a package because a
+    // generic word in a long alias (for example "short" in "short trip")
+    // happens to appear in an unrelated user question.
     if (searchable.some((n) => q === n || (n.length >= 4 && q.includes(n)))) return true;
     if (searchable.some((n) => n.includes("char dham")) && includesAny(q, ["char dham", "chardham", "char dham yatra", "chardham yatra"])) return true;
-    return searchable.some((n) => n.split(" ").some((w) => w.length >= 5 && tokens.includes(w)));
+    return false;
   });
   if (exact) return exact;
   // Tolerate common one-character typos in destination names (e.g. "shmila", "kerla").
