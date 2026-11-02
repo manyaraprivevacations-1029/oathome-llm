@@ -132,6 +132,14 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return "Hi andi! Nenu Radhika, On A Trip Holidays travel team nunchi matladuthunnanu. Meeru ye trip plan chesthunnaru?";
   }
 
+  // Natural conversation endings: acknowledge gratitude and farewells instead of restarting the sales pitch.
+  if (/^(thanks|thank you|thanks a lot|thank you so much|ok thanks|okay thanks|ok thank you|okay thank you|thank u|thx|dhanyavad|dhanyavaad|chala thanks)$/.test(q)) {
+    return "You're welcome andi 😊 On A Trip Holidays ni contact chesinanduku thanks! Meeku eppudaina trip plan unte nenu help chesthanu. Have a nice day!";
+  }
+  if (/^(bye|goodbye|good bye|bye bye|see you|see ya|take care| tata|tata|vellostha|vellostanu)$/.test(q)) {
+    return "Okay andi 😊 Thank you for choosing On A Trip Holidays. Have a great day! Malli trip plan unte tappakunda message cheyyandi.";
+  }
+
   // If the customer selects a destination/package by name, respond with that package's own details.
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
