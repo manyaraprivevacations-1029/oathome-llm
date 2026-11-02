@@ -82,21 +82,21 @@ function lastAssistant(history: ChatMessage[]): string {
 }
 function shortConversationalItinerary(pkg: PackageRecord): string {
   const days = (pkg.itinerary || []).slice(0, 10).map((entry, index) => {
-    const clean = entry.replace(/^Day\\s+\\d+\\s*[—–-]\\s*/i, "").trim();
+    const clean = entry.replace(/^Day\s+\d+\s*[—–-]\s*/i, "").trim();
     const split = clean.split(":");
-    const route = (split[0] || "").trim();
-    const detail = split.slice(1).join(":");
-    const places = [...detail.matchAll(/\\b(?:visit|enjoy|cover)\\s+([^.;]+)/gi)]
-      .map((m) => m[1].replace(/\\s+(?:then|and then)\\s+.*$/i, "").trim())
-      .filter(Boolean);
-    const highlights = places.length
-      ? places[0].split(/,|\\band\\b/i).map((v) => v.trim()).filter(Boolean).slice(0, 3).join(", ")
-      : "";
-    const stay = detail.match(/(?:overnight stay in|overnight in)\\s+([^.;]+)/i)?.[1]?.trim();
-    const routeText = route ? route.replace(/\\s+to\\s+/i, " nunchi ") : "sightseeing";
-    return "Day " + (index + 1) + ": " + routeText +
-      (highlights ? " – " + highlights + " visit chestham" : "") +
-      (stay ? "; night stay " + stay : "") + ".";
+    const heading = (split[0] || "").trim();
+    const detail = split.slice(1).join(":").trim();
+    const firstSentence = (detail.split(/[.!?]/)[0] || "").trim();
+    const compact = firstSentence
+      .replace(/^Airport pickup,\s*/i, "airport pickup tarvata ")
+      .replace(/^Sightseeing at /i, "")
+      .replace(/^Full-day excursion to /i, "")
+      .replace(/^Visit /i, "")
+      .replace(/^Transfer to /i, "transfer ")
+      .replace(/\s+/g, " ")
+      .slice(0, 145);
+    return "Day " + (index + 1) + ": " + heading +
+      (compact ? " – " + compact : "") + ".";
   });
   if (!days.length) return fallback;
   const inclusions = pkg.inclusions || [];
@@ -110,13 +110,16 @@ function shortConversationalItinerary(pkg: PackageRecord): string {
     .replace(/as per itinerary/ig, "itinerary prakaram")
     .replace(/as per the confirmed itinerary/ig, "confirmed itinerary prakaram")
     .replace(/such as /ig, "")
-    .replace(/\\s+/g, " ")
+    .replace(/\s+/g, " ")
     .trim()).join("; ");
-  return pkg.name + " itinerary short ga chepthanu andi 😊\\n" + days.join("\\n") +
-    (stay.length ? "\\n\\n**Stay:** " + shortItems(stay) + "." : "") +
-    (transport.length ? "\\n**Transport:** " + shortItems(transport) + "." : "") +
-    (food.length ? "\\n**Food:** " + shortItems(food) + "." : "") +
-    "\\n\\nInkemaina details kavala andi? 😊";
+  const stayText = stay.length ? shortItems(stay) : "";
+  const transportText = transport.length ? shortItems(transport) : "";
+  const foodText = food.length ? shortItems(food) : "";
+  return pkg.name + " itinerary short ga chepthanu andi 😊\n" + days.join("\n") +
+    (stayText ? "\n\n**Stay:** " + stayText + "." : "") +
+    (transportText ? "\n**Transport:** " + transportText + "." : "") +
+    (foodText ? "\n**Food:** " + foodText + "." : "") +
+    "\n\nInkemaina details kavala andi? 😊";
 }
 
 function answerQuestion(question: string, history: ChatMessage[] = []): string {
