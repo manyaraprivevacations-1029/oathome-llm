@@ -24,4 +24,8 @@
 
 For model installation, supported runtime commands, environment variables, and deployment security, see [website/README.md](website/README.md), [LICENSE](LICENSE), and the runtime source.
 
+## Native OWN runtime (Intel Mac first milestone)
+
+The repository includes its own Go inference server and llama.cpp-based model runner. To build and run that runtime on the existing Intel Mac without stopping Ollama, follow [the OWN runtime setup guide](docs/own-runtime-macos.md). The launcher uses port `11436`, keeps the current Ollama service on `11434` as a rollback option, and attempts to reuse the existing local Qwen model store without pruning it.
+
 Open-weight models remain subject to their own licenses and hardware requirements.
