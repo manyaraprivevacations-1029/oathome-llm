@@ -174,6 +174,12 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
     return "LLM stands for Large Language Model. It is an AI model trained on large amounts of text so it can understand and generate language, answer questions, summarize information, and help with writing. Examples include models used in chatbots.";
   }
 
+  // Recognise destinations customers ask about even when no approved package
+  // currently exists. Never fall through to a generic FAQ or unrelated package.
+  if (/\bgoa\b/i.test(q) && !pkg) {
+    return "Goa trip gurinchi adugutunnara andi? 😊 Present approved package list lo Goa package details levu. Wrong price or dates cheppanu. Goa package availability and current offer ni travel team tho confirm cheyinchi share chestham. Mee preferred travel month cheppandi?";
+  }
+
   // Keep package discovery short and split domestic vs international.
   const domesticPackages = data.packages.filter((p) => /char dham|kullu manali|shimla|kerala|kashmir|gokarna|dandeli|spiti|himachal|jyotirlinga/i.test([p.name, p.destination || "", ...(((p as PackageRecord & { aliases?: string[] }).aliases) || [])].join(" ")));
   const internationalPackages = data.packages.filter((p) => /thailand|vietnam|dubai|bali|singapore|malaysia|international/i.test([p.name, p.destination || "", ...(((p as PackageRecord & { aliases?: string[] }).aliases) || [])].join(" ")));
