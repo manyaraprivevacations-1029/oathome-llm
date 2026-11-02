@@ -55,9 +55,12 @@ function findPackage(s: string): PackageRecord | undefined {
   const candidates = data.packages.filter((p) => {
     const aliases = (p as PackageRecord & { aliases?: string[] }).aliases || [];
     const words = [p.name, ...aliases].map(normalize).flatMap((n) => n.split(" "));
-    return tokens.some((token) => token.length >= 5 && words.some((word) =>
-      word.length >= 5 && Math.abs(word.length - token.length) <= 1 && editDistance(token, word) <= 1
-    ));
+    return tokens.some((token) => token.length >= 5 && words.some((word) => {
+      if (word.length < 5 || Math.abs(word.length - token.length) > 2) return false;
+      // One typo for shorter words; allow two for longer destination names.
+      const allowedDistance = token.length >= 7 && word.length >= 7 ? 2 : 1;
+      return editDistance(token, word) <= allowedDistance;
+    }));
   });
   return candidates.length === 1 ? candidates[0] : undefined;
 }
@@ -84,7 +87,7 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   // If the customer selects a destination/package by name, respond with that package's own details.
   const selectedPackage = findPackage(question);
   if (selectedPackage && q.split(" ").length <= 5 && !includesAny(q, ["itinerary", "included", "inclusions", "exclusions", "price", "cost", "how much", "days", "nights", "details"])) {
-    return "**" + selectedPackage.name + "**\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\n\nWould you like the itinerary or package inclusions?";
+    return "**" + selectedPackage.name + "**\nDuration: " + (selectedPackage.duration || "Please confirm duration") + "\nPrice: " + (selectedPackage.price || "Please confirm current price") + "\n\nWhen are you planning to travel?";
   }
 
   // Identify the assistant when customers ask who they are talking to.
@@ -125,6 +128,25 @@ function answerQuestion(question: string, history: ChatMessage[] = []): string {
   if (isYes && pkg && (prevA.includes("confirm") || prevA.includes("departure") || prevA.includes("batch"))) {
     return "Okay andi! " + pkg.name + " departure dates ippudu approved data lo confirm kaaledu. Wrong date cheppakunda travel team confirmation tarvatha share cheyyali. Inthalo itinerary or inclusions kavala?";
   }
+  // Keep Radhika's qualification flow conversational: ask one detail at a time.
+  const dateReply = /\b(?:\d{1,2}(?:st|nd|rd|th)?\s+(?:jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|september|oct|october|nov|november|dec|december)(?:\s+20\d{2})?|(?:jan|january|feb|february|mar|march|apr|april|may|jun|june|jul|july|aug|august|sep|september|oct|october|nov|november|dec|december)\s+\d{1,2}(?:st|nd|rd|th)?(?:\s*,?\s*20\d{2})?|20\d{2}-\d{2}-\d{2}|this weekend|next weekend|next month|this month|in\s+\d+\s+weeks?)\b/i.test(q);
+  const countReply = /^\d{1,2}(?:\s*(?:adults?|children?|kids?|members?|people|persons?|pax))?(?:\s*(?:and|,|\+)\s*\d{1,2}\s*(?:children?|kids?|adults?))?$/.test(q) ||
+    includesAny(q, ["members", "people", "persons", "travellers", "travelers", "pax", "couple", "family", "only me", "just me"]);
+  const cityReply = ["hyderabad", "vijayawada", "visakhapatnam", "vizag", "bangalore", "bengaluru", "chennai", "mumbai", "pune", "delhi", "kolkata", "tirupati", "warangal", "guntur", "rajahmundry", "nellore", "kurnool", "anantapur"].some((city) => q.includes(city));
+
+  if (pkg && dateReply && (prevA.includes("when are you planning to travel") || prevA.includes("travel date"))) {
+    return "Thanks andi! " + pkg.name + " kosam note chesanu. Mee trip lo entha mandi travel chestharu?";
+  }
+  if (pkg && countReply && (prevA.includes("how many people") || prevA.includes("entha mandi") || prevA.includes("number of travellers"))) {
+    return "Okay andi! Mee group size note chesanu. Meeru ye city nunchi start avutharu?";
+  }
+  if (pkg && cityReply && (prevA.includes("which city") || prevA.includes("ye city") || prevA.includes("start avutharu"))) {
+    return "Thank you andi! " + pkg.name + " details share chesthanu. Ee package starting point: " +
+      (/delhi to delhi|from delhi|ex delhi/i.test(pkg.duration || "") || /delhi/i.test(pkg.name) ? "Delhi" :
+       /hubli to hubli/i.test(pkg.duration || "") || /hubli to hubli/i.test(pkg.name) ? "Hubli" : "travel team confirmation needed") +
+      ". Mee travel plan ki itinerary kavala, leka inclusions and exclusions first cheppana?";
+  }
+
   if (/^(ok|okay|alright|fine|sare|thanks|thank you|thankyou|got it|understood|hmm|hmmm)$/.test(q)) {
     if (prevA.includes("which destination") || prevA.includes("ye destination") || prevA.includes("what trip plan")) {
       return "Sure andi! Meeru ye place ki vellali anukuntunnaru — Manali, Kashmir, Kerala, Char Dham, leka vere destination aa?";
