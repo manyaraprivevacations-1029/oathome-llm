@@ -14,8 +14,8 @@ const modules = [
   {icon:"◖",name:"Voice Studio",desc:"Generate Telugu-English and English voiceover scripts with OWN.",status:"Ready",href:"/social/voice"},
   {icon:"▤",name:"Carousel Studio",desc:"Generate editable multi-slide copy and captions with OWN.",status:"Ready",href:"/social/carousel"},
   {icon:"✓",name:"Approval Library",desc:"Review, approve or return drafts before publishing.",status:"Approval-first",href:"/social/approvals"},
-  {icon:"◎",name:"Instagram Manager",desc:"Connect and manage the Instagram business account.",status:"Not connected"},
-  {icon:"↗",name:"Analytics",desc:"Review reach, engagement and content performance.",status:"Planned"},
+  {icon:"◎",name:"Instagram Manager",desc:"Check official Meta connection readiness and publishing safeguards.",status:"Not connected",href:"/social/instagram"},
+  {icon:"↗",name:"Analytics",desc:"Track drafts, approvals and content workflow activity.",status:"Ready",href:"/social/analytics"},
 ];
 
 export default function SocialDashboardPage() {
