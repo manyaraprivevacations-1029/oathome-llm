@@ -8,6 +8,7 @@ export default function SocialLoginPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -33,6 +34,19 @@ export default function SocialLoginPage() {
     } finally { setBusy(false); }
   }
 
+  async function sendResetEmail() {
+    setBusy(true); setError(""); setMessage("");
+    try {
+      if (!email.trim()) throw new Error("Enter your email address first.");
+      const redirectTo = `${window.location.origin}/social/reset-password`;
+      const { error: authError } = await getSocialSupabase().auth.resetPasswordForEmail(email.trim(), { redirectTo });
+      if (authError) throw authError;
+      setMessage("If an account exists for this email, a password reset link has been sent. Check your inbox and spam folder.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to send the reset email. Please try again.");
+    } finally { setBusy(false); }
+  }
+
   return (
     <main style={{minHeight:"100vh",display:"grid",placeItems:"center",padding:24,background:"radial-gradient(ellipse at 50% 0%,#193126 0%,#090d0b 52%)"}}>
       <section style={{width:"100%",maxWidth:430,border:"1px solid #26372e",borderRadius:20,padding:32,background:"#101713",boxShadow:"0 24px 90px #0008"}}>
@@ -41,12 +55,18 @@ export default function SocialLoginPage() {
         <h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"10px 0 8px"}}>OAT Social AI</h1>
         <p style={{color:"#9ca9a0",fontSize:13,lineHeight:1.7,margin:"0 0 25px"}}>Your travel brand’s creative workspace. Plan, create and review content in one place.</p>
         <div style={{display:"flex",gap:8,marginBottom:20}}>
-          <button type="button" onClick={()=>setMode("signin")} style={tabStyle(mode==="signin")}>Sign in</button>
-          <button type="button" onClick={()=>setMode("signup")} style={tabStyle(mode==="signup")}>Create account</button>
+          <button type="button" onClick={()=>{setMode("signin");setError("");setMessage("");}} style={tabStyle(mode==="signin")}>Sign in</button>
+          <button type="button" onClick={()=>{setMode("signup");setError("");setMessage("");}} style={tabStyle(mode==="signup")}>Create account</button>
         </div>
         <form onSubmit={submit} style={{display:"grid",gap:13}}>
           <label style={labelStyle}>EMAIL ADDRESS<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} style={inputStyle} placeholder="you@company.com"/></label>
-          <label style={labelStyle}>PASSWORD<input required minLength={6} type="password" autoComplete={mode==="signin"?"current-password":"new-password"} value={password} onChange={e=>setPassword(e.target.value)} style={inputStyle} placeholder="At least 6 characters"/></label>
+          <label style={labelStyle}>PASSWORD
+            <div style={{position:"relative"}}>
+              <input required minLength={6} type={showPassword?"text":"password"} autoComplete={mode==="signin"?"current-password":"new-password"} value={password} onChange={e=>setPassword(e.target.value)} style={{...inputStyle,paddingRight:76}} placeholder="At least 6 characters"/>
+              <button type="button" onClick={()=>setShowPassword(v=>!v)} aria-label={showPassword?"Hide password":"Show password"} style={visibilityButton}>{showPassword?"Hide":"Show"}</button>
+            </div>
+          </label>
+          {mode==="signin" && <div style={{textAlign:"right",marginTop:-5}}><button type="button" disabled={busy} onClick={sendResetEmail} style={textButton}>Forgot password?</button></div>}
           {error && <p role="alert" style={{color:"#ff9b9b",fontSize:12,margin:0}}>{error}</p>}
           {message && <p role="status" style={{color:"#9bd9ae",fontSize:12,lineHeight:1.6,margin:0}}>{message}</p>}
           <button disabled={busy} type="submit" style={{marginTop:5,padding:13,border:0,borderRadius:10,background:"#26734a",color:"white",fontWeight:700}}>{busy?"Please wait…":mode==="signin"?"Sign in to Social AI":"Create Social AI account"}</button>
@@ -58,5 +78,7 @@ export default function SocialLoginPage() {
 }
 
 const labelStyle: CSSProperties = {display:"grid",gap:7,fontSize:9,letterSpacing:".12em",color:"#9eafa3"};
-const inputStyle: React.CSSProperties = {width:"100%",padding:"12px 13px",border:"1px solid #304238",borderRadius:9,background:"#0b100d",color:"#f2f5f2",fontSize:13,outline:"none"};
-function tabStyle(active:boolean): React.CSSProperties { return {flex:1,padding:10,borderRadius:8,border:"1px solid "+(active?"#397a54":"#29372f"),background:active?"#1b3525":"#111914",color:active?"#d8f1df":"#8c9b90",fontSize:12}; }
+const inputStyle: CSSProperties = {width:"100%",boxSizing:"border-box",padding:"12px 13px",border:"1px solid #304238",borderRadius:9,background:"#0b100d",color:"#f2f5f2",fontSize:13,outline:"none"};
+const visibilityButton: CSSProperties = {position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",border:0,background:"transparent",color:"#9bd0aa",fontSize:11,cursor:"pointer"};
+const textButton: CSSProperties = {border:0,background:"transparent",color:"#9bd0aa",fontSize:11,cursor:"pointer",padding:0};
+function tabStyle(active:boolean): CSSProperties { return {flex:1,padding:10,borderRadius:8,border:"1px solid "+(active?"#397a54":"#29372f"),background:active?"#1b3525":"#111914",color:active?"#d8f1df":"#8c9b90",fontSize:12}; }
