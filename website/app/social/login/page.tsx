@@ -48,12 +48,12 @@ export default function SocialLoginPage() {
   }
 
   return (
-    <main style={{minHeight:"100vh",display:"grid",placeItems:"center",padding:24,background:"#f5f7f5"}}>
-      <section style={{width:"100%",maxWidth:430,border:"1px solid #e2e8e3",borderRadius:20,padding:32,background:"#ffffff",boxShadow:"0 24px 90px #0008"}}>
-        <Link href="/" style={{color:"#26734a",fontSize:12,textDecoration:"none"}}>← OWN workspace</Link>
-        <div style={{marginTop:30,fontSize:11,letterSpacing:".18em",color:"#26734a"}}>ON A TRIP HOLIDAYS</div>
+    <main style={{minHeight:"100vh",display:"grid",placeItems:"center",padding:24,background:"#f4f8fd"}}>
+      <section style={{width:"100%",maxWidth:430,border:"1px solid #dce8f5",borderRadius:20,padding:32,background:"#ffffff",boxShadow:"0 24px 90px #0008"}}>
+        <Link href="/" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← OWN workspace</Link>
+        <div style={{marginTop:30,fontSize:11,letterSpacing:".18em",color:"#0878d8"}}>ON A TRIP HOLIDAYS</div>
         <h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"10px 0 8px"}}>OAT Social AI</h1>
-        <p style={{color:"#65736b",fontSize:13,lineHeight:1.7,margin:"0 0 25px"}}>Your travel brand’s creative workspace. Plan, create and review content in one place.</p>
+        <p style={{color:"#5d708a",fontSize:13,lineHeight:1.7,margin:"0 0 25px"}}>Your travel brand’s creative workspace. Plan, create and review content in one place.</p>
         <div style={{display:"flex",gap:8,marginBottom:20}}>
           <button type="button" onClick={()=>{setMode("signin");setError("");setMessage("");}} style={tabStyle(mode==="signin")}>Sign in</button>
           <button type="button" onClick={()=>{setMode("signup");setError("");setMessage("");}} style={tabStyle(mode==="signup")}>Create account</button>
@@ -68,17 +68,17 @@ export default function SocialLoginPage() {
           </label>
           {mode==="signin" && <div style={{textAlign:"right",marginTop:-5}}><button type="button" disabled={busy} onClick={sendResetEmail} style={textButton}>Forgot password?</button></div>}
           {error && <p role="alert" style={{color:"#b42318",fontSize:12,margin:0}}>{error}</p>}
-          {message && <p role="status" style={{color:"#26734a",fontSize:12,lineHeight:1.6,margin:0}}>{message}</p>}
-          <button disabled={busy} type="submit" style={{marginTop:5,padding:13,border:0,borderRadius:10,background:"#26734a",color:"white",fontWeight:700}}>{busy?"Please wait…":mode==="signin"?"Sign in to Social AI":"Create Social AI account"}</button>
+          {message && <p role="status" style={{color:"#0878d8",fontSize:12,lineHeight:1.6,margin:0}}>{message}</p>}
+          <button disabled={busy} type="submit" style={{marginTop:5,padding:13,border:0,borderRadius:10,background:"#0878d8",color:"white",fontWeight:700}}>{busy?"Please wait…":mode==="signin"?"Sign in to Social AI":"Create Social AI account"}</button>
         </form>
-        <p style={{fontSize:11,color:"#748078",lineHeight:1.6,margin:"20px 0 0"}}>This login is separate from OWN. Your Supabase project must have Email authentication enabled. Email confirmation follows your Supabase Auth settings.</p>
+        <p style={{fontSize:11,color:"#71839a",lineHeight:1.6,margin:"20px 0 0"}}>This login is separate from OWN. Your Supabase project must have Email authentication enabled. Email confirmation follows your Supabase Auth settings.</p>
       </section>
     </main>
   );
 }
 
-const labelStyle: CSSProperties = {display:"grid",gap:7,fontSize:9,letterSpacing:".12em",color:"#65736b"};
-const inputStyle: CSSProperties = {width:"100%",boxSizing:"border-box",padding:"12px 13px",border:"1px solid #d7dfd8",borderRadius:9,background:"#ffffff",color:"#1f2933",fontSize:13,outline:"none"};
-const visibilityButton: CSSProperties = {position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",border:0,background:"transparent",color:"#26734a",fontSize:11,cursor:"pointer"};
-const textButton: CSSProperties = {border:0,background:"transparent",color:"#26734a",fontSize:11,cursor:"pointer",padding:0};
-function tabStyle(active:boolean): CSSProperties { return {flex:1,padding:10,borderRadius:8,border:"1px solid "+(active?"#26734a":"#d7dfd8"),background:active?"#edf5ef":"#ffffff",color:active?"#d8f1df":"#8c9b90",fontSize:12}; }
+const labelStyle: CSSProperties = {display:"grid",gap:7,fontSize:9,letterSpacing:".12em",color:"#5d708a"};
+const inputStyle: CSSProperties = {width:"100%",boxSizing:"border-box",padding:"12px 13px",border:"1px solid #cbdced",borderRadius:9,background:"#ffffff",color:"#142b4f",fontSize:13,outline:"none"};
+const visibilityButton: CSSProperties = {position:"absolute",right:9,top:"50%",transform:"translateY(-50%)",border:0,background:"transparent",color:"#0878d8",fontSize:11,cursor:"pointer"};
+const textButton: CSSProperties = {border:0,background:"transparent",color:"#0878d8",fontSize:11,cursor:"pointer",padding:0};
+function tabStyle(active:boolean): CSSProperties { return {flex:1,padding:10,borderRadius:8,border:"1px solid "+(active?"#0878d8":"#cbdced"),background:active?"#eaf4ff":"#ffffff",color:active?"#075da8":"#6b7f98",fontSize:12}; }
