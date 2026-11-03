@@ -27,29 +27,45 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
   } catch {
     // Drafting remains available if the optional profile lookup is unavailable.
   }
+
   const fullPrompt = [
     "You are the content assistant for On A Trip Holidays. Use natural, useful marketing language. Never invent travel prices, dates, departures, availability, inclusions, hotel standards or guarantees. The existing OWN service supplies verified travel knowledge; when facts are not confirmed, say they need confirmation or use a general enquiry CTA.",
     brandContext,
     prompt
   ].filter(Boolean).join("\n\n");
+
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ messages: [{ role: "user", content: fullPrompt }] }),
     cache: "no-store"
   });
+
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
     throw new Error(detail || "OWN could not generate a draft. Please try again.");
   }
+
   const raw = await response.text();
   const lines = raw.split("\n").map(line => line.trim()).filter(Boolean);
   for (const line of lines.reverse()) {
+    let item: { message?: { content?: unknown }; response?: unknown };
     try {
-      const item = JSON.parse(line) as { message?: { content?: unknown }; response?: unknown };
-      const content = item.message?.content ?? item.response;
-      if (typeof content === "string" && content.trim()) {\n        const answer = content.trim();\n        if (/^ee detail na daggara clear ga ledu/i.test(answer)) throw new Error("OWN is reachable, but its model did not generate a creative response. Check the OWN model runtime and try again.");\n        return answer;\n      }
-    } catch { /* Ignore non-JSON stream fragments and inspect the next line. */ }
+      item = JSON.parse(line) as { message?: { content?: unknown }; response?: unknown };
+    } catch {
+      // Ignore non-JSON stream fragments and inspect the next line.
+      continue;
+    }
+
+    const content = item.message?.content ?? item.response;
+    if (typeof content === "string" && content.trim()) {
+      const answer = content.trim();
+      if (/^ee detail na daggara clear ga ledu/i.test(answer)) {
+        throw new Error("OWN is reachable, but its model returned a knowledge-only fallback instead of generating a creative response. Check the OWN model runtime and try again.");
+      }
+      return answer;
+    }
   }
+
   throw new Error("OWN returned an empty response. Please try again.");
 }
