@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
@@ -76,7 +76,7 @@ export default function SocialDashboardPage() {
   </main>;
 }
 
-const shell:React.CSSProperties={minHeight:"100vh",padding:"42px clamp(20px,5vw,72px)",background:"radial-gradient(ellipse at 75% 0%,#173021 0%,#090d0b 48%)",color:"#eef4ef"};
+const shell:CSSProperties={minHeight:"100vh",padding:"42px clamp(20px,5vw,72px)",background:"radial-gradient(ellipse at 75% 0%,#173021 0%,#090d0b 48%)",color:"#eef4ef"};
 const panel:React.CSSProperties={border:"1px solid #2a3b30",borderRadius:16,padding:24,background:"#111914"};
 const card:React.CSSProperties={border:"1px solid #293a30",borderRadius:13,padding:18,background:"#111914",minHeight:150};
 const link:React.CSSProperties={color:"#9bd0aa"};
