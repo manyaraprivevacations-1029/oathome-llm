@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 type Trend = { id:string; title:string; platform:string; destination:string|null; insight:string; source_url:string|null; content_angle:string|null; created_at:string };
-const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f5f7f5",color:"#18231d"};
-const panel:CSSProperties={border:"1px solid #e2e8e3",borderRadius:15,padding:21,background:"#ffffff"};
-const label:CSSProperties={display:"grid",gap:7,color:"#65736b",fontSize:10,letterSpacing:".08em"};
-const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #d7dfd8",borderRadius:8,background:"#ffffff",color:"#1f2933",fontSize:13};
-const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#26734a",color:"#ffffff",fontWeight:700,cursor:"pointer"};
-const muted:CSSProperties={padding:"9px 12px",border:"1px solid #d7dfd8",borderRadius:8,background:"#f0f5f1",color:"#263b2e",fontSize:11,cursor:"pointer"};
+const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f4f8fd",color:"#10264a"};
+const panel:CSSProperties={border:"1px solid #dce8f5",borderRadius:15,padding:21,background:"#ffffff"};
+const label:CSSProperties={display:"grid",gap:7,color:"#5d708a",fontSize:10,letterSpacing:".08em"};
+const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#ffffff",color:"#142b4f",fontSize:13};
+const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#0878d8",color:"#ffffff",fontWeight:700,cursor:"pointer"};
+const muted:CSSProperties={padding:"9px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#edf5fc",color:"#174a7c",fontSize:11,cursor:"pointer"};
 
 export default function TrendResearchPage(){
  const router=useRouter();
@@ -56,10 +56,10 @@ export default function TrendResearchPage(){
   }catch(e){setError(e instanceof Error?e.message:"Could not create content draft.");}
  }
  return <main style={shell}>
-  <header style={{marginBottom:22}}><Link href="/social" style={{color:"#26734a",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Trend Research</h1><p style={{color:"#68756d",fontSize:13,margin:0}}>Collect travel and Instagram signals, record the source, and turn useful insights into content drafts.</p></header>
-  <section style={{...panel,marginBottom:16,background:"#edf5ef"}}>
-   <h2 style={{fontSize:16,margin:"0 0 8px",color:"#1d5135"}}>Research workflow</h2>
-   <p style={{fontSize:12,color:"#43564a",lineHeight:1.7,margin:0}}>Add a trend you have spotted from Instagram, Google Trends, competitor posts, customer enquiries or travel news. Keep the source link so your team can verify it. Turn saved research into a draft with one click.</p>
+  <header style={{marginBottom:22}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Trend Research</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Collect travel and Instagram signals, record the source, and turn useful insights into content drafts.</p></header>
+  <section style={{...panel,marginBottom:16,background:"#eaf4ff"}}>
+   <h2 style={{fontSize:16,margin:"0 0 8px",color:"#075da8"}}>Research workflow</h2>
+   <p style={{fontSize:12,color:"#45617f",lineHeight:1.7,margin:0}}>Add a trend you have spotted from Instagram, Google Trends, competitor posts, customer enquiries or travel news. Keep the source link so your team can verify it. Turn saved research into a draft with one click.</p>
   </section>
   <section style={{...panel,marginBottom:16}}>
    <h2 style={{fontSize:17,margin:"0 0 15px"}}>Add a research insight</h2>
@@ -76,18 +76,18 @@ export default function TrendResearchPage(){
    </form>
   </section>
   <section style={panel}>
-   <h2 style={{fontSize:17,margin:"0 0 14px"}}>Saved research <span style={{fontSize:11,color:"#748078"}}>({trends.length})</span></h2>
+   <h2 style={{fontSize:17,margin:"0 0 14px"}}>Saved research <span style={{fontSize:11,color:"#71839a"}}>({trends.length})</span></h2>
    {error&&<p role="alert" style={{color:"#b42318",fontSize:12,whiteSpace:"pre-wrap"}}>{error}</p>}
-   {notice&&<p role="status" style={{color:"#26734a",fontSize:12}}>{notice}</p>}
-   {loading?<p style={{fontSize:12,color:"#65736b"}}>Loading research…</p>:trends.length===0?<p style={{fontSize:12,color:"#68756d"}}>No research saved yet. Add your first insight above.</p>:<div style={{display:"grid",gap:11}}>
-    {trends.map(t=><article key={t.id} style={{border:"1px solid #e2e8e3",borderRadius:11,padding:15,background:"#fbfcfb"}}>
-     <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><h3 style={{fontSize:14,margin:"0 0 5px"}}>{t.title}</h3><span style={{fontSize:10,color:"#68756d"}}>{t.platform}{t.destination?" · "+t.destination:""} · {new Date(t.created_at).toLocaleDateString()}</span></div><button style={primary} onClick={()=>void turnIntoDraft(t)}>Create content draft</button></div>
-     <p style={{fontSize:12,color:"#3e4b42",lineHeight:1.65,whiteSpace:"pre-wrap"}}>{t.insight}</p>
-     {t.content_angle&&<p style={{fontSize:12,color:"#43564a",lineHeight:1.6}}><strong>Content angle:</strong> {t.content_angle}</p>}
-     {t.source_url&&<a href={t.source_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#26734a"}}>Open research source ↗</a>}
+   {notice&&<p role="status" style={{color:"#0878d8",fontSize:12}}>{notice}</p>}
+   {loading?<p style={{fontSize:12,color:"#5d708a"}}>Loading research…</p>:trends.length===0?<p style={{fontSize:12,color:"#60738d"}}>No research saved yet. Add your first insight above.</p>:<div style={{display:"grid",gap:11}}>
+    {trends.map(t=><article key={t.id} style={{border:"1px solid #dce8f5",borderRadius:11,padding:15,background:"#f7fbff"}}>
+     <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><h3 style={{fontSize:14,margin:"0 0 5px"}}>{t.title}</h3><span style={{fontSize:10,color:"#60738d"}}>{t.platform}{t.destination?" · "+t.destination:""} · {new Date(t.created_at).toLocaleDateString()}</span></div><button style={primary} onClick={()=>void turnIntoDraft(t)}>Create content draft</button></div>
+     <p style={{fontSize:12,color:"#314968",lineHeight:1.65,whiteSpace:"pre-wrap"}}>{t.insight}</p>
+     {t.content_angle&&<p style={{fontSize:12,color:"#45617f",lineHeight:1.6}}><strong>Content angle:</strong> {t.content_angle}</p>}
+     {t.source_url&&<a href={t.source_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#0878d8"}}>Open research source ↗</a>}
     </article>)}
    </div>}
   </section>
-  <p style={{fontSize:10,color:"#748078",lineHeight:1.6,marginTop:16}}>This version organises and converts research you provide. It does not claim live trend rankings or scrape Instagram. Research notes are private to your signed-in account.</p>
+  <p style={{fontSize:10,color:"#71839a",lineHeight:1.6,marginTop:16}}>This version organises and converts research you provide. It does not claim live trend rankings or scrape Instagram. Research notes are private to your signed-in account.</p>
  </main>;
 }
