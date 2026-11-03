@@ -9,10 +9,11 @@ export function getSocialSupabase(): SupabaseClient {
   }
   if (client) return client;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
+  // Use namespaced variables so the existing OWN Supabase configuration remains untouched.
+  const url = process.env.NEXT_PUBLIC_SOCIAL_SUPABASE_URL?.trim();
+  const anonKey = process.env.NEXT_PUBLIC_SOCIAL_SUPABASE_ANON_KEY?.trim();
   if (!url || !anonKey) {
-    throw new Error("OAT Social AI is not configured. Add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY.");
+    throw new Error("OAT Social AI is not configured. Add NEXT_PUBLIC_SOCIAL_SUPABASE_URL and NEXT_PUBLIC_SOCIAL_SUPABASE_ANON_KEY.");
   }
 
   client = createClient(url, anonKey, {
