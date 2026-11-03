@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
+import travelKnowledge from "@/data/travel-knowledge.json";
 
 type BrandProfile = {
   id?: string;
@@ -97,6 +98,27 @@ export default function BrandBrainPage() {
     <section style={{...panel,marginBottom:17}}>
       <h2 style={{fontSize:16,margin:"0 0 8px"}}>Verified starting details</h2>
       <p style={{fontSize:12,color:"#627b95",lineHeight:1.7,margin:0}}>Company name, website and Instagram handle are prefilled from the existing On A Trip Holidays project context. Review them before saving. Package information remains in the existing travel knowledge source and is not edited here.</p>
+    </section>
+
+    <section style={{...panel,marginBottom:17}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}>
+        <div><h2 style={{fontSize:16,margin:"0 0 6px"}}>Business knowledge connected</h2><p style={{fontSize:12,color:"#627b95",lineHeight:1.6,margin:0}}>Your Brand Brain works alongside the existing verified travel knowledge source. This keeps brand preferences separate from package facts.</p></div>
+        <span style={{fontSize:10,padding:"6px 9px",borderRadius:20,background:"#e9fbf2",color:"#137b4e",border:"1px solid #b5e5d0"}}>CONNECTED</span>
+      </div>
+      <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginTop:15}}>
+        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#0878d8"}}>{travelKnowledge.packages.length}</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Package records</div></div>
+        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#0878d8"}}>{travelKnowledge.services.length}</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Service categories</div></div>
+        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#0878d8"}}>1</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Official travel knowledge source</div></div>
+      </div>
+      <h3 style={{fontSize:12,margin:"17px 0 9px"}}>Available package knowledge</h3>
+      <div style={{display:"grid",gap:8}}>
+        {travelKnowledge.packages.map((item,index)=><div key={item.name} style={{padding:"10px 12px",border:"1px solid #dce8f5",borderRadius:9,background:"#fbfdff"}}>
+          <strong style={{fontSize:12}}>{item.name}</strong>
+          <p style={{fontSize:11,color:"#627b95",margin:"4px 0 0",lineHeight:1.5}}>{item.duration} · {item.destination}</p>
+          <p style={{fontSize:10,color:"#9b6a10",margin:"5px 0 0"}}>Price and departure details must be reconfirmed before promotion.</p>
+        </div>)}
+      </div>
+      <p style={{fontSize:10,color:"#71839a",lineHeight:1.6,margin:"12px 0 0"}}>Package records are displayed from the existing knowledge file; this page does not edit them. Ask the travel team to update the source when package information changes.</p>
     </section>
     {loading ? <p style={{color:"#5d708a"}}>Loading your brand profile…</p> : <form onSubmit={save} style={{display:"grid",gap:15}}>
       <section style={panel}>

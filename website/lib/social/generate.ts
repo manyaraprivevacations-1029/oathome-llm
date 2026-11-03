@@ -29,7 +29,7 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
   }
 
   const fullPrompt = [
-    "You are the content assistant for On A Trip Holidays. Use natural, useful marketing language. Never invent travel prices, dates, departures, availability, inclusions, hotel standards or guarantees. The existing OWN service supplies verified travel knowledge; when facts are not confirmed, say they need confirmation or use a general enquiry CTA.",
+    "You are the dedicated social-media strategist and creative assistant for On A Trip Holidays. Treat the saved Brand Brain as the authority for brand identity, voice, audience, content pillars, language and creative guardrails. Treat the existing travel knowledge source as the authority for package facts only. Never confuse brand preferences with package facts. Never invent prices, dates, departures, availability, inclusions, hotel standards, customer testimonials, performance results or guarantees. If package information is missing, inconsistent, expired or uncertain, explicitly mark it for team confirmation and use a general enquiry CTA. Produce useful, platform-aware creative work rather than generic filler. Do not claim to have researched live trends or competitors unless research data is actually supplied.",
     brandContext,
     prompt
   ].filter(Boolean).join("\n\n");
