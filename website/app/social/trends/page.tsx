@@ -1,93 +1,30 @@
 "use client";
-
-import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
+import {useEffect,useMemo,useState,type CSSProperties,type FormEvent} from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { getSocialSupabase } from "@/lib/social/supabase-browser";
-
-type Trend = { id:string; title:string; platform:string; destination:string|null; insight:string; source_url:string|null; content_angle:string|null; created_at:string };
+import {useRouter} from "next/navigation";
+import {getSocialSupabase} from "@/lib/social/supabase-browser";
+type Research={id:string;research_type:string;title:string;platform:string;destination:string|null;competitor_handle:string|null;content_format:string|null;observed_on:string|null;insight:string;source_url:string|null;metric_label:string|null;metric_value:string|null;content_angle:string|null;created_at:string};
 const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f4f8fd",color:"#10264a"};
-const panel:CSSProperties={border:"1px solid #dce8f5",borderRadius:15,padding:21,background:"#ffffff"};
+const panel:CSSProperties={border:"1px solid #dce8f5",borderRadius:15,padding:21,background:"#fff"};
+const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#fff",color:"#142b4f",fontSize:13};
 const label:CSSProperties={display:"grid",gap:7,color:"#5d708a",fontSize:10,letterSpacing:".08em"};
-const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#ffffff",color:"#142b4f",fontSize:13};
-const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#0878d8",color:"#ffffff",fontWeight:700,cursor:"pointer"};
-const muted:CSSProperties={padding:"9px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#edf5fc",color:"#174a7c",fontSize:11,cursor:"pointer"};
-
+const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#0878d8",color:"#fff",fontWeight:700,cursor:"pointer"};
 export default function TrendResearchPage(){
- const router=useRouter();
- const [trends,setTrends]=useState<Trend[]>([]);
- const [loading,setLoading]=useState(true);
- const [saving,setSaving]=useState(false);
- const [error,setError]=useState("");
- const [notice,setNotice]=useState("");
- const [title,setTitle]=useState("");
- const [platform,setPlatform]=useState("Instagram");
- const [destination,setDestination]=useState("");
- const [insight,setInsight]=useState("");
- const [source,setSource]=useState("");
- const [angle,setAngle]=useState("");
-
- async function refresh(){
-  const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();
-  if(!auth.user){router.replace("/social/login");return;}
-  const {data,error}=await sb.from("social_trend_research").select("id,title,platform,destination,insight,source_url,content_angle,created_at").eq("user_id",auth.user.id).order("created_at",{ascending:false}).limit(100);
-  if(error)throw error;setTrends((data||[]) as Trend[]);
- }
- useEffect(()=>{let alive=true;(async()=>{try{await refresh();}catch(e){if(alive)setError(e instanceof Error?e.message:"Unable to load research. Check that the Social AI database migration has been applied.");}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[router]);
-
- async function save(e:FormEvent<HTMLFormElement>){
-  e.preventDefault();setSaving(true);setError("");setNotice("");
-  try{
-   const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user)throw new Error("Please sign in again.");
-   const {error}=await sb.from("social_trend_research").insert({user_id:auth.user.id,title:title.trim(),platform,destination:destination.trim()||null,insight:insight.trim(),source_url:source.trim()||null,content_angle:angle.trim()||null});
-   if(error)throw error;
-   setTitle("");setDestination("");setInsight("");setSource("");setAngle("");setNotice("Research note saved privately.");await refresh();
-  }catch(e){setError(e instanceof Error?e.message:"Could not save research.");}
-  finally{setSaving(false);}
- }
- async function turnIntoDraft(t:Trend){
-  setError("");setNotice("");
-  try{
-   const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user)throw new Error("Please sign in again.");
-   const caption="Trend insight: "+t.insight+"\n\nContent angle: "+(t.content_angle||"Develop a useful travel post around this insight.")+"\n\nVerify all package details before publishing.\n\n#OnATripHolidays #TravelIndia";
-   const script="RESEARCH-LED CONTENT BRIEF\nTrend: "+t.title+"\nPlatform: "+t.platform+"\nDestination: "+(t.destination||"Not specified")+"\n\nInsight: "+t.insight+"\n\nSuggested angle: "+(t.content_angle||"Create an informative travel post based on this trend.")+"\n\nResearch source: "+(t.source_url||"Not recorded")+"\n\nBefore publishing, verify prices, dates, availability and inclusions with the travel team.";
-   const {error}=await sb.from("social_content_items").insert({user_id:auth.user.id,title:"Trend idea: "+t.title,content_type:"post",status:"draft",caption,script});
-   if(error)throw error;setNotice("A content draft was created in Content Planner.");
-  }catch(e){setError(e instanceof Error?e.message:"Could not create content draft.");}
- }
- return <main style={shell}>
-  <header style={{marginBottom:22}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Trend Research</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Collect travel and Instagram signals, record the source, and turn useful insights into content drafts.</p></header>
-  <section style={{...panel,marginBottom:16,background:"#eaf4ff"}}>
-   <h2 style={{fontSize:16,margin:"0 0 8px",color:"#075da8"}}>Research workflow</h2>
-   <p style={{fontSize:12,color:"#45617f",lineHeight:1.7,margin:0}}>Add a trend you have spotted from Instagram, Google Trends, competitor posts, customer enquiries or travel news. Keep the source link so your team can verify it. Turn saved research into a draft with one click.</p>
-  </section>
-  <section style={{...panel,marginBottom:16}}>
-   <h2 style={{fontSize:17,margin:"0 0 15px"}}>Add a research insight</h2>
-   <form onSubmit={save} style={{display:"grid",gap:13}}>
-    <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12}}>
-     <label style={label}>TREND / TOPIC<input required value={title} onChange={e=>setTitle(e.target.value)} style={field} placeholder="e.g. Winter snowfall trips"/></label>
-     <label style={label}>PLATFORM / SOURCE<select value={platform} onChange={e=>setPlatform(e.target.value)} style={field}><option>Instagram</option><option>Google Trends</option><option>YouTube</option><option>Competitor research</option><option>Customer enquiries</option><option>Travel news</option><option>Other</option></select></label>
-    </div>
-    <label style={label}>DESTINATION / MARKET<input value={destination} onChange={e=>setDestination(e.target.value)} style={field} placeholder="e.g. Manali, Kashmir, Hyderabad audience"/></label>
-    <label style={label}>WHAT DID YOU NOTICE?<textarea required rows={3} value={insight} onChange={e=>setInsight(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Describe the trend, audience question, content format or demand signal…"/></label>
-    <label style={label}>SOURCE URL (OPTIONAL)<input type="url" value={source} onChange={e=>setSource(e.target.value)} style={field} placeholder="https://…"/></label>
-    <label style={label}>CONTENT IDEA / ANGLE (OPTIONAL)<textarea rows={3} value={angle} onChange={e=>setAngle(e.target.value)} style={{...field,resize:"vertical"}} placeholder="How could On A Trip Holidays turn this into a useful reel, carousel or post?"/></label>
-    <div><button disabled={saving} style={primary}>{saving?"Saving…":"Save research"}</button></div>
-   </form>
-  </section>
-  <section style={panel}>
-   <h2 style={{fontSize:17,margin:"0 0 14px"}}>Saved research <span style={{fontSize:11,color:"#71839a"}}>({trends.length})</span></h2>
-   {error&&<p role="alert" style={{color:"#b42318",fontSize:12,whiteSpace:"pre-wrap"}}>{error}</p>}
-   {notice&&<p role="status" style={{color:"#0878d8",fontSize:12}}>{notice}</p>}
-   {loading?<p style={{fontSize:12,color:"#5d708a"}}>Loading research…</p>:trends.length===0?<p style={{fontSize:12,color:"#60738d"}}>No research saved yet. Add your first insight above.</p>:<div style={{display:"grid",gap:11}}>
-    {trends.map(t=><article key={t.id} style={{border:"1px solid #dce8f5",borderRadius:11,padding:15,background:"#f7fbff"}}>
-     <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><h3 style={{fontSize:14,margin:"0 0 5px"}}>{t.title}</h3><span style={{fontSize:10,color:"#60738d"}}>{t.platform}{t.destination?" · "+t.destination:""} · {new Date(t.created_at).toLocaleDateString()}</span></div><button style={primary} onClick={()=>void turnIntoDraft(t)}>Create content draft</button></div>
-     <p style={{fontSize:12,color:"#314968",lineHeight:1.65,whiteSpace:"pre-wrap"}}>{t.insight}</p>
-     {t.content_angle&&<p style={{fontSize:12,color:"#45617f",lineHeight:1.6}}><strong>Content angle:</strong> {t.content_angle}</p>}
-     {t.source_url&&<a href={t.source_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#0878d8"}}>Open research source ↗</a>}
-    </article>)}
-   </div>}
-  </section>
-  <p style={{fontSize:10,color:"#71839a",lineHeight:1.6,marginTop:16}}>This version organises and converts research you provide. It does not claim live trend rankings or scrape Instagram. Research notes are private to your signed-in account.</p>
- </main>;
+ const router=useRouter();const [items,setItems]=useState<Research[]>([]);const [loading,setLoading]=useState(true);const [saving,setSaving]=useState(false);const [error,setError]=useState("");const [notice,setNotice]=useState("");const [filter,setFilter]=useState("all");const [search,setSearch]=useState("");
+ const [kind,setKind]=useState("trend");const [title,setTitle]=useState("");const [platform,setPlatform]=useState("Instagram");const [destination,setDestination]=useState("");const [competitor,setCompetitor]=useState("");const [format,setFormat]=useState("Reel");const [observed,setObserved]=useState(new Date().toISOString().slice(0,10));const [insight,setInsight]=useState("");const [source,setSource]=useState("");const [metricLabel,setMetricLabel]=useState("");const [metricValue,setMetricValue]=useState("");const [angle,setAngle]=useState("");
+ async function refresh(){const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user){router.replace("/social/login");return;}const {data,error}=await sb.from("social_trend_research").select("id,research_type,title,platform,destination,competitor_handle,content_format,observed_on,insight,source_url,metric_label,metric_value,content_angle,created_at").eq("user_id",auth.user.id).order("created_at",{ascending:false}).limit(200);if(error)throw error;setItems((data||[]) as Research[]);}
+ useEffect(()=>{let alive=true;(async()=>{try{await refresh();}catch(e){if(alive)setError(e instanceof Error?e.message:"Unable to load research. Apply the Social AI research migration.");}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[router]);
+ const filtered=useMemo(()=>items.filter(x=>(filter==="all"||x.research_type===filter)&&[x.title,x.destination,x.competitor_handle,x.insight,x.platform].join(" ").toLowerCase().includes(search.toLowerCase())),[items,filter,search]);
+ async function save(e:FormEvent<HTMLFormElement>){e.preventDefault();setSaving(true);setError("");setNotice("");try{const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user)throw new Error("Please sign in again.");const {error}=await sb.from("social_trend_research").insert({user_id:auth.user.id,research_type:kind,title:title.trim(),platform,destination:destination.trim()||null,competitor_handle:competitor.trim()||null,content_format:format,observed_on:observed||null,insight:insight.trim(),source_url:source.trim()||null,metric_label:metricLabel.trim()||null,metric_value:metricValue.trim()||null,content_angle:angle.trim()||null});if(error)throw error;setTitle("");setDestination("");setCompetitor("");setInsight("");setSource("");setMetricLabel("");setMetricValue("");setAngle("");setNotice("Research evidence saved privately.");await refresh();}catch(e){setError(e instanceof Error?e.message:"Could not save research.");}finally{setSaving(false);}}
+ async function draft(t:Research){setError("");setNotice("");try{const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user)throw new Error("Please sign in again.");const caption="Research insight: "+t.insight+"\n\nContent angle: "+(t.content_angle||"Create a useful travel post around this observation.")+"\n\nVerify all package details before publishing.\n\n#OnATripHolidays #TravelIndia";const script="RESEARCH-LED CONTENT BRIEF\nType: "+t.research_type+"\nTopic: "+t.title+"\nPlatform: "+t.platform+"\nDestination: "+(t.destination||"Not specified")+"\nCompetitor: "+(t.competitor_handle||"Not specified")+"\nFormat: "+(t.content_format||"Not specified")+"\nObserved: "+(t.observed_on||"Not recorded")+"\nEvidence: "+t.insight+"\nSource metric: "+(t.metric_label&&t.metric_value?t.metric_label+": "+t.metric_value:"Not supplied")+"\nSource: "+(t.source_url||"Not recorded")+"\nSuggested angle: "+(t.content_angle||"Create an informative travel post.")+"\nVerify prices, dates, availability and inclusions with the travel team.";const {error}=await sb.from("social_content_items").insert({user_id:auth.user.id,title:"Research idea: "+t.title,content_type:t.content_format?.toLowerCase()==="reel"?"reel":t.content_format?.toLowerCase()==="carousel"?"carousel":"post",status:"draft",caption,script,metadata:{research_id:t.id,research_type:t.research_type,source_url:t.source_url,observed_on:t.observed_on}});if(error)throw error;setNotice("Research-backed draft added to Content Planner.");}catch(e){setError(e instanceof Error?e.message:"Could not create content draft.");}}
+ return <main style={shell}><header style={{marginBottom:22}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Trend & Competitor Intelligence</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Build an evidence-backed library of travel trends, competitor content and audience demand.</p></header>
+ <section style={{...panel,marginBottom:16,background:"#eaf4ff"}}><h2 style={{fontSize:16,margin:"0 0 8px",color:"#075da8"}}>Research with evidence, not guesses</h2><p style={{fontSize:12,color:"#45617f",lineHeight:1.7,margin:0}}>Record what you observed, when and where you saw it, and keep the original source link. Metrics are optional and must be copied from the source. This module does not scrape Instagram or claim live rankings; it organises verified research and converts it into content briefs.</p></section>
+ <section style={{...panel,marginBottom:16}}><h2 style={{fontSize:17,margin:"0 0 15px"}}>Add research evidence</h2><form onSubmit={save} style={{display:"grid",gap:13}}>
+ <div style={{display:"grid",gridTemplateColumns:"1fr 2fr 1fr",gap:12}}><label style={label}>RESEARCH TYPE<select value={kind} onChange={e=>setKind(e.target.value)} style={field}><option value="trend">Travel trend</option><option value="competitor">Competitor</option><option value="audience">Audience demand</option><option value="format">Content format</option></select></label><label style={label}>TOPIC / POST TITLE<input required value={title} onChange={e=>setTitle(e.target.value)} style={field} placeholder="Christmas Manali snowfall reels"/></label><label style={label}>PLATFORM<select value={platform} onChange={e=>setPlatform(e.target.value)} style={field}><option>Instagram</option><option>YouTube</option><option>Google Trends</option><option>Customer enquiries</option><option>Travel news</option><option>Other</option></select></label></div>
+ <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}><label style={label}>DESTINATION / MARKET<input value={destination} onChange={e=>setDestination(e.target.value)} style={field} placeholder="Manali / Hyderabad"/></label><label style={label}>COMPETITOR HANDLE / BRAND<input value={competitor} onChange={e=>setCompetitor(e.target.value)} style={field} placeholder="@travelbrand (optional)"/></label><label style={label}>CONTENT FORMAT<select value={format} onChange={e=>setFormat(e.target.value)} style={field}><option>Reel</option><option>Carousel</option><option>Story</option><option>Post</option><option>Video</option><option>Other</option></select></label></div>
+ <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:12}}><label style={label}>DATE OBSERVED<input type="date" value={observed} onChange={e=>setObserved(e.target.value)} style={field}/></label><label style={label}>SOURCE METRIC LABEL<input value={metricLabel} onChange={e=>setMetricLabel(e.target.value)} style={field} placeholder="Views / likes / comments"/></label><label style={label}>SOURCE METRIC VALUE<input value={metricValue} onChange={e=>setMetricValue(e.target.value)} style={field} placeholder="125K (as displayed)"/></label></div>
+ <label style={label}>WHAT DOES THE SOURCE SHOW?<textarea required rows={3} value={insight} onChange={e=>setInsight(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Describe the actual post, audience question or demand signal…"/></label><label style={label}>SOURCE URL<input type="url" value={source} onChange={e=>setSource(e.target.value)} style={field} placeholder="https://…"/></label><label style={label}>HOW CAN ON A TRIP HOLIDAYS USE THIS?<textarea rows={2} value={angle} onChange={e=>setAngle(e.target.value)} style={{...field,resize:"vertical"}} placeholder="A useful content angle or campaign idea…"/></label><div><button disabled={saving} style={primary}>{saving?"Saving…":"Save evidence"}</button></div></form></section>
+ <section style={panel}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:14}}><h2 style={{fontSize:17,margin:0}}>Research library <span style={{fontSize:11,color:"#71839a"}}>({filtered.length} of {items.length})</span></h2><div style={{display:"flex",gap:8,flexWrap:"wrap"}}><select aria-label="Filter research" value={filter} onChange={e=>setFilter(e.target.value)} style={{...field,width:"auto"}}><option value="all">All research</option><option value="trend">Travel trends</option><option value="competitor">Competitors</option><option value="audience">Audience demand</option><option value="format">Content formats</option></select><input aria-label="Search research" value={search} onChange={e=>setSearch(e.target.value)} style={{...field,width:220}} placeholder="Search research…"/></div></div>
+ {error&&<p role="alert" style={{color:"#b42318",fontSize:12,whiteSpace:"pre-wrap"}}>{error}</p>}{notice&&<p role="status" style={{color:"#0878d8",fontSize:12}}>{notice}</p>}{loading?<p style={{fontSize:12,color:"#5d708a"}}>Loading research…</p>:filtered.length===0?<p style={{fontSize:12,color:"#60738d"}}>No matching research yet. Add your first evidence note above.</p>:<div style={{display:"grid",gap:11}}>{filtered.map(t=><article key={t.id} style={{border:"1px solid #dce8f5",borderRadius:11,padding:15,background:"#f7fbff"}}><div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><span style={{fontSize:9,textTransform:"uppercase",letterSpacing:".1em",color:"#0878d8",fontWeight:800}}>{t.research_type} · {t.platform}</span><h3 style={{fontSize:14,margin:"5px 0"}}>{t.title}</h3><span style={{fontSize:10,color:"#60738d"}}>{[t.destination,t.competitor_handle,t.content_format,t.observed_on].filter(Boolean).join(" · ")}</span></div><button style={primary} onClick={()=>void draft(t)}>Create content draft</button></div><p style={{fontSize:12,color:"#314968",lineHeight:1.65,whiteSpace:"pre-wrap"}}>{t.insight}</p>{t.metric_label&&t.metric_value&&<p style={{fontSize:11,color:"#45617f"}}><strong>Source-reported {t.metric_label}:</strong> {t.metric_value}</p>}{t.content_angle&&<p style={{fontSize:12,color:"#45617f"}}><strong>Content angle:</strong> {t.content_angle}</p>}{t.source_url&&<a href={t.source_url} target="_blank" rel="noreferrer" style={{fontSize:11,color:"#0878d8"}}>Open original source ↗</a>}</article>)}</div>}</section>
+ <p style={{fontSize:10,color:"#71839a",lineHeight:1.6,marginTop:16}}>Private to your signed-in account. Metrics are user-entered source observations, not independently verified analytics. No scraping, auto-posting or competitor account access is performed.</p></main>;
 }
