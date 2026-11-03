@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
-const modules = [
+const modules: { icon: string; name: string; desc: string; status: string; href?: string }[] = [
   {icon:"✦",name:"Brand Brain",desc:"Brand voice, audience, offers and content guidelines.",status:"Ready",href:"/social/brand"},
   {icon:"▦",name:"Content Planner",desc:"Create drafts, organise content and approve before publishing.",status:"Ready",href:"/social/planner"},
   {icon:"⌁",name:"Trend Research",desc:"Collect travel trends and turn them into campaign ideas.",status:"Planned"},
