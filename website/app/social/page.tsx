@@ -60,26 +60,26 @@ export default function SocialDashboardPage() {
 
   return <main style={shell}>
     <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:16,flexWrap:"wrap",marginBottom:34}}>
-      <div><div style={{fontSize:10,letterSpacing:".18em",color:"#8fc9a2"}}>ON A TRIP HOLIDAYS</div><h1 style={{fontSize:36,letterSpacing:"-.05em",margin:"9px 0 5px"}}>Social AI workspace</h1><p style={{color:"#91a096",fontSize:13,margin:0}}>Plan smarter. Create consistently. Approve before publishing.</p></div>
-      <div style={{display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:11,color:"#9eafa3"}}>{session.user.email}</span><button onClick={signOut} style={secondaryButton}>Sign out</button></div>
+      <div><div style={{fontSize:10,letterSpacing:".18em",color:"#26734a"}}>ON A TRIP HOLIDAYS</div><h1 style={{fontSize:36,letterSpacing:"-.05em",margin:"9px 0 5px"}}>Social AI workspace</h1><p style={{color:"#68756d",fontSize:13,margin:0}}>Plan smarter. Create consistently. Approve before publishing.</p></div>
+      <div style={{display:"flex",gap:10,alignItems:"center"}}><span style={{fontSize:11,color:"#65736b"}}>{session.user.email}</span><button onClick={signOut} style={secondaryButton}>Sign out</button></div>
     </header>
-    <section style={{...panel,marginBottom:24,background:"linear-gradient(120deg,#17291e,#111914)"}}>
-      <div style={{fontSize:10,letterSpacing:".14em",color:"#8fc9a2"}}>YOUR BRAND WORKSPACE</div>
+    <section style={{...panel,marginBottom:24,background:"linear-gradient(120deg,#17291e,#ffffff)"}}>
+      <div style={{fontSize:10,letterSpacing:".14em",color:"#26734a"}}>YOUR BRAND WORKSPACE</div>
       <h2 style={{fontSize:22,margin:"10px 0"}}>On A Trip Holidays</h2>
       <p style={{color:"#a5b2a8",fontSize:13,lineHeight:1.7,maxWidth:700,margin:0}}>A dedicated home for travel campaigns, Instagram content, reels and brand assets. OWN remains a separate product and is not modified by this workspace.</p>
     </section>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#829087",margin:0}}>Open the available tools below. More creative modules will be added in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#748078",margin:0}}>Open the available tools below. More creative modules will be added in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
     <section style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(235px,1fr))",gap:13}}>
-      {modules.map(m=><article key={m.name} style={card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:21,color:"#9bd0aa"}}>{m.icon}</span><span style={smallPill}>{m.status}</span></div><h3 style={{fontSize:15,margin:"17px 0 7px"}}>{m.name}</h3><p style={{fontSize:12,color:"#91a096",lineHeight:1.65,margin:0}}>{m.desc}</p>{m.href && <Link href={m.href} style={{display:"inline-block",marginTop:14,color:"#9bd0aa",fontSize:11,textDecoration:"none"}}>Open module →</Link>}</article>)}
+      {modules.map(m=><article key={m.name} style={card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:21,color:"#26734a"}}>{m.icon}</span><span style={smallPill}>{m.status}</span></div><h3 style={{fontSize:15,margin:"17px 0 7px"}}>{m.name}</h3><p style={{fontSize:12,color:"#68756d",lineHeight:1.65,margin:0}}>{m.desc}</p>{m.href && <Link href={m.href} style={{display:"inline-block",marginTop:14,color:"#26734a",fontSize:11,textDecoration:"none"}}>Open module →</Link>}</article>)}
     </section>
     <p style={{fontSize:11,color:"#748078",marginTop:25,lineHeight:1.7}}>Safety: no Instagram publishing, messaging, ad changes or external account actions are enabled in this initial foundation.</p>
   </main>;
 }
 
-const shell:CSSProperties={minHeight:"100vh",padding:"42px clamp(20px,5vw,72px)",background:"radial-gradient(ellipse at 75% 0%,#173021 0%,#090d0b 48%)",color:"#eef4ef"};
-const panel:React.CSSProperties={border:"1px solid #2a3b30",borderRadius:16,padding:24,background:"#111914"};
-const card:React.CSSProperties={border:"1px solid #293a30",borderRadius:13,padding:18,background:"#111914",minHeight:150};
-const link:React.CSSProperties={color:"#9bd0aa"};
-const pill:React.CSSProperties={fontSize:9,letterSpacing:".08em",padding:"7px 9px",borderRadius:20,border:"1px solid #735b32",color:"#e4c58a"};
+const shell:CSSProperties={minHeight:"100vh",padding:"42px clamp(20px,5vw,72px)",background:"#f5f7f5",color:"#18231d"};
+const panel:React.CSSProperties={border:"1px solid #e2e8e3",borderRadius:16,padding:24,background:"#ffffff"};
+const card:React.CSSProperties={border:"1px solid #e2e8e3",borderRadius:13,padding:18,background:"#ffffff",minHeight:150};
+const link:React.CSSProperties={color:"#26734a"};
+const pill:React.CSSProperties={fontSize:9,letterSpacing:".08em",padding:"7px 9px",borderRadius:20,border:"1px solid #735b32",color:"#986b16"};
 const smallPill:React.CSSProperties={fontSize:9,padding:"5px 7px",borderRadius:20,border:"1px solid #304338",color:"#9eb5a4"};
-const secondaryButton:React.CSSProperties={padding:"9px 12px",borderRadius:8,border:"1px solid #3a4d40",background:"#152019",color:"#dce8df",fontSize:11};
+const secondaryButton:React.CSSProperties={padding:"9px 12px",borderRadius:8,border:"1px solid #d7dfd8",background:"#f0f5f1",color:"#dce8df",fontSize:11};
