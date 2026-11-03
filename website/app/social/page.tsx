@@ -11,9 +11,9 @@ const modules = [
   {icon:"▦",name:"Content Planner",desc:"Create drafts, organise content and approve before publishing.",status:"Ready",href:"/social/planner"},
   {icon:"⌁",name:"Trend Research",desc:"Collect travel trends and turn them into campaign ideas.",status:"Ready",href:"/social/trends"},
   {icon:"▶",name:"Reel Studio",desc:"Draft travel reel scripts and captions from verified trip details.",status:"Ready",href:"/social/reels"},
-  {icon:"◖",name:"Voice Studio",desc:"Prepare voiceovers and narration for travel content.",status:"Planned"},
-  {icon:"▤",name:"Carousel Studio",desc:"Create structured multi-slide Instagram content.",status:"Planned"},
-  {icon:"✓",name:"Approval Library",desc:"Review and approve every creative before publishing.",status:"Approval-first"},
+  {icon:"◖",name:"Voice Studio",desc:"Generate Telugu-English and English voiceover scripts with OWN.",status:"Ready",href:"/social/voice"},
+  {icon:"▤",name:"Carousel Studio",desc:"Generate editable multi-slide copy and captions with OWN.",status:"Ready",href:"/social/carousel"},
+  {icon:"✓",name:"Approval Library",desc:"Review, approve or return drafts before publishing.",status:"Approval-first",href:"/social/approvals"},
   {icon:"◎",name:"Instagram Manager",desc:"Connect and manage the Instagram business account.",status:"Not connected"},
   {icon:"↗",name:"Analytics",desc:"Review reach, engagement and content performance.",status:"Planned"},
 ];
