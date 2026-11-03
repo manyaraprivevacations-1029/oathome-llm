@@ -10,7 +10,7 @@ const modules = [
   {icon:"✦",name:"Brand Brain",desc:"Brand voice, audience, offers and content guidelines.",status:"Ready",href:"/social/brand"},
   {icon:"▦",name:"Content Planner",desc:"Create drafts, organise content and approve before publishing.",status:"Ready",href:"/social/planner"},
   {icon:"⌁",name:"Trend Research",desc:"Collect travel trends and turn them into campaign ideas.",status:"Planned"},
-  {icon:"▶",name:"Reel Studio",desc:"Build scripts and reels from your footage or supported AI tools.",status:"Planned"},
+  {icon:"▶",name:"Reel Studio",desc:"Draft travel reel scripts and captions from verified trip details.",status:"Ready",href:"/social/reels"},
   {icon:"◖",name:"Voice Studio",desc:"Prepare voiceovers and narration for travel content.",status:"Planned"},
   {icon:"▤",name:"Carousel Studio",desc:"Create structured multi-slide Instagram content.",status:"Planned"},
   {icon:"✓",name:"Approval Library",desc:"Review and approve every creative before publishing.",status:"Approval-first"},
@@ -68,7 +68,7 @@ export default function SocialDashboardPage() {
       <h2 style={{fontSize:22,margin:"10px 0"}}>On A Trip Holidays</h2>
       <p style={{color:"#a5b2a8",fontSize:13,lineHeight:1.7,maxWidth:700,margin:0}}>A dedicated home for travel campaigns, Instagram content, reels and brand assets. OWN remains a separate product and is not modified by this workspace.</p>
     </section>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#829087",margin:0}}>The dashboard foundation is ready; modules will be enabled in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#829087",margin:0}}>Open the available tools below. More creative modules will be added in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
     <section style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(235px,1fr))",gap:13}}>
       {modules.map(m=><article key={m.name} style={card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:21,color:"#9bd0aa"}}>{m.icon}</span><span style={smallPill}>{m.status}</span></div><h3 style={{fontSize:15,margin:"17px 0 7px"}}>{m.name}</h3><p style={{fontSize:12,color:"#91a096",lineHeight:1.65,margin:0}}>{m.desc}</p>{"href" in m && <Link href={m.href} style={{display:"inline-block",marginTop:14,color:"#9bd0aa",fontSize:11,textDecoration:"none"}}>Open module →</Link>}</article>)}
     </section>
