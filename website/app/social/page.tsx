@@ -66,9 +66,9 @@ export default function SocialDashboardPage() {
     <section style={{...panel,marginBottom:24,background:"linear-gradient(120deg,#17291e,#ffffff)"}}>
       <div style={{fontSize:10,letterSpacing:".14em",color:"#26734a"}}>YOUR BRAND WORKSPACE</div>
       <h2 style={{fontSize:22,margin:"10px 0"}}>On A Trip Holidays</h2>
-      <p style={{color:"#a5b2a8",fontSize:13,lineHeight:1.7,maxWidth:700,margin:0}}>A dedicated home for travel campaigns, Instagram content, reels and brand assets. OWN remains a separate product and is not modified by this workspace.</p>
+      <p style={{color:"#53645a",fontSize:13,lineHeight:1.7,maxWidth:700,margin:0}}>A dedicated home for travel campaigns, Instagram content, reels and brand assets. OWN remains a separate product and is not modified by this workspace.</p>
     </section>
-    <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#748078",margin:0}}>Open the available tools below. More creative modules will be added in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
+    <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#65736b",margin:0}}>Open the available tools below. More creative modules will be added in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
     <section style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(235px,1fr))",gap:13}}>
       {modules.map(m=><article key={m.name} style={card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:21,color:"#26734a"}}>{m.icon}</span><span style={smallPill}>{m.status}</span></div><h3 style={{fontSize:15,margin:"17px 0 7px"}}>{m.name}</h3><p style={{fontSize:12,color:"#68756d",lineHeight:1.65,margin:0}}>{m.desc}</p>{m.href && <Link href={m.href} style={{display:"inline-block",marginTop:14,color:"#26734a",fontSize:11,textDecoration:"none"}}>Open module →</Link>}</article>)}
     </section>
@@ -81,5 +81,5 @@ const panel:React.CSSProperties={border:"1px solid #e2e8e3",borderRadius:16,padd
 const card:React.CSSProperties={border:"1px solid #e2e8e3",borderRadius:13,padding:18,background:"#ffffff",minHeight:150};
 const link:React.CSSProperties={color:"#26734a"};
 const pill:React.CSSProperties={fontSize:9,letterSpacing:".08em",padding:"7px 9px",borderRadius:20,border:"1px solid #735b32",color:"#986b16"};
-const smallPill:React.CSSProperties={fontSize:9,padding:"5px 7px",borderRadius:20,border:"1px solid #304338",color:"#9eb5a4"};
-const secondaryButton:React.CSSProperties={padding:"9px 12px",borderRadius:8,border:"1px solid #d7dfd8",background:"#f0f5f1",color:"#dce8df",fontSize:11};
+const smallPill:React.CSSProperties={fontSize:9,padding:"5px 7px",borderRadius:20,border:"1px solid #cbd9cf",color:"#9eb5a4"};
+const secondaryButton:React.CSSProperties={padding:"9px 12px",borderRadius:8,border:"1px solid #d7dfd8",background:"#f0f5f1",color:"#263b2e",fontSize:11};
