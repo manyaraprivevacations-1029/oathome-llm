@@ -9,7 +9,7 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 const modules: { icon: string; name: string; desc: string; status: string; href?: string }[] = [
   {icon:"✦",name:"Brand Brain",desc:"Brand voice, audience, offers and content guidelines.",status:"Ready",href:"/social/brand"},
   {icon:"▦",name:"Content Planner",desc:"Create drafts, organise content and approve before publishing.",status:"Ready",href:"/social/planner"},
-  {icon:"⌁",name:"Trend Research",desc:"Collect travel trends and turn them into campaign ideas.",status:"Planned"},
+  {icon:"⌁",name:"Trend Research",desc:"Collect travel trends and turn them into campaign ideas.",status:"Ready",href:"/social/trends"},
   {icon:"▶",name:"Reel Studio",desc:"Draft travel reel scripts and captions from verified trip details.",status:"Ready",href:"/social/reels"},
   {icon:"◖",name:"Voice Studio",desc:"Prepare voiceovers and narration for travel content.",status:"Planned"},
   {icon:"▤",name:"Carousel Studio",desc:"Create structured multi-slide Instagram content.",status:"Planned"},
