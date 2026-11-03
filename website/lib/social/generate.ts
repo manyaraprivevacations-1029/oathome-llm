@@ -48,7 +48,7 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
     try {
       const item = JSON.parse(line) as { message?: { content?: unknown }; response?: unknown };
       const content = item.message?.content ?? item.response;
-      if (typeof content === "string" && content.trim()) return content.trim();
+      if (typeof content === "string" && content.trim()) {\n        const answer = content.trim();\n        if (/^ee detail na daggara clear ga ledu/i.test(answer)) throw new Error("OWN is reachable, but its model did not generate a creative response. Check the OWN model runtime and try again.");\n        return answer;\n      }
     } catch { /* Ignore non-JSON stream fragments and inspect the next line. */ }
   }
   throw new Error("OWN returned an empty response. Please try again.");
