@@ -1,8 +1,41 @@
+import { getSocialSupabase } from "@/lib/social/supabase-browser";
+
 export async function generateSocialDraft(prompt: string): Promise<string> {
+  let brandContext = "";
+  try {
+    const supabase = getSocialSupabase();
+    const { data: auth } = await supabase.auth.getUser();
+    if (auth.user) {
+      const { data: profile } = await supabase
+        .from("social_brand_profiles")
+        .select("brand_name,website_url,instagram_handle,brand_voice,audience_notes,content_rules")
+        .eq("user_id", auth.user.id)
+        .eq("brand_name", "On A Trip Holidays")
+        .maybeSingle();
+      if (profile) {
+        brandContext = [
+          "BRAND BRAIN — follow these saved brand settings:",
+          "Brand: " + (profile.brand_name || "On A Trip Holidays"),
+          "Website: " + (profile.website_url || ""),
+          "Instagram: " + (profile.instagram_handle || ""),
+          "Voice: " + (profile.brand_voice || ""),
+          "Audience: " + (profile.audience_notes || ""),
+          "Content rules: " + JSON.stringify(profile.content_rules || {})
+        ].join("\n");
+      }
+    }
+  } catch {
+    // Drafting remains available if the optional profile lookup is unavailable.
+  }
+  const fullPrompt = [
+    "You are the content assistant for On A Trip Holidays. Use natural, useful marketing language. Never invent travel prices, dates, departures, availability, inclusions, hotel standards or guarantees. The existing OWN service supplies verified travel knowledge; when facts are not confirmed, say they need confirmation or use a general enquiry CTA.",
+    brandContext,
+    prompt
+  ].filter(Boolean).join("\n\n");
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: [{ role: "user", content: prompt }] }),
+    body: JSON.stringify({ messages: [{ role: "user", content: fullPrompt }] }),
     cache: "no-store"
   });
   if (!response.ok) {
