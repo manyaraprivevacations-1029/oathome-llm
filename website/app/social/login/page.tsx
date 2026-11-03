@@ -1,0 +1,62 @@
+"use client";
+
+import { useState, type FormEvent, type CSSProperties } from "react";
+import Link from "next/link";
+import { getSocialSupabase } from "@/lib/social/supabase-browser";
+
+export default function SocialLoginPage() {
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(true); setError(""); setMessage("");
+    try {
+      const supabase = getSocialSupabase();
+      if (mode === "signup") {
+        const { data, error: authError } = await supabase.auth.signUp({ email, password });
+        if (authError) throw authError;
+        setMessage(data.session
+          ? "Account created. You can now open your workspace."
+          : "Account created. Check your email to confirm your address, then sign in.");
+      } else {
+        const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+        if (authError) throw authError;
+        window.location.assign("/social");
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to authenticate. Please try again.");
+    } finally { setBusy(false); }
+  }
+
+  return (
+    <main style={{minHeight:"100vh",display:"grid",placeItems:"center",padding:24,background:"radial-gradient(ellipse at 50% 0%,#193126 0%,#090d0b 52%)"}}>
+      <section style={{width:"100%",maxWidth:430,border:"1px solid #26372e",borderRadius:20,padding:32,background:"#101713",boxShadow:"0 24px 90px #0008"}}>
+        <Link href="/" style={{color:"#a7c8b0",fontSize:12,textDecoration:"none"}}>← OWN workspace</Link>
+        <div style={{marginTop:30,fontSize:11,letterSpacing:".18em",color:"#8fc9a2"}}>ON A TRIP HOLIDAYS</div>
+        <h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"10px 0 8px"}}>OAT Social AI</h1>
+        <p style={{color:"#9ca9a0",fontSize:13,lineHeight:1.7,margin:"0 0 25px"}}>Your travel brand’s creative workspace. Plan, create and review content in one place.</p>
+        <div style={{display:"flex",gap:8,marginBottom:20}}>
+          <button type="button" onClick={()=>setMode("signin")} style={tabStyle(mode==="signin")}>Sign in</button>
+          <button type="button" onClick={()=>setMode("signup")} style={tabStyle(mode==="signup")}>Create account</button>
+        </div>
+        <form onSubmit={submit} style={{display:"grid",gap:13}}>
+          <label style={labelStyle}>EMAIL ADDRESS<input required type="email" autoComplete="email" value={email} onChange={e=>setEmail(e.target.value)} style={inputStyle} placeholder="you@company.com"/></label>
+          <label style={labelStyle}>PASSWORD<input required minLength={6} type="password" autoComplete={mode==="signin"?"current-password":"new-password"} value={password} onChange={e=>setPassword(e.target.value)} style={inputStyle} placeholder="At least 6 characters"/></label>
+          {error && <p role="alert" style={{color:"#ff9b9b",fontSize:12,margin:0}}>{error}</p>}
+          {message && <p role="status" style={{color:"#9bd9ae",fontSize:12,lineHeight:1.6,margin:0}}>{message}</p>}
+          <button disabled={busy} type="submit" style={{marginTop:5,padding:13,border:0,borderRadius:10,background:"#26734a",color:"white",fontWeight:700}}>{busy?"Please wait…":mode==="signin"?"Sign in to Social AI":"Create Social AI account"}</button>
+        </form>
+        <p style={{fontSize:11,color:"#728078",lineHeight:1.6,margin:"20px 0 0"}}>This login is separate from OWN. Your Supabase project must have Email authentication enabled. Email confirmation follows your Supabase Auth settings.</p>
+      </section>
+    </main>
+  );
+}
+
+const labelStyle: CSSProperties = {display:"grid",gap:7,fontSize:9,letterSpacing:".12em",color:"#9eafa3"};
+const inputStyle: React.CSSProperties = {width:"100%",padding:"12px 13px",border:"1px solid #304238",borderRadius:9,background:"#0b100d",color:"#f2f5f2",fontSize:13,outline:"none"};
+function tabStyle(active:boolean): React.CSSProperties { return {flex:1,padding:10,borderRadius:8,border:"1px solid "+(active?"#397a54":"#29372f"),background:active?"#1b3525":"#111914",color:active?"#d8f1df":"#8c9b90",fontSize:12}; }
