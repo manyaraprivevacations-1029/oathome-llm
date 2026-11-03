@@ -29,11 +29,11 @@ const defaults: BrandProfile = {
   }
 };
 
-const shell: CSSProperties = { minHeight:"100vh", padding:"34px clamp(18px,5vw,64px)", background:"#f5f7f5", color:"#18231d" };
-const panel: CSSProperties = { border:"1px solid #e2e8e3", borderRadius:15, padding:22, background:"#ffffff" };
-const label: CSSProperties = { display:"grid", gap:7, color:"#65736b", fontSize:10, letterSpacing:".09em" };
-const input: CSSProperties = { width:"100%", boxSizing:"border-box", padding:"11px 12px", border:"1px solid #d7dfd8", borderRadius:8, background:"#ffffff", color:"#1f2933", fontSize:13 };
-const button: CSSProperties = { padding:"11px 15px", border:0, borderRadius:9, background:"#26734a", color:"white", fontWeight:700, cursor:"pointer" };
+const shell: CSSProperties = { minHeight:"100vh", padding:"34px clamp(18px,5vw,64px)", background:"#f4f8fd", color:"#10264a" };
+const panel: CSSProperties = { border:"1px solid #dce8f5", borderRadius:15, padding:22, background:"#ffffff" };
+const label: CSSProperties = { display:"grid", gap:7, color:"#5d708a", fontSize:10, letterSpacing:".09em" };
+const input: CSSProperties = { width:"100%", boxSizing:"border-box", padding:"11px 12px", border:"1px solid #cbdced", borderRadius:8, background:"#ffffff", color:"#142b4f", fontSize:13 };
+const button: CSSProperties = { padding:"11px 15px", border:0, borderRadius:9, background:"#0878d8", color:"white", fontWeight:700, cursor:"pointer" };
 
 export default function BrandBrainPage() {
   const router = useRouter();
@@ -91,14 +91,14 @@ export default function BrandBrainPage() {
 
   return <main style={shell}>
     <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,flexWrap:"wrap",marginBottom:25}}>
-      <div><Link href="/social" style={{color:"#26734a",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Brand Brain</h1><p style={{color:"#68756d",fontSize:13,margin:0}}>One trusted source for your brand voice and content rules.</p></div>
-      <span style={{fontSize:9,letterSpacing:".1em",padding:"7px 10px",border:"1px solid #304338",borderRadius:20,color:"#a7c9b1"}}>PRIVATE WORKSPACE</span>
+      <div><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Brand Brain</h1><p style={{color:"#5d708a",fontSize:13,margin:0}}>One trusted source for your brand voice and content rules.</p></div>
+      <span style={{fontSize:9,letterSpacing:".1em",padding:"7px 10px",border:"1px solid #c6def5",borderRadius:20,color:"#1769aa"}}>PRIVATE WORKSPACE</span>
     </header>
     <section style={{...panel,marginBottom:17}}>
       <h2 style={{fontSize:16,margin:"0 0 8px"}}>Verified starting details</h2>
-      <p style={{fontSize:12,color:"#a1ada4",lineHeight:1.7,margin:0}}>Company name, website and Instagram handle are prefilled from the existing On A Trip Holidays project context. Review them before saving. Package information remains in the existing travel knowledge source and is not edited here.</p>
+      <p style={{fontSize:12,color:"#627b95",lineHeight:1.7,margin:0}}>Company name, website and Instagram handle are prefilled from the existing On A Trip Holidays project context. Review them before saving. Package information remains in the existing travel knowledge source and is not edited here.</p>
     </section>
-    {loading ? <p style={{color:"#65736b"}}>Loading your brand profile…</p> : <form onSubmit={save} style={{display:"grid",gap:15}}>
+    {loading ? <p style={{color:"#5d708a"}}>Loading your brand profile…</p> : <form onSubmit={save} style={{display:"grid",gap:15}}>
       <section style={panel}>
         <h2 style={{fontSize:16,margin:"0 0 17px"}}>Brand identity</h2>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14}}>
@@ -124,8 +124,8 @@ export default function BrandBrainPage() {
         </div>
       </section>
       {error && <p role="alert" style={{color:"#b42318",fontSize:12}}>{error}</p>}
-      {message && <p role="status" style={{color:"#26734a",fontSize:12}}>{message}</p>}
-      <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}><button disabled={saving} type="submit" style={button}>{saving?"Saving…":"Save Brand Brain"}</button><span style={{fontSize:11,color:"#748078"}}>Saved privately to your signed-in Social AI account.</span></div>
+      {message && <p role="status" style={{color:"#0878d8",fontSize:12}}>{message}</p>}
+      <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}><button disabled={saving} type="submit" style={button}>{saving?"Saving…":"Save Brand Brain"}</button><span style={{fontSize:11,color:"#71839a"}}>Saved privately to your signed-in Social AI account.</span></div>
     </form>}
   </main>;
 }
