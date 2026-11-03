@@ -4,6 +4,7 @@ import { useEffect, useState, type FormEvent, type CSSProperties } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
+import { generateSocialDraft } from "@/lib/social/generate";
 
 type Item = { id:string; title:string; content_type:"reel"|"carousel"|"post"|"story"; status:"draft"|"in_review"|"approved"|"rejected"|"scheduled"|"published"; caption:string|null; script:string|null; created_at:string };
 const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f4f8fd",color:"#10264a"};
@@ -25,6 +26,7 @@ export default function ContentPlannerPage(){
   const [caption,setCaption]=useState("");
   const [script,setScript]=useState("");
   const [filter,setFilter]=useState("all");
+  const [generating,setGenerating]=useState(false);
 
   async function refresh(){
     const supabase=getSocialSupabase();
@@ -35,6 +37,16 @@ export default function ContentPlannerPage(){
     setItems((data||[]) as Item[]);
   }
   useEffect(()=>{let alive=true;(async()=>{try{await refresh();}catch(e){if(alive)setError(e instanceof Error?e.message:"Unable to load content.");}finally{if(alive)setLoading(false);}})();return()=>{alive=false;};},[router]);
+
+  async function generateCaption(){
+    if(!title.trim()){setError("Enter a draft title first.");return;}
+    setGenerating(true);setError("");setNotice("");
+    try{
+      const result=await generateSocialDraft("Write an Instagram "+kind+" caption for this content title: "+title+". Creative notes or verified facts supplied: "+(script.trim()||"No package facts supplied; do not invent price, dates, inclusions or availability. Use an enquiry CTA.")+". Draft caption text currently: "+(caption.trim()||"None")+". Write natural Telugu-English suitable for Hyderabad travellers, include a clear CTA and a few relevant hashtags. Do not invent travel facts.");
+      setCaption(result);setNotice("Caption generated with OWN and saved into the draft form. Review before saving.");
+    }catch(e){setError(e instanceof Error?e.message:"Caption generation failed.");}
+    finally{setGenerating(false);}
+  }
 
   async function create(event:FormEvent<HTMLFormElement>){
     event.preventDefault();setBusy(true);setError("");setNotice("");
@@ -64,7 +76,7 @@ export default function ContentPlannerPage(){
           <label style={label}>DRAFT TITLE<input required value={title} onChange={e=>setTitle(e.target.value)} style={field} placeholder="e.g. Manali winter trip announcement"/></label>
           <label style={label}>FORMAT<select value={kind} onChange={e=>setKind(e.target.value as Item["content_type"])} style={field}><option value="reel">Reel</option><option value="carousel">Carousel</option><option value="post">Post</option><option value="story">Story</option></select></label>
         </div>
-        <label style={label}>CAPTION<textarea rows={4} value={caption} onChange={e=>setCaption(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Write a caption draft…"/></label>
+        <label style={label}>CAPTION<textarea rows={4} value={caption} onChange={e=>setCaption(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Write a caption draft…"/></label><div><button type="button" disabled={generating||busy} onClick={()=>void generateCaption()} style={primary}>{generating?"Generating with OWN…":"Generate caption with OWN"}</button></div>
         <label style={label}>SCRIPT / CREATIVE NOTES<textarea rows={5} value={script} onChange={e=>setScript(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Add reel script, slide outline or production notes…"/></label>
         <div><button disabled={busy} style={primary}>{busy?"Saving…":"Save draft"}</button></div>
       </form>
