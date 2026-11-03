@@ -4,11 +4,11 @@ import { useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
-const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f5f7f5",color:"#18231d"};
-const panel:CSSProperties={border:"1px solid #e2e8e3",borderRadius:15,padding:21,background:"#ffffff"};
-const label:CSSProperties={display:"grid",gap:7,color:"#65736b",fontSize:10,letterSpacing:".09em"};
-const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #d7dfd8",borderRadius:8,background:"#ffffff",color:"#1f2933",fontSize:13};
-const button:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#26734a",color:"white",fontWeight:700,cursor:"pointer"};
+const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f4f8fd",color:"#10264a"};
+const panel:CSSProperties={border:"1px solid #dce8f5",borderRadius:15,padding:21,background:"#ffffff"};
+const label:CSSProperties={display:"grid",gap:7,color:"#5d708a",fontSize:10,letterSpacing:".09em"};
+const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#ffffff",color:"#142b4f",fontSize:13};
+const button:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#0878d8",color:"white",fontWeight:700,cursor:"pointer"};
 
 export default function ReelStudioPage(){
   const [destination,setDestination]=useState("");
@@ -56,7 +56,7 @@ export default function ReelStudioPage(){
   }
 
   return <main style={shell}>
-    <header style={{marginBottom:24}}><Link href="/social" style={{color:"#26734a",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Reel Studio</h1><p style={{color:"#68756d",fontSize:13,margin:0}}>Create factual reel scripts and captions with a free-first drafting workflow.</p></header>
+    <header style={{marginBottom:24}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Reel Studio</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Create factual reel scripts and captions with a free-first drafting workflow.</p></header>
     <section style={{...panel,marginBottom:16}}>
       <h2 style={{fontSize:17,margin:"0 0 15px"}}>Reel brief</h2>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(220px,1fr))",gap:13}}>
@@ -73,8 +73,8 @@ export default function ReelStudioPage(){
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap"}}><h2 style={{fontSize:17,margin:0}}>Your reel script</h2><button onClick={saveDraft} disabled={saving} style={button}>{saving?"Saving…":"Save to Content Planner"}</button></div>
       <textarea aria-label="Editable reel script" value={script} onChange={e=>setScript(e.target.value)} rows={15} style={{...field,marginTop:14,resize:"vertical",lineHeight:1.7}}/>
       <h3 style={{fontSize:13,margin:"18px 0 8px"}}>Instagram caption</h3><textarea aria-label="Editable Instagram caption" value={caption} onChange={e=>setCaption(e.target.value)} rows={5} style={{...field,resize:"vertical",lineHeight:1.7}}/>
-      <p style={{fontSize:10,color:"#748078",lineHeight:1.6}}>This is a script and caption drafting tool, not a video renderer. It does not generate footage or publish to Instagram.</p>
+      <p style={{fontSize:10,color:"#71839a",lineHeight:1.6}}>This is a script and caption drafting tool, not a video renderer. It does not generate footage or publish to Instagram.</p>
     </section>}
-    {error&&<p role="alert" style={{color:"#b42318",fontSize:12}}>{error}</p>}{notice&&<p role="status" style={{color:"#26734a",fontSize:12}}>{notice}</p>}
+    {error&&<p role="alert" style={{color:"#b42318",fontSize:12}}>{error}</p>}{notice&&<p role="status" style={{color:"#0878d8",fontSize:12}}>{notice}</p>}
   </main>;
 }
