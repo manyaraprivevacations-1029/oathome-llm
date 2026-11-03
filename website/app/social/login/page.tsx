@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent, type CSSProperties } from "react";
 import Link from "next/link";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
@@ -57,6 +57,6 @@ export default function SocialLoginPage() {
   );
 }
 
-const labelStyle: React.CSSProperties = {display:"grid",gap:7,fontSize:9,letterSpacing:".12em",color:"#9eafa3"};
+const labelStyle: CSSProperties = {display:"grid",gap:7,fontSize:9,letterSpacing:".12em",color:"#9eafa3"};
 const inputStyle: React.CSSProperties = {width:"100%",padding:"12px 13px",border:"1px solid #304238",borderRadius:9,background:"#0b100d",color:"#f2f5f2",fontSize:13,outline:"none"};
 function tabStyle(active:boolean): React.CSSProperties { return {flex:1,padding:10,borderRadius:8,border:"1px solid "+(active?"#397a54":"#29372f"),background:active?"#1b3525":"#111914",color:active?"#d8f1df":"#8c9b90",fontSize:12}; }
