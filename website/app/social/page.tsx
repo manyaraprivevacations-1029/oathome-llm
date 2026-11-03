@@ -7,9 +7,9 @@ import type { Session } from "@supabase/supabase-js";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 const modules = [
-  {icon:"✦",name:"Brand Brain",desc:"Brand voice, audience, offers and content guidelines.",status:"Foundation"},
+  {icon:"✦",name:"Brand Brain",desc:"Brand voice, audience, offers and content guidelines.",status:"Ready",href:"/social/brand"},
+  {icon:"▦",name:"Content Planner",desc:"Create drafts, organise content and approve before publishing.",status:"Ready",href:"/social/planner"},
   {icon:"⌁",name:"Trend Research",desc:"Collect travel trends and turn them into campaign ideas.",status:"Planned"},
-  {icon:"▦",name:"Content Planner",desc:"Organise weekly posts, reels and campaign calendars.",status:"Planned"},
   {icon:"▶",name:"Reel Studio",desc:"Build scripts and reels from your footage or supported AI tools.",status:"Planned"},
   {icon:"◖",name:"Voice Studio",desc:"Prepare voiceovers and narration for travel content.",status:"Planned"},
   {icon:"▤",name:"Carousel Studio",desc:"Create structured multi-slide Instagram content.",status:"Planned"},
@@ -70,7 +70,7 @@ export default function SocialDashboardPage() {
     </section>
     <div style={{display:"flex",justifyContent:"space-between",alignItems:"end",gap:12,marginBottom:14}}><div><h2 style={{fontSize:18,margin:"0 0 5px"}}>Creative tools</h2><p style={{fontSize:11,color:"#829087",margin:0}}>The dashboard foundation is ready; modules will be enabled in stages.</p></div><span style={pill}>PUBLISHING DISABLED</span></div>
     <section style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(235px,1fr))",gap:13}}>
-      {modules.map(m=><article key={m.name} style={card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:21,color:"#9bd0aa"}}>{m.icon}</span><span style={smallPill}>{m.status}</span></div><h3 style={{fontSize:15,margin:"17px 0 7px"}}>{m.name}</h3><p style={{fontSize:12,color:"#91a096",lineHeight:1.65,margin:0}}>{m.desc}</p></article>)}
+      {modules.map(m=><article key={m.name} style={card}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><span style={{fontSize:21,color:"#9bd0aa"}}>{m.icon}</span><span style={smallPill}>{m.status}</span></div><h3 style={{fontSize:15,margin:"17px 0 7px"}}>{m.name}</h3><p style={{fontSize:12,color:"#91a096",lineHeight:1.65,margin:0}}>{m.desc}</p>{"href" in m && <Link href={m.href} style={{display:"inline-block",marginTop:14,color:"#9bd0aa",fontSize:11,textDecoration:"none"}}>Open module →</Link>}</article>)}
     </section>
     <p style={{fontSize:11,color:"#748078",marginTop:25,lineHeight:1.7}}>Safety: no Instagram publishing, messaging, ad changes or external account actions are enabled in this initial foundation.</p>
   </main>;
