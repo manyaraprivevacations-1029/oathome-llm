@@ -34,10 +34,14 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
     prompt
   ].filter(Boolean).join("\n\n");
 
-  const response = await fetch("/api/chat", {
+  const { data: sessionData } = await getSocialSupabase().auth.getSession();
+  const accessToken = sessionData.session?.access_token;
+  if (!accessToken) throw new Error("Your Social AI session expired. Please sign in again.");
+
+  const response = await fetch("/api/social/generate", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ messages: [{ role: "user", content: fullPrompt }] }),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    body: JSON.stringify({ prompt: fullPrompt }),
     cache: "no-store"
   });
 
@@ -46,26 +50,7 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
     throw new Error(detail || "OWN could not generate a draft. Please try again.");
   }
 
-  const raw = await response.text();
-  const lines = raw.split("\n").map(line => line.trim()).filter(Boolean);
-  for (const line of lines.reverse()) {
-    let item: { message?: { content?: unknown }; response?: unknown };
-    try {
-      item = JSON.parse(line) as { message?: { content?: unknown }; response?: unknown };
-    } catch {
-      // Ignore non-JSON stream fragments and inspect the next line.
-      continue;
-    }
-
-    const content = item.message?.content ?? item.response;
-    if (typeof content === "string" && content.trim()) {
-      const answer = content.trim();
-      if (/^ee detail na daggara clear ga ledu/i.test(answer)) {
-        throw new Error("OWN is reachable, but its model returned a knowledge-only fallback instead of generating a creative response. Check the OWN model runtime and try again.");
-      }
-      return answer;
-    }
-  }
-
-  throw new Error("OWN returned an empty response. Please try again.");
+  const payload = await response.json().catch(() => null) as { content?: unknown; error?: unknown } | null;
+  if (typeof payload?.content === "string" && payload.content.trim()) return payload.content.trim();
+  throw new Error(typeof payload?.error === "string" ? payload.error : "OWN returned an empty response. Please try again.");
 }
