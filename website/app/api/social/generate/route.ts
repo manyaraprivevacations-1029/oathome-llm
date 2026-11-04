@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   const call = async (path: string, payload: unknown) => fetch(`${baseUrl}${path}`, {
     method: "POST", headers, body: JSON.stringify(payload), cache: "no-store",
-    signal: AbortSignal.timeout(120000)
+    signal: AbortSignal.timeout(270000)
   });
 
   try {
