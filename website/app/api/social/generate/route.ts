@@ -8,7 +8,7 @@ function jsonError(message: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "").trim();
+  const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token) return jsonError("Please sign in to OAT Social AI before generating content.", 401);
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SOCIAL_SUPABASE_URL?.trim();
@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   if (!supabaseUrl || !supabaseAnonKey) return jsonError("OAT Social AI authentication is not configured on the server.", 503);
 
   try {
-    const authResponse = await fetch(`${supabaseUrl.replace(/\\/+$/, "")}/auth/v1/user`, {
+    const authResponse = await fetch(`${supabaseUrl.replace(/\/+$/, "")}/auth/v1/user`, {
       headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${token}` },
       cache: "no-store",
       signal: AbortSignal.timeout(10000)
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     "Return only the exact output requested by the user. If JSON is requested, return valid JSON only, with no Markdown fences or introductory text.",
     "Never invent package prices, dates, departures, availability, inclusions, hotel standards, testimonials, performance results or guarantees. Mark uncertain facts for team confirmation.",
     "Do not claim to have researched live trends, created media files, sourced footage or published content unless those actions actually occurred."
-  ].join("\\n");
+  ].join("\n");
 
   if (provider === "openai") {
     // Paid generation is deliberately disabled at the current ₹0 budget.
@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
 
   let baseUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || "";
   if (!baseUrl && process.env.NODE_ENV !== "production") baseUrl = "http://127.0.0.1:11434";
-  baseUrl = baseUrl.replace(/\\/+$/, "");
+  baseUrl = baseUrl.replace(/\/+$/, "");
   if (!baseUrl) return jsonError("OWN model runtime is not configured. Set OATHOME_LLM_BASE_URL in the existing runtime environment.", 503);
 
   const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
