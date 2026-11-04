@@ -8,15 +8,18 @@ function jsonError(message: string, status: number) {
 }
 
 export async function POST(request: NextRequest) {
-  const token = request.headers.get("authorization")?.replace(/^Bearer\\s+/i, "").trim();
+  const authorization = request.headers.get("authorization") || "";
+  const token = authorization.toLowerCase().startsWith("bearer ") ? authorization.slice(7).trim() : "";
   if (!token) return jsonError("Please sign in to OAT Social AI before generating content.", 401);
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SOCIAL_SUPABASE_URL?.trim();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SOCIAL_SUPABASE_URL?.trim() || "";
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SOCIAL_SUPABASE_ANON_KEY?.trim();
   if (!supabaseUrl || !supabaseAnonKey) return jsonError("OAT Social AI authentication is not configured on the server.", 503);
 
   try {
-    const auth = await fetch(`${supabaseUrl.replace(/\\/+$/, "")}/auth/v1/user`, {
+    let authUrl = supabaseUrl;
+    while (authUrl.endsWith("/")) authUrl = authUrl.slice(0, -1);
+    const auth = await fetch(`${authUrl}/auth/v1/user`, {
       headers: { apikey: supabaseAnonKey, Authorization: `Bearer ${token}` },
       cache: "no-store",
       signal: AbortSignal.timeout(10000)
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   let baseUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || "";
   if (!baseUrl && process.env.NODE_ENV !== "production") baseUrl = "http://127.0.0.1:11434";
-  baseUrl = baseUrl.replace(/\\/+$/, "");
+  while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
   if (!baseUrl) return jsonError("OWN model runtime is not configured.", 503);
 
   const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
@@ -47,7 +50,7 @@ export async function POST(request: NextRequest) {
     "Create the requested social content directly using the supplied On A Trip Holidays brief.",
     "Return only the requested output. If JSON is requested, return valid JSON only.",
     "Never invent package prices, dates, availability, inclusions, testimonials or guarantees. Mark unknown facts for confirmation."
-  ].join("\\n");
+  ].join(" ");
 
   try {
     const response = await fetch(`${baseUrl}/api/chat`, {
