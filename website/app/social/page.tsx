@@ -10,7 +10,7 @@ const modules = [
   {icon:"✦",name:"Brand Brain",desc:"Brand voice, audience, offers and content guidelines.",status:"Ready",href:"/social/brand"},
   {icon:"▦",name:"Content Planner",desc:"Create drafts, organise content and approve before publishing.",status:"Ready",href:"/social/planner"},
   {icon:"⌁",name:"Trend Research",desc:"Research travel trends, competitor content and audience demand with source evidence.",status:"Ready",href:"/social/trends"},
-  {icon:"▶",name:"Reel Studio",desc:"Draft travel reel scripts and captions from verified trip details.",status:"Ready",href:"/social/reels"},
+  {icon:"▶",name:"Reel Studio",desc:"Generate editable reel storyboards, voiceover scripts, shot lists and production briefs.",status:"Ready",href:"/social/reels"},
   {icon:"◖",name:"Voice Studio",desc:"Generate Telugu-English and English voiceover scripts with OWN.",status:"Ready",href:"/social/voice"},
   {icon:"▤",name:"Carousel Studio",desc:"Generate editable multi-slide copy and captions with OWN.",status:"Ready",href:"/social/carousel"},
   {icon:"✓",name:"Approval Library",desc:"Review, approve or return drafts before publishing.",status:"Approval-first",href:"/social/approvals"},
