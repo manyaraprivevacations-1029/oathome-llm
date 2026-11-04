@@ -42,7 +42,7 @@ export default function ContentPlannerPage(){
     if(!title.trim()){setError("Enter a draft title first.");return;}
     setGenerating(true);setError("");setNotice("");
     try{
-      const result=await generateSocialDraft("Write an Instagram "+kind+" caption for this content title: "+title+". Creative notes or verified facts supplied: "+(script.trim()||"No package facts supplied; do not invent price, dates, inclusions or availability. Use an enquiry CTA.")+". Draft caption text currently: "+(caption.trim()||"None")+". Write natural Telugu-English suitable for Hyderabad travellers, include a clear CTA and a few relevant hashtags. Do not invent travel facts.");
+      const result=await generateSocialDraft("Write one ready-to-use Instagram "+kind+" caption for this content title: "+title+". Creative notes or verified facts supplied: "+(script.trim()||"No package facts supplied; do not invent price, dates, inclusions or availability. Use a general enquiry CTA.")+". Existing draft to improve, if any: "+(caption.trim()||"None")+". Write natural conversational Telugu-English suitable for Hyderabad travellers. Return ONLY the caption as plain text, never JSON, never a field label, and never Markdown code fences. Use one engaging opening hook, 2-4 short and useful sentences, one clear enquiry CTA, and 3-5 relevant hashtags. Keep it around 60-90 words. Do not repeat any sentence, phrase, idea, CTA or hashtag. Avoid awkward literal translations and repetitive filler. Do not invent travel or package facts.");
       setCaption(result);setNotice("Caption generated with OWN and saved into the draft form. Review before saving.");
     }catch(e){setError(e instanceof Error?e.message:"Caption generation failed.");}
     finally{setGenerating(false);}
