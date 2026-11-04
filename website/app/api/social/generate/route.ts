@@ -7,6 +7,39 @@ function jsonError(message: string, status: number) {
   return NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
 }
 
+function normalizeGeneratedContent(raw: string): string {
+  let content = raw.trim().replace(/^\`\`\`(?:json|text)?\s*/i, "").replace(/\s*\`\`\`$/, "").trim();
+
+  // Older/local models may still wrap a plain-text caption in JSON despite the prompt.
+  try {
+    const parsed: unknown = JSON.parse(content);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const object = parsed as Record<string, unknown>;
+      const candidate = object.caption ?? object.text ?? object.content ?? object.response ?? object.output;
+      if (typeof candidate === "string") content = candidate.trim();
+    } else if (typeof parsed === "string") {
+      content = parsed.trim();
+    }
+  } catch {
+    // The expected response is plain text, so leave non-JSON output unchanged.
+  }
+
+  // Remove exact repeated sentences without changing the wording of unique sentences.
+  const seen = new Set<string>();
+  content = content
+    .split(/(?<=[.!?।])\s+/u)
+    .filter((sentence) => {
+      const key = sentence.toLocaleLowerCase().replace(/[\s\p{P}\p{S}]/gu, "");
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
+    .join(" ")
+    .trim();
+
+  return content;
+}
+
 export async function POST(request: NextRequest) {
   const token = request.headers.get("authorization")?.replace(/^Bearer\s+/i, "").trim();
   if (!token) return jsonError("Please sign in to OAT Social AI before generating content.", 401);
@@ -45,7 +78,8 @@ export async function POST(request: NextRequest) {
   const system = [
     "You are OWN, the creative engine for OAT Social AI. You are not the travel-customer chatbot Radhika.",
     "Follow the supplied On A Trip Holidays brand brief. Generate the requested creative asset directly; never answer with a generic travel enquiry, FAQ fallback, or a question asking what destination the customer wants.",
-    "Return only the exact output requested by the user. If JSON is requested, return valid JSON only, with no Markdown fences or introductory text.",
+    "Return clean plain text by default. Do not wrap ordinary captions or creative copy in JSON, code fences, labels, or introductory commentary. Return JSON only when the user explicitly asks for JSON.",
+    "For captions, write naturally and concisely. Use one clear hook, useful distinct sentences, one CTA and a small set of relevant hashtags. Never repeat a sentence, idea, CTA or hashtag block to fill space.",
     "Never invent package prices, dates, departures, availability, inclusions, hotel standards, testimonials, performance results or guarantees. Mark uncertain facts for team confirmation.",
     "Do not claim to have researched live trends, created media files, sourced footage or published content unless those actions actually occurred."
   ].join("\n");
@@ -60,8 +94,7 @@ export async function POST(request: NextRequest) {
     const chat = await call("/api/chat", {
       model,
       messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
-      stream: false,
-      format: "json"
+      stream: false
     });
     if (chat.ok) {
       const result = await chat.json().catch(() => null) as { message?: { content?: unknown } } | null;
@@ -73,8 +106,7 @@ export async function POST(request: NextRequest) {
         model,
         system,
         prompt,
-        stream: false,
-        format: "json"
+        stream: false
       });
       if (!generated.ok) {
         const detail = (await generated.text().catch(() => "")).slice(0, 700);
@@ -85,6 +117,7 @@ export async function POST(request: NextRequest) {
       if (typeof result?.response === "string") content = result.response.trim();
     }
 
+    content = normalizeGeneratedContent(content);
     if (!content) return jsonError("OWN returned an empty creative response. Please try again.", 502);
     return NextResponse.json({ content }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
