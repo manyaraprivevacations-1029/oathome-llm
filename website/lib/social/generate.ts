@@ -1,5 +1,26 @@
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
+function cleanGeneratedText(value: string): string {
+  const trimmed = value.trim();
+  // OWN is asked for JSON by the Ollama-compatible runtime. Unwrap common
+  // response fields so the editor receives the actual caption, not JSON syntax.
+  try {
+    const parsed: unknown = JSON.parse(trimmed);
+    if (typeof parsed === "string") return parsed.trim();
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const record = parsed as Record<string, unknown>;
+      for (const key of ["caption", "content", "text", "response", "output"]) {
+        if (typeof record[key] === "string" && record[key].trim()) {
+          return (record[key] as string).trim();
+        }
+      }
+    }
+  } catch {
+    // Plain-text model responses are valid too.
+  }
+  return trimmed.replace(/^\`{3}(?:json|text)?\\s*/i, "").replace(/\\s*\`{3}$/, "").trim();
+}
+
 export async function generateSocialDraft(prompt: string): Promise<string> {
   let brandContext = "";
   try {
@@ -21,7 +42,7 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
           "Voice: " + (profile.brand_voice || ""),
           "Audience: " + (profile.audience_notes || ""),
           "Content rules: " + JSON.stringify(profile.content_rules || {})
-        ].join("\n");
+        ].join("\\n");
       }
     }
   } catch {
@@ -32,7 +53,7 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
     "You are the dedicated social-media strategist and creative assistant for On A Trip Holidays. Treat the saved Brand Brain as the authority for brand identity, voice, audience, content pillars, language and creative guardrails. Treat the existing travel knowledge source as the authority for package facts only. Never confuse brand preferences with package facts. Never invent prices, dates, departures, availability, inclusions, hotel standards, customer testimonials, performance results or guarantees. If package information is missing, inconsistent, expired or uncertain, explicitly mark it for team confirmation and use a general enquiry CTA. Produce useful, platform-aware creative work rather than generic filler. Do not claim to have researched live trends or competitors unless research data is actually supplied.",
     brandContext,
     prompt
-  ].filter(Boolean).join("\n\n");
+  ].filter(Boolean).join("\\n\\n");
 
   const { data: sessionData } = await getSocialSupabase().auth.getSession();
   const accessToken = sessionData.session?.access_token;
@@ -51,6 +72,8 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
   }
 
   const payload = await response.json().catch(() => null) as { content?: unknown; error?: unknown } | null;
-  if (typeof payload?.content === "string" && payload.content.trim()) return payload.content.trim();
+  if (typeof payload?.content === "string" && payload.content.trim()) {
+    return cleanGeneratedText(payload.content);
+  }
   throw new Error(typeof payload?.error === "string" ? payload.error : "OWN returned an empty response. Please try again.");
 }
