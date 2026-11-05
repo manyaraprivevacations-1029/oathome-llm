@@ -13,7 +13,7 @@ type AccountListResponse = { data?: InstagramAccount[] };
 type PageListResponse = { data?: Array<{ id?: string; name?: string; instagram_business_account?: InstagramAccount }> };
 
 function finish(request: NextRequest, result: string) {
-  const url = new URL("/social/instagram", request.url);
+  const url = new URL("https://graph.facebook.com/" + metaGraphApiVersion() + "/" + path.replace(/^\/+/, ""));
   url.searchParams.set("connection", result);
   const response = NextResponse.redirect(url);
   response.cookies.set("oat_social_ig_state", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/api/social/instagram", maxAge: 0 });
