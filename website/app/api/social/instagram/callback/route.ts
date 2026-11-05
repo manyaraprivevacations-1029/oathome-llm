@@ -21,7 +21,7 @@ function finish(request: NextRequest, result: string) {
 }
 
 async function graphGet<T>(path: string, accessToken: string): Promise<GraphResponse<T>> {
-  const url = new URL(`https://graph.facebook.com/${metaGraphApiVersion()}/${path.replace(/^\\/+/, "")}`);
+  const url = new URL(\`https://graph.facebook.com/\${metaGraphApiVersion()}/\${path.replace(/^\/+/, "")}\`);
   url.searchParams.set("access_token", accessToken);
   const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   const body = await response.json() as GraphResponse<T>;
