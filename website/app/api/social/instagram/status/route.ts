@@ -7,8 +7,18 @@ export const dynamic = "force-dynamic";
 export async function GET(request: NextRequest) {
   const user = await requireSocialUser(request);
   if (!user) return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
+
   const serviceKey = process.env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY?.trim() || process.env.SOCIAL_SUPABASE_SECRET_KEY?.trim();
-  const configured = Boolean(process.env.SOCIAL_META_APP_ID?.trim() && process.env.SOCIAL_META_APP_SECRET?.trim() && process.env.SOCIAL_META_TOKEN_ENCRYPTION_KEY?.trim() && serviceKey);
+  const configured = Boolean(
+    process.env.SOCIAL_META_APP_ID?.trim() &&
+    process.env.SOCIAL_META_APP_SECRET?.trim() &&
+    process.env.SOCIAL_META_TOKEN_ENCRYPTION_KEY?.trim() &&
+    serviceKey
+  );
+  if (!serviceKey) {
+    return NextResponse.json({ configured: false, connected: false, account: null }, { headers: { "Cache-Control": "no-store" } });
+  }
+
   try {
     const admin = getSocialAdmin();
     const { data, error } = await admin.from("social_platform_accounts")
