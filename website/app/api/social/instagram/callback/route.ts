@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { encryptMetaToken, getSocialAdmin, metaAppId, metaRedirectUri, verifyOAuthState } from "@/lib/social/meta-server";
+import { encryptMetaToken, getSocialAdmin, metaAppId, metaGraphApiVersion, metaRedirectUri, verifyOAuthState } from "@/lib/social/meta-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type TokenResponse = { access_token?: string; user_id?: number | string; expires_in?: number; error_message?: string };
-type ProfileResponse = { user_id?: number | string; id?: number | string; username?: string; account_type?: string };
+type GraphError = { message?: string; type?: string; code?: number };
+type GraphResponse<T> = T & { error?: GraphError };
+type TokenResponse = { access_token?: string; token_type?: string; expires_in?: number };
+type BusinessResponse = { client_business_id?: string };
+type InstagramAccount = { id?: string; username?: string };
+type AccountListResponse = { data?: InstagramAccount[] };
 
 function finish(request: NextRequest, result: string) {
   const url = new URL("/social/instagram", request.url);
@@ -13,6 +17,18 @@ function finish(request: NextRequest, result: string) {
   const response = NextResponse.redirect(url);
   response.cookies.set("oat_social_ig_state", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/api/social/instagram", maxAge: 0 });
   return response;
+}
+
+async function graphGet<T>(path: string, accessToken: string): Promise<GraphResponse<T>> {
+  const url = new URL(`https://graph.facebook.com/${metaGraphApiVersion()}/${path.replace(/^\/+/, "")}`);
+  url.searchParams.set("access_token", accessToken);
+  const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+  const body = await response.json() as GraphResponse<T>;
+  if (!response.ok || body.error) {
+    console.error("[OAT Social AI] Meta Graph request failed:", body.error?.code || response.status, body.error?.type || "GraphError");
+    throw new Error("Meta could not return the Instagram business assets.");
+  }
+  return body;
 }
 
 export async function GET(request: NextRequest) {
@@ -30,49 +46,34 @@ export async function GET(request: NextRequest) {
   if (!appId || !appSecret) return finish(request, "setup_error");
 
   try {
-    const form = new URLSearchParams({
-      client_id: appId,
-      client_secret: appSecret,
-      grant_type: "authorization_code",
-      redirect_uri: metaRedirectUri(request),
-      code,
-    });
-    const shortResponse = await fetch("https://api.instagram.com/oauth/access_token", {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: form,
-      cache: "no-store",
-      signal: AbortSignal.timeout(15000),
-    });
-    const shortToken = await shortResponse.json() as TokenResponse;
-    if (!shortResponse.ok || !shortToken.access_token) return finish(request, "token_error");
+    const tokenUrl = new URL(`https://graph.facebook.com/${metaGraphApiVersion()}/oauth/access_token`);
+    tokenUrl.searchParams.set("client_id", appId);
+    tokenUrl.searchParams.set("client_secret", appSecret);
+    tokenUrl.searchParams.set("redirect_uri", metaRedirectUri(request));
+    tokenUrl.searchParams.set("code", code);
+    const tokenResponse = await fetch(tokenUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
+    const token = await tokenResponse.json() as GraphResponse<TokenResponse>;
+    if (!tokenResponse.ok || token.error || !token.access_token) return finish(request, "token_error");
 
-    const longUrl = new URL("https://graph.instagram.com/access_token");
-    longUrl.searchParams.set("grant_type", "ig_exchange_token");
-    longUrl.searchParams.set("client_secret", appSecret);
-    longUrl.searchParams.set("access_token", shortToken.access_token);
-    const longResponse = await fetch(longUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-    const longToken = await longResponse.json() as TokenResponse;
-    const accessToken = longResponse.ok && longToken.access_token ? longToken.access_token : shortToken.access_token;
-    const expiresIn = longResponse.ok && longToken.expires_in ? longToken.expires_in : shortToken.expires_in || 3600;
+    const business = await graphGet<BusinessResponse>("me?fields=client_business_id", token.access_token);
+    if (!business.client_business_id) return finish(request, "business_access_error");
 
-    const profileUrl = new URL("https://graph.instagram.com/me");
-    profileUrl.searchParams.set("fields", "user_id,username,account_type");
-    profileUrl.searchParams.set("access_token", accessToken);
-    const profileResponse = await fetch(profileUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) });
-    const profile = await profileResponse.json() as ProfileResponse;
-    if (!profileResponse.ok || !(profile.user_id || profile.id)) return finish(request, "profile_error");
+    const assigned = await graphGet<AccountListResponse>("me/assigned_instagram_accounts?fields=id,username", token.access_token);
+    const accounts = (assigned.data || []).filter((account): account is InstagramAccount & { id: string } => Boolean(account.id));
+    if (accounts.length === 0) return finish(request, "no_instagram_accounts");
+    if (accounts.length > 1) return finish(request, "multiple_instagram_accounts");
 
+    const account = accounts[0];
     const admin = getSocialAdmin();
     const { error } = await admin.from("social_platform_accounts").upsert({
       user_id: userId,
       platform: "instagram",
-      platform_account_id: String(profile.user_id || profile.id),
-      account_username: profile.username || null,
-      account_type: profile.account_type || "PROFESSIONAL",
-      access_token_encrypted: encryptMetaToken(accessToken),
-      token_expires_at: new Date(Date.now() + expiresIn * 1000).toISOString(),
-      scopes: ["instagram_business_basic", "instagram_business_content_publish"],
+      platform_account_id: account.id,
+      account_username: account.username || null,
+      account_type: "PROFESSIONAL",
+      access_token_encrypted: encryptMetaToken(token.access_token),
+      token_expires_at: typeof token.expires_in === "number" ? new Date(Date.now() + token.expires_in * 1000).toISOString() : null,
+      scopes: ["instagram_basic", "instagram_content_publish", "instagram_manage_comments", "instagram_manage_messages"],
       connected_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,platform,platform_account_id" });
@@ -82,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
     return finish(request, "connected");
   } catch (error) {
-    console.error("[OAT Social AI] Instagram OAuth callback failed:", error instanceof Error ? error.message : String(error));
+    console.error("[OAT Social AI] Instagram Unified Login callback failed:", error instanceof Error ? error.message : String(error));
     return finish(request, "connection_error");
   }
 }
