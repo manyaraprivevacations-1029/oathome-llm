@@ -12,6 +12,7 @@ export async function GET(request: NextRequest) {
   const configured = Boolean(
     process.env.SOCIAL_META_APP_ID?.trim() &&
     process.env.SOCIAL_META_APP_SECRET?.trim() &&
+    process.env.SOCIAL_META_LOGIN_CONFIG_ID?.trim() &&
     process.env.SOCIAL_META_TOKEN_ENCRYPTION_KEY?.trim() &&
     serviceKey
   );
