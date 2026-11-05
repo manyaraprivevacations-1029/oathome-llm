@@ -37,7 +37,7 @@ async function graphGet<T>(path: string, accessToken: string): Promise<GraphResp
   return body;
 }
 
-async function discoverInstagramAccounts(accessToken: string): Promise<InstagramAccount[]> {
+async function discoverInstagramAccounts(accessToken: string, businessId: string): Promise<InstagramAccount[]> {
   // Unified Login normally exposes Instagram assets assigned to the selected business.
   try {
     const assigned = await graphGet<AccountListResponse>(
@@ -54,8 +54,23 @@ async function discoverInstagramAccounts(accessToken: string): Promise<Instagram
     console.warn("[OAT Social AI] Assigned Instagram account lookup failed; trying linked Facebook Pages.");
   }
 
-  // Some Business Login configurations expose the same professional account via its linked Page.
-  // Only accept accounts explicitly returned by Meta for a Page in this authorized user's asset list.
+  // Unified Login shares assets with a business portfolio/system user. Query the selected
+  // portfolio edges before attempting the legacy Page-user-token lookup.
+  for (const edge of ["instagram_accounts", "instagram_business_accounts"]) {
+    try {
+      const result = await graphGet<AccountListResponse>(
+        businessId + "/" + edge + "?fields=id,username",
+        accessToken,
+      );
+      const accounts = (result.data || []).filter(account => Boolean(account.id));
+      console.info("[OAT Social AI] Instagram account discovery:", { source: edge, count: accounts.length });
+      if (accounts.length > 0) return accounts;
+    } catch {
+      console.warn("[OAT Social AI] Business Instagram asset lookup failed:", { edge });
+    }
+  }
+
+  // Last-resort compatibility check for configurations that also grant Page access.
   try {
     const pages = await graphGet<PageListResponse>(
       "me/accounts?fields=id,name,instagram_business_account{id,username}",
@@ -108,7 +123,7 @@ export async function GET(request: NextRequest) {
     const business = await graphGet<BusinessResponse>("me?fields=client_business_id", token.access_token);
     if (!business.client_business_id) return finish(request, "business_access_error");
 
-    const accounts = await discoverInstagramAccounts(token.access_token);
+    const accounts = await discoverInstagramAccounts(token.access_token, business.client_business_id);
     if (accounts.length === 0) return finish(request, "no_instagram_accounts");
     if (accounts.length > 1) return finish(request, "multiple_instagram_accounts");
 
