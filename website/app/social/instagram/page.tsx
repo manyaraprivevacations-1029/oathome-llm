@@ -86,7 +86,7 @@ export default function InstagramManagerPage(){
           <p style={{fontSize:12,color:"#62758e",lineHeight:1.7,margin:0}}>{status?.connected?"Your Instagram professional account is linked to this Social AI workspace.":"Connect an Instagram Business or Creator account using Meta's official Instagram Login."}</p>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
-          {status?.connected?<button disabled={busy} onClick={()=>void disconnect()} style={secondary}>{busy?"Working…":"Disconnect"}</button>:<button disabled={busy||loading||status?.configured===false} onClick={()=>void connect()} style={{...primary,opacity:busy||loading||status?.configured===false?.55:1}}>{busy?"Connecting…":"Connect Instagram"}</button>}
+          {status?.connected?<button disabled={busy} onClick={()=>void disconnect()} style={secondary}>{busy?"Working…":"Disconnect"}</button>:<button disabled={busy||loading||status?.configured===false} onClick={()=>void connect()} style={{...primary,opacity:(busy||loading||status?.configured===false)?0.55:1}}>{busy?"Connecting…":"Connect Instagram"}</button>}
           <button disabled={loading||busy} onClick={()=>void refresh().catch(e=>setError(e instanceof Error?e.message:"Refresh failed."))} style={secondary}>Refresh</button>
         </div>
       </div>
