@@ -72,8 +72,24 @@ export default function ContentPlannerPage(){
   function cancelEdit(){setEditingId(null);setTitle("");setCaption("");setScript("");setError("");setNotice("Draft editing cancelled.");}
   async function setStatus(id:string,status:Item["status"]){
     setError("");setNotice("");
-    try{const {error:updateError}=await getSocialSupabase().from("social_content_items").update({status,updated_at:new Date().toISOString(),...(status==="approved"?{approved_at:new Date().toISOString()}:{})}).eq("id",id);if(updateError)throw updateError;setNotice(status==="approved"?"Marked approved for internal use. This does not publish to Instagram.":"Content status updated.");await refresh();}
-    catch(e){setError(e instanceof Error?e.message:"Could not update status.");}
+    try{
+      const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user)throw new Error("Please sign in again.");
+      const {data,error:updateError}=await sb.from("social_content_items").update({status,updated_at:new Date().toISOString(),...(status==="approved"?{approved_at:new Date().toISOString()}:{})}).eq("id",id).eq("user_id",auth.user.id).select("id").maybeSingle();
+      if(updateError)throw updateError;if(!data?.id)throw new Error("This content item was not found in your account. Refresh and try again.");
+      setNotice(status==="approved"?"Marked approved for internal use. This does not publish to Instagram.":"Content status updated.");await refresh();
+    }catch(e){setError(e instanceof Error?e.message:"Could not update status.");}
+  }
+  async function deleteDraft(item:Item){
+    if(item.status!=="draft"&&item.status!=="rejected")return;
+    if(!window.confirm("Delete this saved draft permanently? This cannot be undone."))return;
+    setError("");setNotice("");
+    try{
+      const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user)throw new Error("Please sign in again.");
+      const {data,error:deleteError}=await sb.from("social_content_items").delete().eq("id",item.id).eq("user_id",auth.user.id).select("id").maybeSingle();
+      if(deleteError)throw deleteError;if(!data?.id)throw new Error("This draft was not found in your account. Refresh and try again.");
+      if(editingId===item.id)cancelEdit();
+      setNotice("Draft deleted from your private content library.");await refresh();
+    }catch(e){setError(e instanceof Error?e.message:"Could not delete draft.");}
   }
   const visible=filter==="all"?items:items.filter(x=>x.status===filter);
   const statusColor=(s:string)=>s==="approved"?"#0878d8":s==="rejected"?"#b42318":s==="in_review"?"#986b16":"#8aa4bf";
@@ -102,7 +118,7 @@ export default function ContentPlannerPage(){
           {item.caption&&<p style={{fontSize:12,color:"#314968",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{item.caption}</p>}
           {item.script&&<details style={{fontSize:11,color:"#62758e"}}><summary style={{cursor:"pointer"}}>View script / notes</summary><p style={{whiteSpace:"pre-wrap",lineHeight:1.7}}>{item.script}</p></details>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
-            {(item.status==="draft"||item.status==="rejected")&&<button style={muted} onClick={()=>editDraft(item)}>Edit draft</button>}
+            {(item.status==="draft"||item.status==="rejected")&&<><button style={muted} onClick={()=>editDraft(item)}>Edit draft</button><button style={{...muted,color:"#b42318",borderColor:"#f0c8c5"}} onClick={()=>void deleteDraft(item)}>Delete</button></>}
             {item.status==="draft"&&<button style={muted} onClick={()=>void setStatus(item.id,"in_review")}>Send to review</button>}
             {item.status==="in_review"&&<><button style={primary} onClick={()=>void setStatus(item.id,"approved")}>Approve draft</button><button style={muted} onClick={()=>void setStatus(item.id,"rejected")}>Reject</button></>}
             {item.status==="rejected"&&<button style={muted} onClick={()=>void setStatus(item.id,"draft")}>Return to draft</button>}
