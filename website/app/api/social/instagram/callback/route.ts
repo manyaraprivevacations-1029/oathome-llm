@@ -13,7 +13,7 @@ type AccountListResponse = { data?: InstagramAccount[] };
 type PageListResponse = { data?: Array<{ id?: string; name?: string; instagram_business_account?: InstagramAccount }> };
 
 function finish(request: NextRequest, result: string) {
-  const url = new URL("https://graph.facebook.com/" + metaGraphApiVersion() + "/" + path.replace(/^\/+/, ""));
+  const url = new URL("/social/instagram", request.url);
   url.searchParams.set("connection", result);
   const response = NextResponse.redirect(url);
   response.cookies.set("oat_social_ig_state", "", { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", path: "/api/social/instagram", maxAge: 0 });
@@ -21,7 +21,7 @@ function finish(request: NextRequest, result: string) {
 }
 
 async function graphGet<T>(path: string, accessToken: string): Promise<GraphResponse<T>> {
-  const url = new URL(\`https://graph.facebook.com/\${metaGraphApiVersion()}/\${path.replace(/^\/+/, "")}\`);
+  const url = new URL("https://graph.facebook.com/" + metaGraphApiVersion() + "/" + path.replace(/^\/+/, ""));
   url.searchParams.set("access_token", accessToken);
   const response = await fetch(url, { cache: "no-store", signal: AbortSignal.timeout(15000) });
   const body = await response.json() as GraphResponse<T>;
