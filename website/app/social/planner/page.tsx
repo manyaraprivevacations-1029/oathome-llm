@@ -56,9 +56,10 @@ export default function ContentPlannerPage(){
       if(!auth.user)throw new Error("Please sign in again.");
       const payload={title:title.trim(),content_type:kind,status:"draft",caption:caption.trim()||null,script:script.trim()||null,updated_at:new Date().toISOString()};
       const write=editingId
-        ? await supabase.from("social_content_items").update(payload).eq("id",editingId).eq("user_id",auth.user.id)
-        : await supabase.from("social_content_items").insert({user_id:auth.user.id,...payload});
+        ? await supabase.from("social_content_items").update(payload).eq("id",editingId).eq("user_id",auth.user.id).select("id").maybeSingle()
+        : await supabase.from("social_content_items").insert({user_id:auth.user.id,...payload}).select("id").maybeSingle();
       if(write.error)throw write.error;
+      if(!write.data?.id)throw new Error("This draft could not be found in your account. Refresh the library and try again.");
       setTitle("");setCaption("");setScript("");setEditingId(null);setNotice(editingId?"Draft changes saved to your private content library.":"Draft saved to your private content library.");await refresh();
     }catch(e){setError(e instanceof Error?e.message:"Could not save draft.");}
     finally{setBusy(false);}
@@ -80,7 +81,7 @@ export default function ContentPlannerPage(){
   return <main style={shell}>
     <header style={{marginBottom:24}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Content Planner</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Create drafts, organise ideas and approve content before it leaves your workspace.</p></header>
     <section style={{...panel,marginBottom:18}}>
-      <h2 style={{fontSize:17,margin:"0 0 16px"}}>Create a content draft</h2>
+      <h2 style={{fontSize:17,margin:"0 0 16px"}}>{editingId?"Edit saved draft":"Create a content draft"}</h2>
       <form id="social-draft-form" onSubmit={create} style={{display:"grid",gap:13}}>
         <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12}}>
           <label style={label}>DRAFT TITLE<input required value={title} onChange={e=>setTitle(e.target.value)} style={field} placeholder="e.g. Manali winter trip announcement"/></label>
