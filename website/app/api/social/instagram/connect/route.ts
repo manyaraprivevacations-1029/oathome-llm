@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createOAuthState, metaAppId, metaRedirectUri, requireSocialUser } from "@/lib/social/meta-server";
+import { createOAuthState, metaAppId, metaLoginConfigId, metaRedirectUri, requireSocialUser } from "@/lib/social/meta-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -9,12 +9,13 @@ export async function POST(request: NextRequest) {
   if (!user) return NextResponse.json({ error: "Please sign in to OAT Social AI again." }, { status: 401 });
 
   const appId = metaAppId();
+  const configId = metaLoginConfigId();
   const appSecret = process.env.SOCIAL_META_APP_SECRET?.trim() || "";
   const encryptionKey = process.env.SOCIAL_META_TOKEN_ENCRYPTION_KEY?.trim() || "";
   const serviceKey = process.env.SOCIAL_SUPABASE_SERVICE_ROLE_KEY?.trim() || process.env.SOCIAL_SUPABASE_SECRET_KEY?.trim() || "";
-  if (!appId || !appSecret || !encryptionKey || !serviceKey) {
+  if (!appId || !configId || !appSecret || !encryptionKey || !serviceKey) {
     return NextResponse.json({
-      error: "Instagram connection setup is incomplete. Configure the Meta app and secure Social Supabase token storage first.",
+      error: "Instagram Unified Login setup is incomplete. Add the Meta app ID, Unified Login configuration ID, app secret, token encryption key and Social Supabase server key in Vercel.",
       configured: false,
     }, { status: 503 });
   }
@@ -22,11 +23,13 @@ export async function POST(request: NextRequest) {
   try {
     const state = createOAuthState(user.id);
     const redirectUri = metaRedirectUri(request);
-    const url = new URL("https://www.instagram.com/oauth/authorize");
+    const url = new URL("https://www.facebook.com/dialog/oauth");
     url.searchParams.set("client_id", appId);
+    url.searchParams.set("config_id", configId);
     url.searchParams.set("redirect_uri", redirectUri);
     url.searchParams.set("response_type", "code");
-    url.searchParams.set("scope", "instagram_business_basic,instagram_business_content_publish");
+    url.searchParams.set("override_default_response_type", "true");
+    url.searchParams.set("prompt", "login");
     url.searchParams.set("state", state);
     const response = NextResponse.json({ authorizationUrl: url.toString() }, { headers: { "Cache-Control": "no-store" } });
     response.cookies.set("oat_social_ig_state", state, {
