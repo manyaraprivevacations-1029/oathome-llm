@@ -72,7 +72,7 @@ export function createOAuthState(userId: string): string {
 
 export function verifyOAuthState(value: string, expectedState: string): string | null {
   const [payload, signature] = value.split(".");
-  if (!payload || !signature || !expectedState) return null;
+  if (!payload || !signature || !expectedState || value !== expectedState) return null;
   const expected = createHmac("sha256", stateSecret()).update(payload).digest();
   let actual: Buffer;
   try { actual = Buffer.from(signature, "base64url"); } catch { return null; }
