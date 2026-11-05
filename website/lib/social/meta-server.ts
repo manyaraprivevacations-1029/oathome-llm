@@ -89,6 +89,15 @@ export function metaAppId(): string {
   return process.env.SOCIAL_META_APP_ID?.trim() || "";
 }
 
+export function metaLoginConfigId(): string {
+  return process.env.SOCIAL_META_LOGIN_CONFIG_ID?.trim() || "";
+}
+
+export function metaGraphApiVersion(): string {
+  const value = process.env.SOCIAL_META_GRAPH_API_VERSION?.trim() || "v26.0";
+  return /^v\d+\.\d+$/.test(value) ? value : "v26.0";
+}
+
 export function metaRedirectUri(request: NextRequest): string {
   return process.env.SOCIAL_META_REDIRECT_URI?.trim() || new URL("/api/social/instagram/callback", request.url).toString();
 }
