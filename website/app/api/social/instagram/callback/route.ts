@@ -4,7 +4,7 @@ import { encryptMetaToken, getSocialAdmin, metaAppId, metaGraphApiVersion, metaR
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type GraphError = { message?: string; type?: string; code?: number };
+type GraphError = { message?: string; type?: string; code?: number; error_subcode?: number; fbtrace_id?: string };
 type GraphResponse<T> = T & { error?: GraphError };
 type TokenResponse = { access_token?: string; token_type?: string; expires_in?: number };
 type BusinessResponse = { client_business_id?: string };
@@ -31,6 +31,9 @@ async function graphGet<T>(path: string, accessToken: string): Promise<GraphResp
       status: response.status,
       code: body.error?.code || null,
       type: body.error?.type || null,
+      subcode: body.error?.error_subcode || null,
+      message: (body.error?.message || '').slice(0, 500),
+      fbtraceId: body.error?.fbtrace_id || null,
     });
     throw new Error("Meta could not return the requested Instagram assets.");
   }
@@ -120,7 +123,27 @@ export async function GET(request: NextRequest) {
       return finish(request, "token_error");
     }
 
+    const permissions = await graphGet<{ data?: Array<{ permission?: string; status?: string }> }>("me/permissions", token.access_token).catch(() => ({ data: [] }));
+    const granted = (permissions.data || []).filter(item => item.status === "granted").map(item => item.permission).filter(Boolean);
+    const appAccessToken = appId + "|" + appSecret;
+    const debugUrl = new URL("https://graph.facebook.com/" + metaGraphApiVersion() + "/debug_token");
+    debugUrl.searchParams.set("input_token", token.access_token);
+    debugUrl.searchParams.set("access_token", appAccessToken);
+    const debugResponse = await fetch(debugUrl, { cache: "no-store", signal: AbortSignal.timeout(15000) }).catch(() => null);
+    const debugBody = debugResponse?.ok ? await debugResponse.json() as { data?: { app_id?: string; type?: string; is_valid?: boolean; scopes?: string[]; granular_scopes?: Array<{ scope?: string; target_ids?: string[] }> } } : {};
     const business = await graphGet<BusinessResponse>("me?fields=client_business_id", token.access_token);
+    console.info("[OAT Social AI] Meta OAuth grant diagnostics:", {
+      tokenDebugAvailable: Boolean(debugBody.data),
+      tokenValid: debugBody.data?.is_valid ?? null,
+      tokenType: debugBody.data?.type ?? null,
+      appIdMatches: debugBody.data?.app_id === appId,
+      grantedPermissions: granted,
+      instagramBasicGranted: granted.includes("instagram_basic"),
+      businessManagementGranted: granted.includes("business_management"),
+      debugScopes: debugBody.data?.scopes || [],
+      granularScopes: (debugBody.data?.granular_scopes || []).map(item => ({ scope: item.scope || null, targetIds: item.target_ids || [] })),
+      businessIdPresent: Boolean(business.client_business_id),
+    });
     if (!business.client_business_id) return finish(request, "business_access_error");
 
     const accounts = await discoverInstagramAccounts(token.access_token, business.client_business_id);
