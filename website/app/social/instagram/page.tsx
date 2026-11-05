@@ -72,7 +72,7 @@ export default function InstagramManagerPage(){
     <header style={{marginBottom:22}}>
       <Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link>
       <h1 style={{fontSize:34,margin:"12px 0 5px"}}>Instagram Manager</h1>
-      <p style={{fontSize:13,color:"#62758e"}}>Connect your professional Instagram account securely through Meta.</p>
+      <p style={{fontSize:13,color:"#62758e"}}>Connect your professional Instagram account securely through Meta Unified Login.</p>
     </header>
 
     {error&&<p role="alert" style={{padding:12,borderRadius:9,background:"#fff0ef",color:"#b42318",fontSize:12}}>{error}</p>}
@@ -83,7 +83,7 @@ export default function InstagramManagerPage(){
         <div>
           <div style={{fontSize:10,fontWeight:800,letterSpacing:".12em",color:status?.connected?"#137b4e":"#9b6a10"}}>{loading?"CHECKING CONNECTION":status?.connected?"CONNECTED":"NOT CONNECTED"}</div>
           <h2 style={{fontSize:20,margin:"9px 0 5px"}}>{status?.connected&&status.account?.username?"@"+status.account.username:"Connect Instagram"}</h2>
-          <p style={{fontSize:12,color:"#62758e",lineHeight:1.7,margin:0}}>{status?.connected?"Your Instagram professional account is linked to this Social AI workspace.":"Connect an Instagram Business or Creator account using Meta's official Instagram Login."}</p>
+          <p style={{fontSize:12,color:"#62758e",lineHeight:1.7,margin:0}}>{status?.connected?"Your Instagram professional account is linked to this Social AI workspace.":"Connect an Instagram Business or Creator account using Meta's Unified Login."}</p>
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           {status?.connected?<button disabled={busy} onClick={()=>void disconnect()} style={secondary}>{busy?"Working…":"Disconnect"}</button>:<button disabled={busy||loading||status?.configured===false} onClick={()=>void connect()} style={{...primary,opacity:(busy||loading||status?.configured===false)?0.55:1}}>{busy?"Connecting…":"Connect Instagram"}</button>}
@@ -94,25 +94,25 @@ export default function InstagramManagerPage(){
         <div><b>Account type</b><div style={{marginTop:4}}>{status.account.accountType||"Professional"}</div></div>
         <div><b>Instagram ID</b><div style={{marginTop:4}}>{status.account.id}</div></div>
         <div><b>Connected</b><div style={{marginTop:4}}>{new Date(status.account.connectedAt).toLocaleString()}</div></div>
-        <div><b>Token expiry</b><div style={{marginTop:4}}>{status.account.expiresAt?new Date(status.account.expiresAt).toLocaleDateString():"Not provided"}</div></div>
+        <div><b>Token expiry</b><div style={{marginTop:4}}>{status.account.expiresAt?new Date(status.account.expiresAt).toLocaleDateString():"No expiry reported by Meta"}</div></div>
       </div>}
     </section>
 
     {status?.configured===false&&<section style={{...panel,marginBottom:15,borderColor:"#f0d8a5"}}>
       <h2 style={{fontSize:16,margin:"0 0 8px"}}>Meta setup required</h2>
-      <p style={{fontSize:12,color:"#62758e",lineHeight:1.8,margin:"0 0 10px"}}>The secure OAuth code is ready, but the Meta app credentials and Social Supabase server key still need to be added to the Vercel environment before the Connect button can work.</p>
-      <p style={{fontSize:11,color:"#45617f",margin:0}}>Required variables: SOCIAL_META_APP_ID, SOCIAL_META_APP_SECRET, SOCIAL_META_TOKEN_ENCRYPTION_KEY and SOCIAL_SUPABASE_SERVICE_ROLE_KEY. Set SOCIAL_META_REDIRECT_URI to this deployment's callback URL.</p>
+      <p style={{fontSize:12,color:"#62758e",lineHeight:1.8,margin:"0 0 10px"}}>The Unified Login integration is ready for configuration, but its Meta credentials and Social Supabase server key must be added to the Vercel environment before Connect can work.</p>
+      <p style={{fontSize:11,color:"#45617f",margin:0}}>Required variables: SOCIAL_META_APP_ID, SOCIAL_META_APP_SECRET, SOCIAL_META_LOGIN_CONFIG_ID, SOCIAL_META_TOKEN_ENCRYPTION_KEY and SOCIAL_SUPABASE_SERVICE_ROLE_KEY. Set SOCIAL_META_REDIRECT_URI to this deployment's callback URL.</p>
     </section>}
 
     <section style={panel}>
       <h2 style={{fontSize:16,margin:"0 0 12px"}}>What this connection enables</h2>
       <ul style={{fontSize:12,color:"#45617f",lineHeight:1.9,paddingLeft:20,margin:0}}>
-        <li>Connect Instagram Business or Creator accounts through Instagram Login.</li>
-        <li>Read the connected account identity and keep its access token encrypted on the server.</li>
+        <li>Connect Instagram Business or Creator accounts through Meta Unified Login.</li>
+        <li>Read the selected Instagram account identity and keep its system-user access token encrypted on the server.</li>
         <li>Prepare the next step: approved media publishing and account insights.</li>
       </ul>
       <div style={{marginTop:14,padding:13,borderRadius:10,background:"#eaf4ff",fontSize:11,color:"#174a7c",lineHeight:1.7}}>Publishing is still disabled. Connecting an account does not publish anything. Every post will require your explicit approval before a publishing feature is enabled.</div>
     </section>
-    <p style={{fontSize:11,color:"#71839a",marginTop:15}}>Meta permissions requested: instagram_business_basic and instagram_business_content_publish. No password is collected by OAT Social AI.</p>
+    <p style={{fontSize:11,color:"#71839a",marginTop:15}}>Meta Unified Login permissions are selected in the Meta configuration. OAT Social AI never collects your Instagram or Facebook password.</p>
   </main>;
 }
