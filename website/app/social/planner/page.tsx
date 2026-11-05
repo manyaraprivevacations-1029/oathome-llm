@@ -27,6 +27,7 @@ export default function ContentPlannerPage(){
   const [script,setScript]=useState("");
   const [filter,setFilter]=useState("all");
   const [generating,setGenerating]=useState(false);
+  const [editingId,setEditingId]=useState<string|null>(null);
 
   async function refresh(){
     const supabase=getSocialSupabase();
@@ -53,12 +54,21 @@ export default function ContentPlannerPage(){
     try{
       const supabase=getSocialSupabase();const {data:auth}=await supabase.auth.getUser();
       if(!auth.user)throw new Error("Please sign in again.");
-      const {error:writeError}=await supabase.from("social_content_items").insert({user_id:auth.user.id,title:title.trim(),content_type:kind,status:"draft",caption:caption.trim()||null,script:script.trim()||null});
-      if(writeError)throw writeError;
-      setTitle("");setCaption("");setScript("");setNotice("Draft saved to your private content library.");await refresh();
+      const payload={title:title.trim(),content_type:kind,status:"draft",caption:caption.trim()||null,script:script.trim()||null,updated_at:new Date().toISOString()};
+      const write=editingId
+        ? await supabase.from("social_content_items").update(payload).eq("id",editingId).eq("user_id",auth.user.id)
+        : await supabase.from("social_content_items").insert({user_id:auth.user.id,...payload});
+      if(write.error)throw write.error;
+      setTitle("");setCaption("");setScript("");setEditingId(null);setNotice(editingId?"Draft changes saved to your private content library.":"Draft saved to your private content library.");await refresh();
     }catch(e){setError(e instanceof Error?e.message:"Could not save draft.");}
     finally{setBusy(false);}
   }
+  function editDraft(item:Item){
+    if(item.status!=="draft"&&item.status!=="rejected")return;
+    setEditingId(item.id);setTitle(item.title);setKind(item.content_type);setCaption(item.caption||"");setScript(item.script||"");setError("");setNotice("Editing this saved draft. Save changes when ready.");
+    document.getElementById("social-draft-form")?.scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  function cancelEdit(){setEditingId(null);setTitle("");setCaption("");setScript("");setError("");setNotice("Draft editing cancelled.");}
   async function setStatus(id:string,status:Item["status"]){
     setError("");setNotice("");
     try{const {error:updateError}=await getSocialSupabase().from("social_content_items").update({status,updated_at:new Date().toISOString(),...(status==="approved"?{approved_at:new Date().toISOString()}:{})}).eq("id",id);if(updateError)throw updateError;setNotice(status==="approved"?"Marked approved for internal use. This does not publish to Instagram.":"Content status updated.");await refresh();}
@@ -71,14 +81,14 @@ export default function ContentPlannerPage(){
     <header style={{marginBottom:24}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Content Planner</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Create drafts, organise ideas and approve content before it leaves your workspace.</p></header>
     <section style={{...panel,marginBottom:18}}>
       <h2 style={{fontSize:17,margin:"0 0 16px"}}>Create a content draft</h2>
-      <form onSubmit={create} style={{display:"grid",gap:13}}>
+      <form id="social-draft-form" onSubmit={create} style={{display:"grid",gap:13}}>
         <div style={{display:"grid",gridTemplateColumns:"2fr 1fr",gap:12}}>
           <label style={label}>DRAFT TITLE<input required value={title} onChange={e=>setTitle(e.target.value)} style={field} placeholder="e.g. Manali winter trip announcement"/></label>
           <label style={label}>FORMAT<select value={kind} onChange={e=>setKind(e.target.value as Item["content_type"])} style={field}><option value="reel">Reel</option><option value="carousel">Carousel</option><option value="post">Post</option><option value="story">Story</option></select></label>
         </div>
         <label style={label}>CAPTION<textarea rows={4} value={caption} onChange={e=>setCaption(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Write a caption draft…"/></label><div><button type="button" disabled={generating||busy} onClick={()=>void generateCaption()} style={primary}>{generating?"Generating with OWN…":"Generate caption with OWN"}</button></div>
         <label style={label}>SCRIPT / CREATIVE NOTES<textarea rows={5} value={script} onChange={e=>setScript(e.target.value)} style={{...field,resize:"vertical"}} placeholder="Add reel script, slide outline or production notes…"/></label>
-        <div><button disabled={busy} style={primary}>{busy?"Saving…":"Save draft"}</button></div>
+        <div style={{display:"flex",gap:8,flexWrap:"wrap"}}><button disabled={busy} style={primary}>{busy?"Saving…":editingId?"Save changes":"Save draft"}</button>{editingId&&<button type="button" disabled={busy} onClick={cancelEdit} style={muted}>Cancel edit</button>}</div>
       </form>
       <p style={{fontSize:10,color:"#71839a",lineHeight:1.6,margin:"12px 0 0"}}>This first version stores and tracks your drafts. It does not generate media, schedule posts or publish to Instagram.</p>
     </section>
@@ -91,6 +101,7 @@ export default function ContentPlannerPage(){
           {item.caption&&<p style={{fontSize:12,color:"#314968",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{item.caption}</p>}
           {item.script&&<details style={{fontSize:11,color:"#62758e"}}><summary style={{cursor:"pointer"}}>View script / notes</summary><p style={{whiteSpace:"pre-wrap",lineHeight:1.7}}>{item.script}</p></details>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
+            {(item.status==="draft"||item.status==="rejected")&&<button style={muted} onClick={()=>editDraft(item)}>Edit draft</button>}
             {item.status==="draft"&&<button style={muted} onClick={()=>void setStatus(item.id,"in_review")}>Send to review</button>}
             {item.status==="in_review"&&<><button style={primary} onClick={()=>void setStatus(item.id,"approved")}>Approve draft</button><button style={muted} onClick={()=>void setStatus(item.id,"rejected")}>Reject</button></>}
             {item.status==="rejected"&&<button style={muted} onClick={()=>void setStatus(item.id,"draft")}>Return to draft</button>}
