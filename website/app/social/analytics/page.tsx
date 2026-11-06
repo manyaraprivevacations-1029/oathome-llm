@@ -134,7 +134,8 @@ export default function SocialAnalyticsPage() {
             ["New followers in range", instagram.follows],
             ["Unfollows in range", instagram.unfollows],
             ["Net follower change", instagram.netFollows],
-            ["Profile visits", null],\n            ["External link taps", instagram.externalLinkTaps],
+            ["Profile visits", null],
+            ["External link taps", instagram.externalLinkTaps],
             ["Follows attributed to selected posts", instagram.attributedFollows],
           ].map(([label, value]) => <article key={String(label)} style={{ border: "1px solid #e8e3d9", borderRadius: 13, padding: "15px 16px", background: "#fcfbf8", minHeight: 88 }}>
             <div style={{ fontSize: 11, color: "#766f63", marginBottom: 7 }}>{label}</div>
