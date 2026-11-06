@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
   let baseUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || "";
   if (!baseUrl && process.env.NODE_ENV !== "production") baseUrl = "http://127.0.0.1:11434";
   while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
-  if (!baseUrl) return jsonError("OWN model runtime is not configured.", 503);
+  if (!baseUrl) return jsonError("OWN model runtime is not connected to this deployment yet. The editor can still create a clearly labelled local starter, but AI generation requires the private Qwen inference service.", 503);
 
   const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
   const headers: Record<string, string> = { "Content-Type": "application/json" };

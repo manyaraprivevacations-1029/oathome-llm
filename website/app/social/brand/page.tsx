@@ -90,7 +90,7 @@ export default function BrandBrainPage() {
 
   function update<K extends keyof BrandProfile>(key:K,value:BrandProfile[K]) { setProfile(old=>({...old,[key]:value})); }
 
-  return <main style={shell}>
+  return <main className="social-theme" style={shell}>
     <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,flexWrap:"wrap",marginBottom:25}}>
       <div><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Brand Brain</h1><p style={{color:"#5d708a",fontSize:13,margin:0}}>One trusted source for your brand voice and content rules.</p></div>
       <span style={{fontSize:9,letterSpacing:".1em",padding:"7px 10px",border:"1px solid #c6def5",borderRadius:20,color:"#1769aa"}}>PRIVATE WORKSPACE</span>

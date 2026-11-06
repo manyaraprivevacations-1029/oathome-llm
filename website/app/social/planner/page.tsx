@@ -67,7 +67,7 @@ export default function ContentPlannerPage(){
   const visible=filter==="all"?items:items.filter(x=>x.status===filter);
   const statusColor=(s:string)=>s==="approved"?"#0878d8":s==="rejected"?"#b42318":s==="in_review"?"#986b16":"#8aa4bf";
 
-  return <main style={shell}>
+  return <main className="social-theme" style={shell}>
     <header style={{marginBottom:24}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Content Planner</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Create drafts, organise ideas and approve content before it leaves your workspace.</p></header>
     <section style={{...panel,marginBottom:18}}>
       <h2 style={{fontSize:17,margin:"0 0 16px"}}>Create a content draft</h2>
