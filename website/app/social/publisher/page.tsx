@@ -6,54 +6,84 @@ import { useRouter } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 import { generateSocialDraft } from "@/lib/social/generate";
 
-type Creative = { headline: string; subheadline: string; caption: string; hashtags: string[]; visualDirection: string };
+type Creative = { headline: string; subheadline: string; caption: string; hashtags: string[]; visualDirection: string; backgroundColor: string; accentColor: string; textColor: string };
 const shell: CSSProperties = { minHeight: "100vh", padding: "32px clamp(16px,4vw,54px) 56px", background: "#f5f2eb", color: "#30291f" };
 const panel: CSSProperties = { background: "#fffdf8", border: "1px solid #e7dfd1", borderRadius: 16, padding: 20 };
 const field: CSSProperties = { width: "100%", boxSizing: "border-box", border: "1px solid #ded5c6", borderRadius: 9, padding: "12px 13px", color: "#30291f", background: "#fff", font: "inherit", fontSize: 13 };
 const primary: CSSProperties = { border: 0, borderRadius: 9, padding: "12px 17px", background: "#a8752d", color: "#fff", fontWeight: 700, cursor: "pointer" };
 const secondary: CSSProperties = { border: "1px solid #ded5c6", borderRadius: 9, padding: "11px 15px", background: "#fff", color: "#57452d", fontWeight: 650, cursor: "pointer" };
 const escapeXml = (value: string) => value.replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&apos;" })[c] || c);
+const safeColor = (value: unknown, fallback: string) => typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value) ? value : fallback;
+const dimensionsFor = (format: string) => format.includes("square") ? { width: 1080, height: 1080 } : format.includes("story") ? { width: 1080, height: 1920 } : { width: 1080, height: 1350 };
 
-function makePoster(creative: Creative, brand: string) {
+function makePoster(creative: Creative, brand: string, format: string) {
+  const { width, height } = dimensionsFor(format);
+  const cx = width / 2;
+  const isDiwali = /diwali|deepavali|lamp|festival of lights/i.test(creative.headline + " " + creative.visualDirection);
   const headline = escapeXml(creative.headline);
   const subheadline = escapeXml(creative.subheadline);
-  const brandText = escapeXml(brand);
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="1350" viewBox="0 0 1080 1350">
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#211b18"/><stop offset=".52" stop-color="#5a3020"/><stop offset="1" stop-color="#a66b32"/></linearGradient>
-    <radialGradient id="glow"><stop stop-color="#ffd98a" stop-opacity=".65"/><stop offset="1" stop-color="#ffd98a" stop-opacity="0"/></radialGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff0bf"/><stop offset="1" stop-color="#d99b48"/></linearGradient>
-  </defs>
-  <rect width="1080" height="1350" fill="url(#bg)"/>
-  <circle cx="540" cy="510" r="390" fill="url(#glow)"/>
-  <rect x="42" y="42" width="996" height="1266" rx="22" fill="none" stroke="#e9c17a" stroke-opacity=".65" stroke-width="2"/>
-  <path d="M90 180 Q540 60 990 180 M90 1170 Q540 1290 990 1170" fill="none" stroke="#e9c17a" stroke-opacity=".4" stroke-width="2"/>
-  <g fill="#f6d68d" opacity=".9"><circle cx="180" cy="300" r="5"/><circle cx="900" cy="270" r="5"/><circle cx="860" cy="880" r="4"/><circle cx="220" cy="940" r="4"/><circle cx="540" cy="220" r="4"/></g>
-  <g transform="translate(540 570)">
-    <ellipse cx="0" cy="95" rx="150" ry="24" fill="#201714" opacity=".35"/>
-    <path d="M-142 30 Q-115 150 0 150 Q115 150 142 30 Q70 68 0 68 Q-70 68 -142 30Z" fill="url(#gold)" stroke="#ffe5a5" stroke-width="5"/>
-    <path d="M-100 35 Q-65 65 0 65 Q65 65 100 35" fill="none" stroke="#9b5424" stroke-width="5"/>
-    <path d="M0 35 C-72 -30 -25 -95 0 -165 C25 -95 72 -30 0 35Z" fill="#ffcf64"/>
-    <path d="M0 18 C-35 -24 -9 -72 0 -102 C16 -61 33 -20 0 18Z" fill="#fff6c8"/>
-    <path d="M0 -165 Q-24 -215 0 -250 Q25 -210 0 -165Z" fill="#ff9d3e"/>
-    <path d="M-210 10 Q-250 -40 -225 -90 M210 10 Q250 -40 225 -90" stroke="#f8d58c" stroke-width="5" fill="none" stroke-linecap="round"/>
-  </g>
-  <text x="540" y="130" text-anchor="middle" fill="#f4d89f" font-family="Arial,sans-serif" font-size="25" letter-spacing="8">${brandText.toUpperCase()}</text>
-  <text x="540" y="340" text-anchor="middle" fill="#fff4d8" font-family="Georgia,serif" font-size="76" font-weight="bold">${headline}</text>
-  <text x="540" y="425" text-anchor="middle" fill="#f6dfb6" font-family="Arial,sans-serif" font-size="29">${subheadline}</text>
-  <text x="540" y="1040" text-anchor="middle" fill="#fff0ce" font-family="Georgia,serif" font-size="36">Wishing you light, joy &amp; beautiful journeys</text>
-  <text x="540" y="1190" text-anchor="middle" fill="#f4d89f" font-family="Arial,sans-serif" font-size="23" letter-spacing="4">ONATRIPHOLIDAYS.IN</text>
+  const brandText = escapeXml(brand.toUpperCase());
+  const bg = safeColor(creative.backgroundColor, isDiwali ? "#321b24" : "#203c42");
+  const accent = safeColor(creative.accentColor, isDiwali ? "#e8b85e" : "#d5a75b");
+  const text = safeColor(creative.textColor, "#fff5df");
+  const titleY = Math.round(height * .255);
+  const subY = Math.round(height * .335);
+  const artY = Math.round(height * .52);
+  const footerY = Math.round(height * .88);
+  const art = isDiwali
+    ? `<g transform="translate(${cx} ${artY})">
+      <circle r="${Math.round(width*.25)}" fill="url(#halo)"/>
+      <ellipse cx="0" cy="86" rx="150" ry="22" fill="#120f12" opacity=".35"/>
+      <path d="M-142 20 Q-115 145 0 145 Q115 145 142 20 Q70 62 0 62 Q-70 62 -142 20Z" fill="url(#metal)" stroke="${accent}" stroke-width="5"/>
+      <path d="M-100 25 Q-65 60 0 60 Q65 60 100 25" fill="none" stroke="${bg}" stroke-width="5"/>
+      <path d="M0 18 C-72 -35 -25 -100 0 -170 C25 -100 72 -35 0 18Z" fill="${accent}"/>
+      <path d="M0 10 C-35 -25 -9 -75 0 -108 C16 -65 33 -22 0 10Z" fill="#fff5d5"/>
+      <path d="M0 -170 Q-24 -220 0 -252 Q25 -210 0 -170Z" fill="#ff9d45"/>
+      <path d="M-210 8 Q-250 -40 -225 -90 M210 8 Q250 -40 225 -90" stroke="${accent}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <g fill="${accent}"><circle cx="-260" cy="-120" r="5"/><circle cx="260" cy="-120" r="5"/><circle cx="-220" cy="170" r="4"/><circle cx="220" cy="170" r="4"/></g>
+    </g>`
+    : `<g transform="translate(${cx} ${artY})" fill="none" stroke="${accent}" stroke-width="5" opacity=".95">
+      <circle r="178" opacity=".24"/><circle r="142" opacity=".35"/><circle r="104" opacity=".5"/>
+      <path d="M-220 65 Q-110 -40 0 65 T220 65" stroke-linecap="round"/>
+      <path d="M-160 110 L-65 -20 L0 55 L85 -75 L175 110" stroke-linejoin="round"/>
+      <path d="M-95 -150 L0 -220 L95 -150" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="0" cy="-20" r="18" fill="${accent}" stroke="none"/>
+    </g>`;
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <defs>
+      <linearGradient id="background" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${bg}"/><stop offset="1" stop-color="#171d25"/></linearGradient>
+      <radialGradient id="halo"><stop stop-color="${accent}" stop-opacity=".55"/><stop offset="1" stop-color="${accent}" stop-opacity="0"/></radialGradient>
+      <linearGradient id="metal" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff0c4"/><stop offset="1" stop-color="${accent}"/></linearGradient>
+    </defs>
+    <rect width="${width}" height="${height}" fill="url(#background)"/>
+    <circle cx="${cx}" cy="${Math.round(height*.49)}" r="${Math.round(width*.43)}" fill="url(#halo)"/>
+    <rect x="38" y="38" width="${width-76}" height="${height-76}" rx="24" fill="none" stroke="${accent}" stroke-opacity=".6" stroke-width="2"/>
+    <path d="M78 ${Math.round(height*.13)} Q${cx} ${Math.round(height*.08)} ${width-78} ${Math.round(height*.13)}" fill="none" stroke="${accent}" stroke-opacity=".55"/>
+    <text x="${cx}" y="${Math.round(height*.13)}" text-anchor="middle" fill="${accent}" font-family="Arial,sans-serif" font-size="22" letter-spacing="6">${brandText}</text>
+    <text x="${cx}" y="${titleY}" text-anchor="middle" fill="${text}" font-family="Georgia,serif" font-size="${Math.round(width*.068)}" font-weight="bold">${headline}</text>
+    <text x="${cx}" y="${subY}" text-anchor="middle" fill="${text}" opacity=".9" font-family="Arial,sans-serif" font-size="${Math.round(width*.027)}">${subheadline}</text>
+    ${art}
+    <text x="${cx}" y="${footerY}" text-anchor="middle" fill="${text}" font-family="Georgia,serif" font-size="${Math.round(width*.03)}">${isDiwali ? "Wishing you light, joy & beautiful journeys" : "Discover more. Travel beautifully."}</text>
+    <text x="${cx}" y="${Math.round(height*.93)}" text-anchor="middle" fill="${accent}" font-family="Arial,sans-serif" font-size="20" letter-spacing="4">ONATRIPHOLIDAYS.IN</text>
   </svg>`;
 }
 
 function parseCreative(raw: string): Creative {
-  const cleaned = raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+  const cleaned = raw.replace(/^```(?:json)?\\s*/i, "").replace(/\\s*```$/, "").trim();
   const parsed = JSON.parse(cleaned) as Record<string, unknown>;
   const strings = (key: string, fallback: string) => typeof parsed[key] === "string" && String(parsed[key]).trim() ? String(parsed[key]).trim() : fallback;
-  const hashtags = Array.isArray(parsed.hashtags) ? parsed.hashtags.filter((x): x is string => typeof x === "string").slice(0, 15) : ["#OnATripHolidays", "#HappyDiwali", "#DiwaliWishes", "#TravelIndia"];
-  return { headline: strings("headline", "Happy Diwali"), subheadline: strings("subheadline", "May your celebrations shine bright"), caption: strings("caption", "Wishing you and your family a bright, joyful and wonderful Diwali!\n\nWith warm wishes, On A Trip Holidays."), hashtags, visualDirection: strings("visualDirection", "Elegant festive gold and warm amber palette.") };
+  const hashtags = Array.isArray(parsed.hashtags) ? parsed.hashtags.filter((x): x is string => typeof x === "string").slice(0, 15) : ["#OnATripHolidays", "#TravelIndia"];
+  return {
+    headline: strings("headline", "Happy Diwali"),
+    subheadline: strings("subheadline", "May your celebrations shine bright"),
+    caption: strings("caption", "Wishing you and your family a bright, joyful and wonderful Diwali!\\n\\nWith warm wishes, On A Trip Holidays."),
+    hashtags,
+    visualDirection: strings("visualDirection", "Premium editorial design with a restrained festive palette."),
+    backgroundColor: safeColor(parsed.backgroundColor, "#321b24"),
+    accentColor: safeColor(parsed.accentColor, "#e8b85e"),
+    textColor: safeColor(parsed.textColor, "#fff5df")
+  };
 }
-
 export default function AiSocialPublisherPage() {
   const router = useRouter();
   const [brief, setBrief] = useState("Create a premium Diwali wishes post for On A Trip Holidays. It should feel elegant, warm and festive, with a rich Indian gold and deep maroon palette. This is a greeting post, not a package advertisement.");
