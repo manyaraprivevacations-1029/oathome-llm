@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-const groups = [
+const groups: { title: string; items: { icon: string; name: string; description: string; href?: string; active?: boolean; soon?: boolean; badge?: string }[] }[] = [
   { title: "START HERE", items: [
     { icon: "▦", name: "Dashboard", description: "Your On A Trip Holidays creative workspace.", href: "/social", active: true },
     { icon: "♧", name: "First reel", description: "Start your first travel reel with OWN.", href: "/social/reels" },
