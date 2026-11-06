@@ -124,6 +124,7 @@ export default function AiSocialPublisherPage() {
       const { data: auth } = await sb.auth.getUser();
       if (!auth.user) { router.replace("/social/login"); return; }
       const caption = creative.caption + "\n\n" + creative.hashtags.join(" ");
+      const dimensions = dimensionsFor(format);
       const { error: writeError } = await sb.from("social_content_items").insert({
         user_id: auth.user.id,
         title: creative.headline + " — AI Social Publisher",
