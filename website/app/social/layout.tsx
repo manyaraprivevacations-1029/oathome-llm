@@ -6,25 +6,29 @@ import { usePathname, useRouter } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 const groups = [
-  { label: "WORKSPACE", items: [{ label: "Dashboard", icon: "▦", href: "/social" }] },
+  { label: "WORKSPACE", items: [
+    { label: "Dashboard", icon: "▦", href: "/social" },
+    { label: "First reel", icon: "♧", href: "/social/reels" },
+  ] },
   { label: "CREATE", items: [
-    { label: "AI Social Publisher", icon: "✦", href: "/social/publisher" },
-    { label: "Content Planner", icon: "▤", href: "/social/planner" },
-    { label: "Reel Studio", icon: "▻", href: "/social/reels" },
-    { label: "Carousel Studio", icon: "▧", href: "/social/carousel" },
-    { label: "Voice Studio", icon: "◖", href: "/social/voice" },
-    { label: "Trend Research", icon: "⌁", href: "/social/trends" },
-  ]},
-  { label: "MANAGE", items: [
-    { label: "Approvals", icon: "✓", href: "/social/approvals" },
-    { label: "Reports", icon: "▥", href: "/social/analytics" },
-  ]},
-  { label: "CONFIGURE", items: [
-    { label: "Accounts", icon: "◎", href: "/social/instagram" },
+    { label: "Idea Studio", icon: "✧", href: "/social/trends" },
+    { label: "Create reel", icon: "✎", href: "/social/reels" },
+    { label: "Creations", icon: "▱", href: "/social/planner" },
+    { label: "AI avatar", icon: "♙", href: "/social/voice", badge: "NEW" },
     { label: "Brand Brain", icon: "♧", href: "/social/brand" },
-  ]},
+    { label: "Reel style", icon: "◉", href: "/social/reels" },
+    { label: "Outreach", icon: "♧", href: "/social/approvals" },
+  ] },
+  { label: "CONFIGURE", items: [
+    { label: "Accounts", icon: "@", href: "/social/instagram" },
+    { label: "Reports", icon: "⌕", href: "/social/analytics" },
+    { label: "Billing", icon: "▱", href: "/social/settings?tab=billing", badge: "SOON" },
+    { label: "Team", icon: "♙", href: "/social/settings?tab=team", badge: "SOON" },
+    { label: "Settings", icon: "⚙", href: "/social/settings", badge: "SOON" },
+    { label: "Guide", icon: "▤", href: "/social/guide", badge: "NEW" },
+  ] },
 ];
-const titles: Record<string,string> = Object.fromEntries(groups.flatMap(group => group.items.map(item => [item.href,item.label])));
+const titles: Record<string,string> = Object.fromEntries(groups.flatMap(group => group.items.map(item => [item.href.split("?")[0],item.label])));
 
 export default function SocialLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -74,12 +78,12 @@ export default function SocialLayout({ children }: { children: ReactNode }) {
       <nav className="oat-nav" aria-label="Main navigation">
         {groups.map(group=><div className="oat-nav-group" key={group.label}>
           <div className="oat-nav-label">{group.label}</div>
-          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href?"page":undefined} className={"oat-nav-link"+(pathname===item.href?" active":"")}>
-            <span className="oat-nav-icon">{item.icon}</span><span className="oat-nav-text">{item.label}</span>
+          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href.split("?")[0]?"page":undefined} className={"oat-nav-link"+(pathname===item.href.split("?")[0]?" active":"")}>
+            <span className="oat-nav-icon">{item.icon}</span><span className="oat-nav-text">{item.label}</span>{item.badge&&<span className="oat-nav-badge">{item.badge}</span>}
           </Link>)}
         </div>)}
       </nav>
-      <div className="oat-sidebar-help"><span className="oat-help-icon">✉</span><div><b>Need a hand?</b><small>Your workspace, your workflow.</small></div></div>
+      <div className="oat-sidebar-help"><span className="oat-help-icon">✉</span><div><b>Stuck somewhere?</b><small>Need help with your workspace?</small></div></div>
       <div className="oat-sidebar-footer"><span className="oat-avatar">ON</span><span className="oat-user-email" title={email}>{email}</span><button onClick={()=>void signOut()} title="Sign out" className="oat-signout">↗</button></div>
     </aside>
     <div className="oat-main-column">
