@@ -1,0 +1,93 @@
+"use client";
+
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import { getSocialSupabase } from "@/lib/social/supabase-browser";
+
+const groups = [
+  { label: "WORKSPACE", items: [{ label: "Dashboard", icon: "▦", href: "/social" }] },
+  { label: "CREATE", items: [
+    { label: "Idea Studio", icon: "✦", href: "/social/trends" },
+    { label: "Content Planner", icon: "▤", href: "/social/planner" },
+    { label: "Reel Studio", icon: "▻", href: "/social/reels" },
+    { label: "Carousel Studio", icon: "▧", href: "/social/carousel" },
+    { label: "Voice Studio", icon: "◖", href: "/social/voice" },
+    { label: "Trend Research", icon: "⌁", href: "/social/trends" },
+  ]},
+  { label: "MANAGE", items: [
+    { label: "Approvals", icon: "✓", href: "/social/approvals" },
+    { label: "Reports", icon: "▥", href: "/social/analytics" },
+  ]},
+  { label: "CONFIGURE", items: [
+    { label: "Accounts", icon: "◎", href: "/social/instagram" },
+    { label: "Brand Brain", icon: "♧", href: "/social/brand" },
+  ]},
+];
+const titles: Record<string,string> = Object.fromEntries(groups.flatMap(group => group.items.map(item => [item.href,item.label])));
+
+export default function SocialLayout({ children }: { children: ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const authPage = pathname === "/social/login" || pathname === "/social/reset-password";
+  const [email,setEmail] = useState("");
+  const [checking,setChecking] = useState(true);
+  const [mobileOpen,setMobileOpen] = useState(false);
+  const [collapsed,setCollapsed] = useState(false);
+
+  useEffect(() => {
+    if (authPage) { setChecking(false); return; }
+    let alive = true;
+    const supabase = getSocialSupabase();
+    supabase.auth.getSession().then(({data}) => {
+      if (!alive) return;
+      if (!data.session) router.replace("/social/login");
+      else setEmail(data.session.user.email || "Workspace account");
+      setChecking(false);
+    }).catch(() => { if (alive) { setChecking(false); router.replace("/social/login"); } });
+    const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,session) => {
+      if (!alive) return;
+      if (!session && !authPage) router.replace("/social/login");
+      else if (session) setEmail(session.user.email || "Workspace account");
+    });
+    return () => { alive=false; subscription.unsubscribe(); };
+  },[authPage,router]);
+
+  useEffect(() => { setMobileOpen(false); },[pathname]);
+
+  const pageTitle = useMemo(() => titles[pathname] || "Social AI workspace",[pathname]);
+  async function signOut() {
+    await getSocialSupabase().auth.signOut();
+    router.replace("/social/login");
+  }
+
+  if (authPage) return <>{children}</>;
+  if (checking) return <div className="oat-shell-loading">Loading your workspace…</div>;
+
+  return <div className={"oat-workspace"+(collapsed?" is-collapsed":"")}>
+    {mobileOpen && <button className="oat-mobile-scrim" aria-label="Close navigation" onClick={()=>setMobileOpen(false)} />}
+    <aside className={"oat-sidebar"+(mobileOpen?" mobile-open":"")}>
+      <div className="oat-brand-row">
+        <Link href="/social" className="oat-brand"><span className="oat-brand-mark">▲</span><span className="oat-brand-copy"><b>OWN</b><small>OAT SOCIAL AI</small></span></Link>
+        <button className="oat-collapse" onClick={()=>setCollapsed(v=>!v)} aria-label={collapsed?"Expand sidebar":"Collapse sidebar"}>{collapsed?"›":"‹"}</button>
+      </div>
+      <nav className="oat-nav" aria-label="Main navigation">
+        {groups.map(group=><div className="oat-nav-group" key={group.label}>
+          <div className="oat-nav-label">{group.label}</div>
+          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href?"page":undefined} className={"oat-nav-link"+(pathname===item.href?" active":"")}>
+            <span className="oat-nav-icon">{item.icon}</span><span className="oat-nav-text">{item.label}</span>
+          </Link>)}
+        </div>)}
+      </nav>
+      <div className="oat-sidebar-help"><span className="oat-help-icon">✉</span><div><b>Need a hand?</b><small>Your workspace, your workflow.</small></div></div>
+      <div className="oat-sidebar-footer"><span className="oat-avatar">ON</span><span className="oat-user-email" title={email}>{email}</span><button onClick={()=>void signOut()} title="Sign out" className="oat-signout">↗</button></div>
+    </aside>
+    <div className="oat-main-column">
+      <header className="oat-topbar">
+        <div className="oat-topbar-left"><button className="oat-mobile-menu" onClick={()=>setMobileOpen(true)} aria-label="Open navigation">☰</button><div><div className="oat-top-eyebrow">ON A TRIP HOLIDAYS <span> / </span> WORKSPACE</div><h1>{pageTitle}</h1></div></div>
+        <div className="oat-topbar-right"><span className="oat-private-pill"><i/> PRIVATE WORKSPACE</span><span className="oat-account-pill">{email}</span></div>
+      </header>
+      <main className="oat-page-content">{children}</main>
+    </div>
+  </div>;
+}
