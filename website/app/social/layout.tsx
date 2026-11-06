@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
@@ -37,7 +37,7 @@ function isNavItemActive(href: string, pathname: string, mode: string | null) {
   return pathname !== "/social/reels" || !mode;
 }
 
-export default function SocialLayout({ children }: { children: ReactNode }) {
+function SocialLayoutContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -103,4 +103,10 @@ export default function SocialLayout({ children }: { children: ReactNode }) {
       <main className="oat-page-content">{children}</main>
     </div>
   </div>;
+}
+
+export default function SocialLayout({ children }: { children: ReactNode }) {
+  return <Suspense fallback={<div className="oat-shell-loading">Loading your workspace…</div>}>
+    <SocialLayoutContent>{children}</SocialLayoutContent>
+  </Suspense>;
 }
