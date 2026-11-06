@@ -7,7 +7,7 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 type Item = { id: string; status: string; content_type: string; created_at: string; approved_at: string | null };
 type Insight = { name: string; title: string; value: number; period: string | null; endTime: string | null };
-type InstagramInsights = { connected?: boolean; insightsAvailable?: boolean; username?: string | null; metrics?: Insight[]; error?: string; permissionHint?: string; fetchedAt?: string };
+type InstagramInsights = { connected?: boolean; insightsAvailable?: boolean; username?: string | null; metrics?: Insight[]; followersCount?: number | null; followsCount?: number | null; follows?: number | null; unfollows?: number | null; netFollows?: number | null; attributedProfileVisits?: number; attributedFollows?: number; attributedMediaCount?: number; mediaInsightsNote?: string; accountInsightsError?: string | null; mediaInsightsError?: string | null; error?: string; permissionHint?: string; fetchedAt?: string };
 type RangeKey = "week" | "month" | "3months";
 
 const ranges: { key: RangeKey; label: string; days: number }[] = [
@@ -25,6 +25,8 @@ const metricLabels: Record<string, string> = {
   accounts_engaged: "Accounts engaged",
   total_interactions: "Interactions",
   profile_views: "Profile views",
+  follows_and_unfollows: "Follows and unfollows",
+  profile_links_taps: "Contact button taps",
 };
 const number = (value: number) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
 const shell: CSSProperties = { minHeight: "100vh", padding: "30px clamp(18px,4vw,56px) 56px", background: "#f5f2eb", color: "#28251f" };
@@ -124,6 +126,25 @@ export default function SocialAnalyticsPage() {
             <div style={{ fontFamily: "Georgia,serif", fontSize: 25, color: "#29251f" }}>{metric ? number(metric.value) : "—"}</div>
           </article>)}
         </div>}
+      {instagram?.connected && <section style={{ marginTop: 18 }}>
+        <h3 style={{ fontFamily: "Georgia,serif", fontSize: 20, fontWeight: 500, margin: "0 0 10px" }}>Audience growth & profile activity</h3>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(150px,1fr))", gap: 10 }}>
+          {[
+            ["Current followers", instagram.followersCount],
+            ["New followers in range", instagram.follows],
+            ["Unfollows in range", instagram.unfollows],
+            ["Net follower change", instagram.netFollows],
+            ["Profile visits from selected posts", instagram.attributedProfileVisits],
+            ["Follows from selected posts", instagram.attributedFollows],
+          ].map(([label, value]) => <article key={String(label)} style={{ border: "1px solid #e8e3d9", borderRadius: 13, padding: "15px 16px", background: "#fcfbf8", minHeight: 88 }}>
+            <div style={{ fontSize: 11, color: "#766f63", marginBottom: 7 }}>{label}</div>
+            <div style={{ fontFamily: "Georgia,serif", fontSize: 25, color: "#29251f" }}>{typeof value === "number" ? number(value) : "Unavailable"}</div>
+          </article>)}
+        </div>
+        <p style={{ fontSize: 10, color: "#8c8376", lineHeight: 1.55, margin: "10px 0 0" }}>{instagram.mediaInsightsNote || "Post-attributed profile visits and follows are lifetime totals for eligible posts published in the selected date range. They are not account-wide totals for that date range."}</p>
+        {instagram.accountInsightsError && <p style={{ fontSize: 11, color: "#94652c" }}>Account growth metrics: {instagram.accountInsightsError}</p>}
+        {instagram.mediaInsightsError && <p style={{ fontSize: 11, color: "#94652c" }}>Post activity metrics: {instagram.mediaInsightsError}</p>}
+      </section>}
       {instagram?.connected && instagram?.insightsAvailable && <p style={{ fontSize: 10, color: "#958c7d", margin: "14px 0 0" }}>Fetched {instagram.fetchedAt ? new Date(instagram.fetchedAt).toLocaleString() : "just now"}. A dash means Meta did not return that metric.</p>}
       {instagram?.error && <p style={{ fontSize: 12, color: "#8a5b28", margin: "12px 0 0" }}>{instagram.error}</p>}
     </section>
