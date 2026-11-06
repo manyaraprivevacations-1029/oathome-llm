@@ -2,13 +2,13 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 const groups = [
   { label: "WORKSPACE", items: [
     { label: "Dashboard", icon: "▦", href: "/social" },
-    { label: "First reel", icon: "♧", href: "/social/reels" },
+    { label: "First reel", icon: "♧", href: "/social/reels?mode=first" },
   ] },
   { label: "CREATE", items: [
     { label: "Idea Studio", icon: "✧", href: "/social/trends" },
@@ -16,7 +16,7 @@ const groups = [
     { label: "Creations", icon: "▱", href: "/social/planner" },
     { label: "AI avatar", icon: "♙", href: "/social/voice", badge: "NEW" },
     { label: "Brand Brain", icon: "♧", href: "/social/brand" },
-    { label: "Reel style", icon: "◉", href: "/social/reels" },
+    { label: "Reel style", icon: "◉", href: "/social/reels?mode=style" },
     { label: "Outreach", icon: "♧", href: "/social/approvals" },
   ] },
   { label: "CONFIGURE", items: [
@@ -32,7 +32,7 @@ const titles: Record<string,string> = Object.fromEntries(groups.flatMap(group =>
 
 export default function SocialLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
+  const router = useRouter();\n  const searchParams = useSearchParams();\n  const mode = searchParams.get("mode");
   const authPage = pathname === "/social/login" || pathname === "/social/reset-password";
   const [email,setEmail] = useState("");
   const [checking,setChecking] = useState(true);
@@ -59,7 +59,7 @@ export default function SocialLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => { setMobileOpen(false); },[pathname]);
 
-  const pageTitle = useMemo(() => titles[pathname] || "Social AI workspace",[pathname]);
+  const pageTitle = useMemo(() => pathname === "/social/reels" && mode === "first" ? "First reel" : pathname === "/social/reels" && mode === "style" ? "Reel style" : titles[pathname] || "Social AI workspace",[pathname,mode]);
   async function signOut() {
     await getSocialSupabase().auth.signOut();
     router.replace("/social/login");
@@ -78,7 +78,7 @@ export default function SocialLayout({ children }: { children: ReactNode }) {
       <nav className="oat-nav" aria-label="Main navigation">
         {groups.map(group=><div className="oat-nav-group" key={group.label}>
           <div className="oat-nav-label">{group.label}</div>
-          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href.split("?")[0]?"page":undefined} className={"oat-nav-link"+(pathname===item.href.split("?")[0]?" active":"")}>
+          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href.split("?")[0]?"page":undefined} className={"oat-nav-link"+((pathname===item.href.split("?")[0] && ((item.href.includes("?mode=") && item.href.split("?mode=")[1]===mode) || (!item.href.includes("?mode=") && pathname!=="/social/reels" || (!item.href.includes("?mode=") && pathname==="/social/reels" && !mode)))?" active":"")}>
             <span className="oat-nav-icon">{item.icon}</span><span className="oat-nav-text">{item.label}</span>{item.badge&&<span className="oat-nav-badge">{item.badge}</span>}
           </Link>)}
         </div>)}
