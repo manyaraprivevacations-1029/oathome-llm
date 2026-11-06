@@ -123,7 +123,7 @@ export default function SocialAnalyticsPage() {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 10 }}>
           {metrics.map(({ name, label, metric }) => <article key={name} style={{ border: "1px solid #e8e3d9", borderRadius: 13, padding: "15px 16px", background: "#fcfbf8", minHeight: 88 }}>
             <div style={{ fontSize: 11, color: "#766f63", marginBottom: 7 }}>{label}</div>
-            <div style={{ fontFamily: "Georgia,serif", fontSize: 25, color: "#29251f" }}>{metric ? number(metric.value) : "—"}</div>
+            <div style={{ fontFamily: "Georgia,serif", fontSize: 25, color: "#29251f" }}>{metric && typeof metric.value === "number" ? number(metric.value) : "Unavailable"}</div>
           </article>)}
         </div>}
       {instagram?.connected && <section style={{ marginTop: 18 }}>
