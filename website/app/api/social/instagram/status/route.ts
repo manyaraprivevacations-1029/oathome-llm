@@ -5,7 +5,7 @@ import { getSocialAdmin, requireSocialUser } from "@/lib/social/meta-server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-type ConnectedAccount = { id?: string; status?: string; toolkit?: { slug?: string } };
+type ConnectedAccount = { id?: string; user_id?: string; status?: string; toolkit?: { slug?: string } };
 
 export async function GET(request: NextRequest) {
   const user = await requireSocialUser(request);
