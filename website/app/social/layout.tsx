@@ -30,6 +30,13 @@ const groups = [
 ];
 const titles: Record<string,string> = Object.fromEntries(groups.flatMap(group => group.items.map(item => [item.href.split("?")[0],item.label])));
 
+function isNavItemActive(href: string, pathname: string, mode: string | null) {
+  if (pathname !== href.split("?")[0]) return false;
+  const requestedMode = new URLSearchParams(href.split("?")[1] || "").get("mode");
+  if (requestedMode) return requestedMode === mode;
+  return pathname !== "/social/reels" || !mode;
+}
+
 export default function SocialLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -80,7 +87,7 @@ export default function SocialLayout({ children }: { children: ReactNode }) {
       <nav className="oat-nav" aria-label="Main navigation">
         {groups.map(group=><div className="oat-nav-group" key={group.label}>
           <div className="oat-nav-label">{group.label}</div>
-          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href.split("?")[0]?"page":undefined} className={"oat-nav-link"+((pathname===item.href.split("?")[0] && ((item.href.includes("?mode=") && item.href.split("?mode=")[1]===mode) || (!item.href.includes("?mode=") && pathname!=="/social/reels" || (!item.href.includes("?mode=") && pathname==="/social/reels" && !mode)))?" active":"")}>
+          {group.items.map(item=><Link key={item.href+item.label} href={item.href} title={collapsed?item.label:undefined} aria-current={pathname===item.href.split("?")[0]?"page":undefined} className={"oat-nav-link" + (isNavItemActive(item.href, pathname, mode) ? " active" : "")}>
             <span className="oat-nav-icon">{item.icon}</span><span className="oat-nav-text">{item.label}</span>{item.badge&&<span className="oat-nav-badge">{item.badge}</span>}
           </Link>)}
         </div>)}
