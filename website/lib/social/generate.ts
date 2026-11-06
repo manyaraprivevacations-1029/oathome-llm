@@ -9,6 +9,8 @@ function cleanGeneratedText(value: string): string {
     if (typeof parsed === "string") return parsed.trim();
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       const record = parsed as Record<string, unknown>;
+      // Preserve structured publisher payloads so the caller can parse every field.
+      if (typeof record.headline === "string" && typeof record.caption === "string") return trimmed;
       for (const key of ["caption", "content", "text", "response", "output"]) {
         if (typeof record[key] === "string" && record[key].trim()) {
           return (record[key] as string).trim();
