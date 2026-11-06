@@ -8,6 +8,7 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 const groups = [
   { label: "WORKSPACE", items: [{ label: "Dashboard", icon: "▦", href: "/social" }] },
   { label: "CREATE", items: [
+    { label: "AI Social Publisher", icon: "✦", href: "/social/publisher" },
     { label: "Content Planner", icon: "▤", href: "/social/planner" },
     { label: "Reel Studio", icon: "▻", href: "/social/reels" },
     { label: "Carousel Studio", icon: "▧", href: "/social/carousel" },
