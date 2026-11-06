@@ -35,10 +35,19 @@ async function proxyInstagram(accountId: string, userId: string, endpoint: strin
   });
 }
 
+function dateOnly(date: Date) {
+  return date.toISOString().slice(0, 10);
+}
+
 export async function GET(request: NextRequest) {
   const user = await requireSocialUser(request);
   if (!user) return NextResponse.json({ error: "Please sign in again." }, { status: 401 });
   if (!composioConfigured()) return NextResponse.json({ error: "Instagram analytics is not configured." }, { status: 503 });
+
+  const requestedRange = request.nextUrl.searchParams.get("range") || "week";
+  const days = requestedRange === "month" ? 30 : requestedRange === "3months" ? 90 : 7;
+  const until = new Date();
+  const since = new Date(until.getTime() - (days - 1) * 86400000);
 
   try {
     const admin = getSocialAdmin();
@@ -61,19 +70,22 @@ export async function GET(request: NextRequest) {
       }, { status: 200, headers: { "Cache-Control": "no-store" } });
     }
 
-    const metrics = "reach,views,follower_count,accounts_engaged,total_interactions,profile_views";
-    const insights = await proxyInstagram(
-      accountId,
-      user.id,
-      "/" + encodeURIComponent(profile.data.id) + "/insights?metric=" + encodeURIComponent(metrics) + "&period=day"
-    );
+    // Request aggregate account insights for the selected reporting window.
+    // follower_count is deliberately excluded: its day-period value is a daily change,
+    // not the account's total follower count.
+    const metricList = "views,reach,likes,comments,shares,saves,accounts_engaged,total_interactions";
+    const endpoint = "/" + encodeURIComponent(profile.data.id) + "/insights?metric=" +
+      encodeURIComponent(metricList) + "&period=day&metric_type=total_value&since=" +
+      encodeURIComponent(dateOnly(since)) + "&until=" + encodeURIComponent(dateOnly(until));
+    const insights = await proxyInstagram(accountId, user.id, endpoint);
+
     if ((insights.status && insights.status >= 400) || insights.data?.error) {
       return NextResponse.json({
         connected: true,
         insightsAvailable: false,
         username: profile.data.username || data.account_username,
         error: insights.data?.error?.message || "Instagram Insights is not available for this account.",
-        permissionHint: "The current Composio authorization may not include Instagram Insights access. The auth configuration must request the relevant insights permission before reconnecting.",
+        permissionHint: "Some metrics depend on Instagram account eligibility and the Insights permissions granted during connection.",
       }, { status: 200, headers: { "Cache-Control": "no-store" } });
     }
 
@@ -96,6 +108,9 @@ export async function GET(request: NextRequest) {
       username: profile.data.username || data.account_username,
       accountType: profile.data.account_type || "PROFESSIONAL",
       mediaCount: profile.data.media_count ?? null,
+      range: requestedRange,
+      since: dateOnly(since),
+      until: dateOnly(until),
       metrics: result,
       fetchedAt: new Date().toISOString(),
     }, { headers: { "Cache-Control": "no-store" } });
