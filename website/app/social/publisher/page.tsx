@@ -147,7 +147,8 @@ export default function AiSocialPublisherPage() {
       const url = URL.createObjectURL(blob);
       const image = new Image();
       image.onload = () => {
-        const dimensions = dimensionsFor(format);\n        const canvas = document.createElement("canvas"); canvas.width = dimensions.width; canvas.height = dimensions.height;
+        const dimensions = dimensionsFor(format);
+        const canvas = document.createElement("canvas"); canvas.width = dimensions.width; canvas.height = dimensions.height;
         const context = canvas.getContext("2d");
         if (!context) { URL.revokeObjectURL(url); setError("Could not prepare the PNG download."); return; }
         context.drawImage(image, 0, 0, dimensions.width, dimensions.height);
