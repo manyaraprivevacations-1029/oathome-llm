@@ -8,7 +8,6 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 const groups = [
   { label: "WORKSPACE", items: [{ label: "Dashboard", icon: "▦", href: "/social" }] },
   { label: "CREATE", items: [
-    { label: "Idea Studio", icon: "✦", href: "/social/trends" },
     { label: "Content Planner", icon: "▤", href: "/social/planner" },
     { label: "Reel Studio", icon: "▻", href: "/social/reels" },
     { label: "Carousel Studio", icon: "▧", href: "/social/carousel" },
