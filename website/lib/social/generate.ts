@@ -57,16 +57,30 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
     prompt
   ].filter(Boolean).join("\\n\\n");
 
-  const { data: sessionData } = await getSocialSupabase().auth.getSession();
-  const accessToken = sessionData.session?.access_token;
-  if (!accessToken) throw new Error("Your Social AI session expired. Please sign in again.");
+  const supabase = getSocialSupabase();
+  let { data: sessionData } = await supabase.auth.getSession();
+  if (!sessionData.session) {
+    const refreshed = await supabase.auth.refreshSession();
+    sessionData = refreshed.data;
+  }
+  let accessToken = sessionData.session?.access_token;
+  if (!accessToken) throw new Error("Your Social AI session has expired. Please sign in again.");
 
-  const response = await fetch("/api/social/generate", {
+  const sendGenerationRequest = (token: string) => fetch("/api/social/generate", {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${accessToken}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ prompt: fullPrompt }),
     cache: "no-store"
   });
+
+  let response = await sendGenerationRequest(accessToken);
+  // Access tokens can expire between reading browser storage and reaching the API.
+  // Refresh once and retry, rather than showing a repeatable 401 for a valid session.
+  if (response.status === 401) {
+    const refreshed = await supabase.auth.refreshSession();
+    accessToken = refreshed.data.session?.access_token || "";
+    if (accessToken) response = await sendGenerationRequest(accessToken);
+  }
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
