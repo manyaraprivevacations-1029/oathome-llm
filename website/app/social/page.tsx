@@ -49,7 +49,7 @@ export default function SocialDashboardPage() {
   if(loading)return <main className="social-theme" style={loadingStyle}>Loading your Social AI workspace…</main>;
   if(issue&&!session)return <main className="social-theme" style={loadingStyle}><section style={panel}><h1>Setup required</h1><p>{issue}</p><Link href="/social/login">Back to login</Link></section></main>;
   if(!session)return null;
-  return <main style={app}>
+  return <main className="social-theme" style={app}>
     <aside style={sidebar}>
       <Link href="/social" style={brand}><span style={brandMark}>▲</span><span><b>ON A TRIP HOLIDAYS</b><strong>OAT Social AI</strong></span></Link>
       <div style={navLabel}>WORKSPACE</div>
