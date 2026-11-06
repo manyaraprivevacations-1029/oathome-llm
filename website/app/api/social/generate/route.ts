@@ -54,9 +54,12 @@ export async function POST(request: NextRequest) {
         cache: "no-store",
         signal: AbortSignal.timeout(90000),
       });
-      const payload = await upstream.json().catch(() => null) as { content?: unknown; error?: unknown } | null;
+      const responseText = await upstream.text().catch(() => "");
+      let payload: { content?: unknown; error?: unknown } | null = null;
+      try { payload = responseText ? JSON.parse(responseText) as { content?: unknown; error?: unknown } : null; } catch { /* preserve status without exposing HTML or secrets */ }
       if (!upstream.ok) {
-        const message = typeof payload?.error === "string" ? payload.error : "The configured OWN inference gateway rejected the request.";
+        const message = typeof payload?.error === "string" ? payload.error : `OWN production gateway returned HTTP ${upstream.status} (${upstream.statusText || "request rejected"}).`;
+        console.error("[OAT Social AI] Production generation gateway rejected preview request:", upstream.status, upstream.statusText);
         return jsonError(message, upstream.status);
       }
       if (typeof payload?.content !== "string" || !payload.content.trim()) {
