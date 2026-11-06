@@ -41,6 +41,7 @@ export default function SocialAnalyticsPage() {
   const [instagramLoading, setInstagramLoading] = useState(true);
   const [instagramError, setInstagramError] = useState("");
   const [range, setRange] = useState<RangeKey>("week");
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -84,6 +85,26 @@ export default function SocialAnalyticsPage() {
 
   useEffect(() => { void loadInstagram(); }, [loadInstagram]);
 
+  const refreshDashboard = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await loadInstagram();
+      const sb = getSocialSupabase();
+      const { data: auth } = await sb.auth.getUser();
+      if (!auth.user) { router.replace("/social/login"); return; }
+      const { data, error: queryError } = await sb.from("social_content_items")
+        .select("id,status,content_type,created_at,approved_at")
+        .eq("user_id", auth.user.id).order("created_at", { ascending: false }).limit(500);
+      if (queryError) throw queryError;
+      setItems((data || []) as Item[]);
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to refresh dashboard data.");
+    } finally {
+      setRefreshing(false);
+    }
+  }, [loadInstagram, router]);
+
   const metrics = useMemo(() => {
     const byName = new Map((instagram?.metrics || []).map((metric) => [metric.name, metric]));
     return ["views", "reach", "likes", "comments", "shares", "saves", "accounts_engaged", "total_interactions"]
@@ -103,7 +124,12 @@ export default function SocialAnalyticsPage() {
         <h1 style={{ fontFamily: "Georgia,serif", fontSize: 34, fontWeight: 500, margin: "12px 0 5px" }}>Reports</h1>
         <p style={{ fontSize: 13, color: "#766f63", margin: 0 }}>Instagram performance for your team, in one place.</p>
       </div>
-      <Link href="/social/instagram" style={{ border: "1px solid #ded6c8", borderRadius: 24, padding: "11px 16px", color: "#332f28", background: "#fff", fontSize: 12, textDecoration: "none" }}>Manage Instagram connection ↗</Link>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+        <button type="button" onClick={() => void refreshDashboard()} disabled={refreshing || instagramLoading} style={{ border: "1px solid #ded6c8", borderRadius: 24, padding: "11px 16px", color: "#332f28", background: refreshing || instagramLoading ? "#f3efe7" : "#fff", fontSize: 12, cursor: refreshing || instagramLoading ? "wait" : "pointer", opacity: refreshing || instagramLoading ? .7 : 1 }}>
+          {refreshing || instagramLoading ? "Refreshing…" : "↻ Refresh data"}
+        </button>
+        <Link href="/social/instagram" style={{ border: "1px solid #ded6c8", borderRadius: 24, padding: "11px 16px", color: "#332f28", background: "#fff", fontSize: 12, textDecoration: "none" }}>Manage Instagram connection ↗</Link>
+      </div>
     </header>
 
     <section style={{ ...panel, padding: "24px clamp(16px,3vw,30px)", marginBottom: 18 }}>
