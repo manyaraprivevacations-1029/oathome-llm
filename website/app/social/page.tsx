@@ -47,7 +47,7 @@ export default function SocialDashboardPage() {
   },[router]);
   async function signOut(){try{await getSocialSupabase().auth.signOut();}finally{router.replace("/social/login");}}
   if(loading)return <main className="social-theme" style={loadingStyle}>Loading your Social AI workspace…</main>;
-  if(issue&&!session)return <main style={loadingStyle}><section style={panel}><h1>Setup required</h1><p>{issue}</p><Link href="/social/login">Back to login</Link></section></main>;
+  if(issue&&!session)return <main className="social-theme" style={loadingStyle}><section style={panel}><h1>Setup required</h1><p>{issue}</p><Link href="/social/login">Back to login</Link></section></main>;
   if(!session)return null;
   return <main style={app}>
     <aside style={sidebar}>
