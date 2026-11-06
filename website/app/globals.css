@@ -84,3 +84,7 @@ html,body{background:#212121;color:#ececec}
  .composer textarea{font-size:14px}
  .runtime-mini{display:none}
 }
+
+
+/* OAT Social AI warm editorial theme; OWN chat remains unchanged. */
+.social-theme{background:#f5f2eb!important;color:#28251f!important;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}.social-theme h1,.social-theme h2,.social-theme h3{color:#28251f!important}.social-theme p{color:#766f63}.social-theme a{color:#8b6a32}.social-theme section,.social-theme article{border-color:#e8e1d5!important}.social-theme article{background:#fcfbf8!important;color:#302b23!important}.social-theme input,.social-theme textarea,.social-theme select{background:#fffdf9!important;color:#302b23!important;border-color:#ded6c8!important}.social-theme button{border-color:#ded6c8}.social-theme button[aria-pressed="true"]{background:#29251f!important;color:#fff!important}
