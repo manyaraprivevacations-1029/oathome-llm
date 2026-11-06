@@ -23,6 +23,7 @@ export default function SocialDashboardPage() {
   const [session,setSession]=useState<Session|null>(null);
   const [loading,setLoading]=useState(true);
   const [issue,setIssue]=useState("");
+  const [instagramStatus,setInstagramStatus]=useState("Checking…");
   useEffect(()=>{
     let alive=true; let subscription:{unsubscribe:()=>void}|undefined;
     try {
@@ -32,6 +33,10 @@ export default function SocialDashboardPage() {
         if(error)setIssue(error.message);
         setSession(data.session); setLoading(false);
         if(!data.session)router.replace("/social/login");
+        else void fetch("/api/social/instagram/status",{headers:{Authorization:"Bearer "+data.session.access_token},cache:"no-store"})
+          .then(async response=>{if(!response.ok)throw new Error("Status unavailable");return response.json();})
+          .then(result=>{if(alive)setInstagramStatus(result.connected?"Connected":"Not connected");})
+          .catch(()=>{if(alive)setInstagramStatus("Status unavailable");});
       });
       const {data}=supabase.auth.onAuthStateChange((_event,next)=>{
         if(!alive)return; setSession(next); if(!next)router.replace("/social/login");
@@ -56,7 +61,7 @@ export default function SocialDashboardPage() {
       <header style={topbar}><div><div style={eyebrow}>ON A TRIP HOLIDAYS</div><h1 style={heading}>Social AI workspace</h1><p style={subtitle}>Plan smarter. Create consistently. Approve before publishing.</p></div><div style={account}><span>{session.user.email}</span><button onClick={signOut} style={secondaryButton}>Sign out</button></div></header>
       <section style={hero}><div><div style={{fontSize:10,fontWeight:800,letterSpacing:".16em",color:"#d6edff"}}>YOUR BRAND WORKSPACE</div><h2 style={{fontSize:32,letterSpacing:"-.04em",margin:"12px 0 8px"}}>On A Trip Holidays</h2><p style={{fontSize:13,lineHeight:1.7,maxWidth:560,margin:0,color:"#e5f3ff"}}>A dedicated home for travel campaigns, Instagram content, reels and brand assets. OWN remains a separate product.</p></div><div style={heroIcon}>✈</div></section>
       <div style={sectionHead}><div><h2 style={{fontSize:20,margin:"0 0 5px",color:"#10264a"}}>Creative tools</h2><p style={{fontSize:12,color:"#62758e",margin:0}}>Choose a workspace to get started.</p></div><span style={publishing}>PUBLISHING DISABLED</span></div>
-      <section style={grid}>{modules.map(m=><article key={m.name} style={card}><div style={cardTop}><span style={moduleIcon}>{m.icon}</span><span style={status(m.status)}>{m.status}</span></div><h3 style={{fontSize:16,margin:"15px 0 7px",color:"#10264a"}}>{m.name}</h3><p style={{fontSize:12,color:"#60738d",lineHeight:1.65,margin:0,minHeight:40}}>{m.desc}</p>{m.href?<Link href={m.href} style={openLink}>Open module　→</Link>:<span style={{...openLink,color:"#8192a8"}}>Coming soon</span>}</article>)}</section>
+      <section style={grid}>{modules.map(m=>{const moduleStatus=m.name==="Instagram Manager"?instagramStatus:m.status;return <article key={m.name} style={card}><div style={cardTop}><span style={moduleIcon}>{m.icon}</span><span style={status(moduleStatus)}>{moduleStatus}</span></div><h3 style={{fontSize:16,margin:"15px 0 7px",color:"#10264a"}}>{m.name}</h3><p style={{fontSize:12,color:"#60738d",lineHeight:1.65,margin:0,minHeight:40}}>{m.desc}</p>{m.href?<Link href={m.href} style={openLink}>Open module　→</Link>:<span style={{...openLink,color:"#8192a8"}}>Coming soon</span>}</article>})}</section>
       <p style={{fontSize:11,color:"#71839a",marginTop:25,lineHeight:1.7}}>Safety: no Instagram publishing, messaging, ad changes or external account actions are enabled.</p>
     </section>
   </main>;
@@ -86,7 +91,7 @@ const grid:CSSProperties={display:"grid",gridTemplateColumns:"repeat(auto-fit,mi
 const card:CSSProperties={border:"1px solid #dce8f5",borderRadius:14,padding:18,background:"#fff",minHeight:165,boxShadow:"0 5px 18px #174b7810"};
 const cardTop:CSSProperties={display:"flex",justifyContent:"space-between",alignItems:"center"};
 const moduleIcon:CSSProperties={fontSize:22,color:"#087fe0"};
-const status=(value:string):CSSProperties=>({fontSize:9,padding:"5px 8px",borderRadius:20,border:"1px solid "+(value==="Ready"?"#b5e5d0":"#d8e4f0"),background:value==="Ready"?"#e9fbf2":"#f2f6fb",color:value==="Ready"?"#137b4e":"#62758e"});
+const status=(value:string):CSSProperties=>({fontSize:9,padding:"5px 8px",borderRadius:20,border:"1px solid "+(value==="Ready"||value==="Connected"?"#b5e5d0":"#d8e4f0"),background:value==="Ready"||value==="Connected"?"#e9fbf2":"#f2f6fb",color:value==="Ready"||value==="Connected"?"#137b4e":"#62758e"});
 const openLink:CSSProperties={display:"inline-block",marginTop:14,color:"#0878d8",fontSize:11,fontWeight:700,textDecoration:"none"};
 const panel:CSSProperties={background:"#fff",padding:24,borderRadius:14};
 const loadingStyle:CSSProperties={minHeight:"100vh",display:"grid",placeContent:"center",background:"#f4f8fd",color:"#31506f"};
