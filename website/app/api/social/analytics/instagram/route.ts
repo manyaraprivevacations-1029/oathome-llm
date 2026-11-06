@@ -81,17 +81,21 @@ export async function GET(request: NextRequest) {
     }
 
     // Graph API since/until parameters are Unix timestamps, not date strings.
-    const accountMetricNames = "views,reach,accounts_engaged,total_interactions,likes,comments,shares,saves,follows_and_unfollows,profile_links_taps";
+    const accountMetricNames = "views,reach,accounts_engaged,total_interactions,likes,comments,shares,saves,profile_links_taps";
     const accountEndpoint = "/" + encodeURIComponent(profile.id) + "/insights?metric=" +
       encodeURIComponent(accountMetricNames) + "&period=day&metric_type=total_value&since=" +
       unix(since) + "&until=" + unix(until);
     const accountResponse = await proxyInstagram(accountId, user.id, accountEndpoint);
     const accountRows = graphError(accountResponse) ? [] : metricRows(accountResponse);
+    const followResponse = await proxyInstagram(accountId, user.id,
+      "/" + encodeURIComponent(profile.id) + "/insights?metric=follows_and_unfollows&period=day&metric_type=total_value&breakdown=follow_type&since=" +
+      unix(since) + "&until=" + unix(until));
+    const followRows = graphError(followResponse) ? [] : metricRows(followResponse);
     const accountMetrics = accountRows.map((row) => ({
       name: row.name || "metric", title: row.title || row.name || "Metric",
       value: metricValue(row), breakdown: metricBreakdown(row),
     }));
-    const followRow = accountRows.find((row) => row.name === "follows_and_unfollows");
+    const followRow = followRows.find((row) => row.name === "follows_and_unfollows");
     const followBreakdown = followRow ? metricBreakdown(followRow) : {};
     const follows = followBreakdown.follower ?? followBreakdown.followers ?? followBreakdown.follows ?? null;
     const unfollows = followBreakdown.nonfollower ?? followBreakdown.non_followers ?? followBreakdown.unfollowers ?? followBreakdown.unfollows ?? null;
@@ -154,7 +158,7 @@ export async function GET(request: NextRequest) {
       range: requestedRange, since: dateOnly(since), until: dateOnly(until),
       metrics: accountMetrics, posts,
       mediaInsightsNote: "Profile visits and follows shown here are lifetime results attributed to posts published in the selected date range, not account-wide visits or follows during that range.",
-      accountInsightsError: graphError(accountResponse),
+      accountInsightsError: graphError(accountResponse) || graphError(followResponse),
       mediaInsightsError: graphError(mediaResponse),
       fetchedAt: new Date().toISOString(),
     }, { headers: { "Cache-Control": "no-store" } });
