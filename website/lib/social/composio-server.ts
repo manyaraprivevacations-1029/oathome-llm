@@ -17,8 +17,8 @@ function apiKey(): string {
   return value;
 }
 
-export function createComposioState(): string {
-  return randomBytes(32).toString("base64url");
+export function createComposioState(userId: string): string {
+  return userId + "." + randomBytes(32).toString("base64url");
 }
 
 export function verifyComposioState(cookieValue: string, queryValue: string): boolean {
