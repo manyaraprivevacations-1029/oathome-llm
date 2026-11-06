@@ -117,7 +117,7 @@ export default function SocialAnalyticsPage() {
   const postsInRange = recentItems.length;
   const workflow = [["Drafts", items.length], ["In review", count("in_review")], ["Approved", count("approved")], ["Created in range", postsInRange]] as const;
 
-  return <main style={shell}>
+  return <main className="social-theme" style={shell}>
     <header style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, flexWrap: "wrap", marginBottom: 22 }}>
       <div>
         <Link href="/social" style={{ color: "#8b6a32", fontSize: 12, textDecoration: "none" }}>← Social AI workspace</Link>
