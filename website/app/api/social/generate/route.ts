@@ -38,38 +38,7 @@ export async function POST(request: NextRequest) {
   let baseUrl = process.env.OATHOME_LLM_BASE_URL?.trim() || "";
   if (!baseUrl && process.env.NODE_ENV !== "production") baseUrl = "http://127.0.0.1:11434";
   while (baseUrl.endsWith("/")) baseUrl = baseUrl.slice(0, -1);
-  if (!baseUrl) {
-    // Preview deployments can securely reuse the already-configured production OWN
-    // inference gateway without copying or exposing its private runtime credentials.
-    const productionGateway = process.env.OATHOME_PRODUCTION_GENERATION_URL?.trim()
-      || "https://app-l09ba1t88-manyaraprivevacations-5393.vercel.app/api/social/generate";
-    try {
-      const upstream = await fetch(productionGateway, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ prompt: prompt.trim() }),
-        cache: "no-store",
-        signal: AbortSignal.timeout(90000),
-      });
-      const responseText = await upstream.text().catch(() => "");
-      let payload: { content?: unknown; error?: unknown } | null = null;
-      try { payload = responseText ? JSON.parse(responseText) as { content?: unknown; error?: unknown } : null; } catch { /* preserve status without exposing HTML or secrets */ }
-      if (!upstream.ok) {
-        const message = typeof payload?.error === "string" ? payload.error : `OWN production gateway returned HTTP ${upstream.status} (${upstream.statusText || "request rejected"}).`;
-        console.error("[OAT Social AI] Production generation gateway rejected preview request:", upstream.status, upstream.statusText);
-        return jsonError(message, upstream.status);
-      }
-      if (typeof payload?.content !== "string" || !payload.content.trim()) {
-        return jsonError("OWN inference gateway returned an empty response.", 502);
-      }
-      return NextResponse.json({ content: payload.content }, { headers: { "Cache-Control": "no-store" } });
-    } catch {
-      return jsonError("Could not reach the configured OWN inference gateway. Please try again.", 502);
-    }
-  }
+  if (!baseUrl) return jsonError("OWN model runtime is not connected to this deployment yet. The editor can still create a clearly labelled local starter, but AI generation requires the private Qwen inference service.", 503);
 
   const model = process.env.OATHOME_LLM_MODEL?.trim() || "qwen2.5:3b";
   const headers: Record<string, string> = { "Content-Type": "application/json" };
