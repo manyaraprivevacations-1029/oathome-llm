@@ -23,7 +23,7 @@ const metricLabels: Record<string, string> = {
   shares: "Shares",
   saves: "Saves",
   accounts_engaged: "Accounts engaged",
-  total_interactions: "Interactions",\n  profile_views: "Profile visits",\n  profile_links_taps: "External link taps",
+  total_interactions: "Interactions",
   profile_views: "Profile views",
   follows_and_unfollows: "Follows and unfollows",
   profile_links_taps: "External link taps",
@@ -134,7 +134,7 @@ export default function SocialAnalyticsPage() {
             ["New followers in range", instagram.follows],
             ["Unfollows in range", instagram.unfollows],
             ["Net follower change", instagram.netFollows],
-            ["Profile visits", instagram.profileVisits],\n            ["External link taps", instagram.externalLinkTaps],
+            ["Profile visits", null],\n            ["External link taps", instagram.externalLinkTaps],
             ["Follows attributed to selected posts", instagram.attributedFollows],
           ].map(([label, value]) => <article key={String(label)} style={{ border: "1px solid #e8e3d9", borderRadius: 13, padding: "15px 16px", background: "#fcfbf8", minHeight: 88 }}>
             <div style={{ fontSize: 11, color: "#766f63", marginBottom: 7 }}>{label}</div>
