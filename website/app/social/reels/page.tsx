@@ -9,7 +9,7 @@ type Project={id:string;title:string;destination:string|null;target_duration_sec
 const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f6f2e9",color:"#30291f"};
 const panel:CSSProperties={border:"1px solid #e7dfd1",borderRadius:15,padding:21,background:"#fffdf8"};
 const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #ded5c6",borderRadius:8,background:"#fff",color:"#30291f",fontSize:13};
-const label:CSSProperties={display:"grid",gap:7,color:"#5d708a",fontSize:10,letterSpacing:".08em"};
+const label:CSSProperties={display:"grid",gap:7,color:"#746957",fontSize:10,letterSpacing:".08em"};
 const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#a8752d",color:"#fff",fontWeight:700,cursor:"pointer"};
 const muted:CSSProperties={padding:"9px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#fffaf0",color:"#8a5d20",fontSize:11,cursor:"pointer"};
 const emptyScene=():Scene=>({scene:1,duration_seconds:5,visual:"",voiceover:"",onscreen_text:"",footage_needed:"",transition:"Cut"});
