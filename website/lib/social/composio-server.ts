@@ -2,7 +2,7 @@ import "server-only";
 
 import { randomBytes, timingSafeEqual } from "node:crypto";
 
-const API_BASE = "https://backend.composio.dev/api/v3";
+const API_BASE = "https://backend.composio.dev/api/v3.1";
 
 export function composioConfigured(): boolean {
   return Boolean(
