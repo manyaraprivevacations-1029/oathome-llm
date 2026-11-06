@@ -33,15 +33,10 @@ function metricRows(response: ProxyResponse): MetricRow[] {
   return Array.isArray(rows) ? rows as MetricRow[] : [];
 }
 function metricValue(row: MetricRow): number | null {
+  // We request metric_type=total_value. Only use Meta's explicit aggregate;
+  // never sum daily buckets or substitute a different metric.
   const total = row.total_value?.value;
-  if (typeof total === "number" && Number.isFinite(total)) return total;
-  // Account insights requested with period=day return one value per day.
-  // Summing the daily buckets gives the selected-range total; taking only
-  // the last bucket silently under-reports the entire reporting period.
-  const dailyValues = (row.values || [])
-    .map((entry) => entry.value)
-    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  return dailyValues.length ? dailyValues.reduce((sum, value) => sum + value, 0) : null;
+  return typeof total === "number" && Number.isFinite(total) ? total : null;
 }
 function metricBreakdown(row: MetricRow): Record<string, number> {
   const result: Record<string, number> = {};
@@ -88,7 +83,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Graph API since/until parameters are Unix timestamps, not date strings.
-    const accountMetricNames = "views,reach,accounts_engaged,total_interactions,likes,comments,shares,saves,profile_views,profile_links_taps";
+    // Request only metrics supported by the current Insights API. Profile visits
+    // are not currently exposed as an account-level metric in this API version.
+    const accountMetricNames = "views,reach,accounts_engaged,total_interactions,likes,comments,shares,saves,profile_links_taps";
     const accountEndpoint = "/" + encodeURIComponent(profile.id) + "/insights?metric=" +
       encodeURIComponent(accountMetricNames) + "&period=day&metric_type=total_value&since=" +
       unix(since) + "&until=" + unix(until);
@@ -162,11 +159,10 @@ export async function GET(request: NextRequest) {
       followsCount: typeof profile.follows_count === "number" ? profile.follows_count : null,
       follows, unfollows, netFollows: follows !== null && unfollows !== null ? follows - unfollows : null,
       attributedProfileVisits, attributedFollows, attributedMediaCount: posts.length,
-      profileVisits: accountMetrics.find((item) => item.name === "profile_views")?.value ?? null,
       externalLinkTaps: accountMetrics.find((item) => item.name === "profile_links_taps")?.value ?? null,
       range: requestedRange, since: dateOnly(since), until: dateOnly(until),
       metrics: accountMetrics, posts,
-      mediaInsightsNote: "Profile visits and follows shown here are lifetime results attributed to posts published in the selected date range, not account-wide visits or follows during that range.",
+      mediaInsightsNote: "Account metrics are fetched live from Meta for the selected date range. Profile visits are not currently returned by the connected Insights API; post-attributed profile actions, when available, are separate lifetime metrics.",
       accountInsightsError: graphError(accountResponse) || graphError(followResponse),
       mediaInsightsError: graphError(mediaResponse),
       fetchedAt: new Date().toISOString(),
