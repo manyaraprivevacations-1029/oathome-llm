@@ -110,7 +110,7 @@ export default function SocialAnalyticsPage() {
       <div style={{ textAlign: "center", marginBottom: 20 }}>
         <div style={{ fontSize: 11, letterSpacing: 1.5, textTransform: "uppercase", color: "#95805c", marginBottom: 9 }}>Instagram report · @{instagram?.username || "onatripholidays"}</div>
         <h2 style={{ fontFamily: "Georgia,serif", fontWeight: 500, fontSize: "clamp(23px,3vw,34px)", margin: "0 0 16px", lineHeight: 1.2 }}>
-          {instagramLoading ? "Loading Instagram performance…" : headlineViews !== undefined ? number(headlineViews) + " views across @" + (instagram?.username || "onatripholidays") : "Instagram performance overview"}
+          {instagramLoading ? "Loading Instagram performance…" : typeof headlineViews === "number" ? number(headlineViews) + " views across @" + (instagram?.username || "onatripholidays") : "Instagram performance overview"}
         </h2>
         <div style={{ display: "inline-flex", gap: 4, padding: 4, borderRadius: 30, background: "#f3efe7" }}>
           {ranges.map((option) => <button key={option.key} onClick={() => setRange(option.key)} aria-pressed={range === option.key} style={{ border: 0, borderRadius: 24, padding: "9px 17px", fontSize: 12, cursor: "pointer", background: range === option.key ? "#26231e" : "transparent", color: range === option.key ? "#fff" : "#5d574d" }}>{option.label}</button>)}
