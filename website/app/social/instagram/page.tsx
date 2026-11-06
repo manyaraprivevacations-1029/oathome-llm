@@ -81,7 +81,7 @@ export default function InstagramManagerPage(){
     finally{setBusy(false);}
   }
 
-  return <main style={shell}>
+  return <main className="social-theme" style={shell}>
     <header style={{marginBottom:22}}>
       <Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link>
       <h1 style={{fontSize:34,margin:"12px 0 5px"}}>Instagram Manager</h1>
