@@ -6,8 +6,8 @@ import { useRouter } from "next/navigation";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 type Item = { id: string; status: string; content_type: string; created_at: string; approved_at: string | null };
-type Insight = { name: string; title: string; value: number; period: string | null; endTime: string | null };
-type InstagramInsights = { connected?: boolean; insightsAvailable?: boolean; username?: string | null; metrics?: Insight[]; followersCount?: number | null; followsCount?: number | null; follows?: number | null; unfollows?: number | null; netFollows?: number | null; profileVisits?: number | null; externalLinkTaps?: number | null; attributedProfileVisits?: number; attributedFollows?: number; attributedMediaCount?: number; mediaInsightsNote?: string; accountInsightsError?: string | null; mediaInsightsError?: string | null; error?: string; permissionHint?: string; fetchedAt?: string };
+type Insight = { name: string; title: string; value: number | null; period?: string | null; endTime?: string | null };
+type InstagramInsights = { connected?: boolean; insightsAvailable?: boolean; username?: string | null; metrics?: Insight[]; followersCount?: number | null; followsCount?: number | null; follows?: number | null; unfollows?: number | null; netFollows?: number | null; externalLinkTaps?: number | null; attributedProfileVisits?: number; attributedFollows?: number; attributedMediaCount?: number; mediaInsightsNote?: string; accountInsightsError?: string | null; mediaInsightsError?: string | null; error?: string; permissionHint?: string; fetchedAt?: string };
 type RangeKey = "week" | "month" | "3months";
 
 const ranges: { key: RangeKey; label: string; days: number }[] = [
@@ -26,7 +26,7 @@ const metricLabels: Record<string, string> = {
   total_interactions: "Interactions",\n  profile_views: "Profile visits",\n  profile_links_taps: "External link taps",
   profile_views: "Profile views",
   follows_and_unfollows: "Follows and unfollows",
-  profile_links_taps: "Contact button taps",
+  profile_links_taps: "External link taps",
 };
 const number = (value: number) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
 const shell: CSSProperties = { minHeight: "100vh", padding: "30px clamp(18px,4vw,56px) 56px", background: "#f5f2eb", color: "#28251f" };
