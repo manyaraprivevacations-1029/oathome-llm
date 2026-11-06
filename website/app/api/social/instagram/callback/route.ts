@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
   const state = request.nextUrl.searchParams.get("state") || "";
   const cookieState = request.cookies.get("oat_composio_ig_state")?.value || "";
   if (!verifyComposioState(cookieState, state)) return finish(request, "invalid_state");
+  const expectedUserId = cookieState.split(".", 1)[0];
 
   const status = request.nextUrl.searchParams.get("status");
   const connectedAccountId = request.nextUrl.searchParams.get("connected_account_id") || "";
@@ -41,7 +42,7 @@ export async function GET(request: NextRequest) {
       account.id !== connectedAccountId ||
       account.toolkit?.slug?.toLowerCase() !== "instagram" ||
       account.status !== "ACTIVE" ||
-      !account.user_id
+      !account.user_id || account.user_id !== expectedUserId
     ) return finish(request, "account_not_active");
 
     const admin = getSocialAdmin();
