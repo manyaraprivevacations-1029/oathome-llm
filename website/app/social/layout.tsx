@@ -32,7 +32,8 @@ const titles: Record<string,string> = Object.fromEntries(groups.flatMap(group =>
 
 export default function SocialLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();\n  const searchParams = useSearchParams();\n  const mode = searchParams.get("mode");
+  const router = useRouter();
+  const searchParams = useSearchParams();\n  const mode = searchParams.get("mode");
   const authPage = pathname === "/social/login" || pathname === "/social/reset-password";
   const [email,setEmail] = useState("");
   const [checking,setChecking] = useState(true);
