@@ -70,7 +70,14 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
 
   if (!response.ok) {
     const detail = await response.text().catch(() => "");
-    throw new Error(detail || "OWN could not generate a draft. Please try again.");
+    let message = detail;
+    try {
+      const parsed = JSON.parse(detail) as { error?: unknown };
+      if (typeof parsed.error === "string" && parsed.error.trim()) message = parsed.error.trim();
+    } catch {
+      // Keep plain-text server errors readable.
+    }
+    throw new Error(message || "OWN could not generate a draft. Please try again.");
   }
 
   const payload = await response.json().catch(() => null) as { content?: unknown; error?: unknown } | null;
