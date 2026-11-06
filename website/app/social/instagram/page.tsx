@@ -18,6 +18,7 @@ export default function InstagramManagerPage(){
   const [status,setStatus]=useState<Status|null>(null);
   const [loading,setLoading]=useState(true);
   const [busy,setBusy]=useState(false);
+  const [refreshing,setRefreshing]=useState(false);
   const [error,setError]=useState("");
   const [notice,setNotice]=useState("");
 
@@ -40,6 +41,18 @@ export default function InstagramManagerPage(){
     void refresh().catch(e=>{if(alive)setError(e instanceof Error?e.message:"Could not load account status.");}).finally(()=>{if(alive)setLoading(false);});
     return()=>{alive=false;};
   },[refresh]);
+
+  async function handleRefresh(){
+    setRefreshing(true);setError("");setNotice("");
+    try{
+      await refresh();
+      setNotice("Instagram connection status refreshed successfully.");
+    }catch(e){
+      setError(e instanceof Error?e.message:"Refresh failed. Please try again.");
+    }finally{
+      setRefreshing(false);
+    }
+  }
 
   async function connect(){
     setBusy(true);setError("");setNotice("");
@@ -85,7 +98,7 @@ export default function InstagramManagerPage(){
         </div>
         <div style={{display:"flex",gap:8,flexWrap:"wrap"}}>
           {status?.connected?<button disabled={busy} onClick={()=>void disconnect()} style={secondary}>{busy?"Working…":"Disconnect"}</button>:<button disabled={busy||loading||status?.configured===false} onClick={()=>void connect()} style={{...primary,opacity:(busy||loading||status?.configured===false)?0.55:1}}>{busy?"Connecting…":"Connect Instagram"}</button>}
-          <button disabled={loading||busy} onClick={()=>void refresh().catch(e=>setError(e instanceof Error?e.message:"Refresh failed."))} style={secondary}>Refresh</button>
+          <button disabled={loading||busy||refreshing} onClick={()=>void handleRefresh()} style={{...secondary,opacity:(loading||busy||refreshing)?0.6:1}}>{refreshing?"Refreshing…":"Refresh"}</button>
         </div>
       </div>
       {status?.connected&&status.account&&<div style={{marginTop:18,paddingTop:15,borderTop:"1px solid #e5edf6",display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(160px,1fr))",gap:12,fontSize:11,color:"#526b87"}}>
