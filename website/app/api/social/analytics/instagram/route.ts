@@ -105,7 +105,7 @@ export async function GET(request: NextRequest) {
     const followRow = followRows.find((row) => row.name === "follows_and_unfollows");
     const followBreakdown = followRow ? metricBreakdown(followRow) : {};
     const follows = followBreakdown.follower ?? followBreakdown.followers ?? followBreakdown.follows ?? null;
-    const unfollows = followBreakdown.nonfollower ?? followBreakdown.non_followers ?? followBreakdown.unfollowers ?? followBreakdown.unfollows ?? null;
+    const unfollows = followBreakdown.nonfollower ?? followBreakdown.non_follower ?? followBreakdown.non_followers ?? followBreakdown.unfollowers ?? followBreakdown.unfollows ?? null;
 
     // Per-media profile_visits/follows are lifetime attribution, not account-wide period totals.
     const mediaResponse = await proxyInstagram(accountId, user.id,
