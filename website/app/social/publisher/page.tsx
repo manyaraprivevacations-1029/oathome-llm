@@ -102,13 +102,14 @@ export default function AiSocialPublisherPage() {
     try {
       const prompt = [
         "Create a complete Instagram social post creative for On A Trip Holidays.",
-        "Return valid JSON only with keys headline, subheadline, caption, hashtags (array of strings), visualDirection.",
+        "Return valid JSON only with keys headline, subheadline, caption, hashtags (array of strings), visualDirection, backgroundColor, accentColor, textColor.",
+        "Choose a premium, readable palette that fits the brief. Colors must be six-digit hex values. Keep headline concise, avoid clutter, and make the visual direction specific enough for a designer.",
         "Do not include markdown fences. Keep headline short enough for a premium 4:5 poster. Caption should sound natural and ready for Instagram. Hashtags must be relevant.",
         "Use Brand Brain and verified travel knowledge. Do not invent offers or package facts. This is a greeting creative unless the brief explicitly says otherwise.",
         "Requested format: " + format, "Language: " + language, "Creative brief: " + brief,
       ].join("\n");
       const result = parseCreative(await generateSocialDraft(prompt));
-      const nextSvg = makePoster(result, "On A Trip Holidays");
+      const nextSvg = makePoster(result, "On A Trip Holidays", format);
       setCreative(result); setSvg(nextSvg); setNotice("Your creative and caption are ready. Review them before saving.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "OWN could not create this post.");
@@ -130,7 +131,7 @@ export default function AiSocialPublisherPage() {
         status: "draft",
         caption,
         script: "Visual direction: " + creative.visualDirection + "\nFormat: " + format + "\nLanguage: " + language,
-        metadata: { source: "ai_social_publisher", creative_svg: svg, format, language, brief },
+        metadata: { source: "ai_social_publisher", creative_svg: svg, format, dimensions, language, brief, colors: { background: creative.backgroundColor, accent: creative.accentColor, text: creative.textColor } },
       });
       if (writeError) throw writeError;
       setNotice("Saved to your Content Planner as a draft. Publishing is not enabled.");
@@ -146,10 +147,10 @@ export default function AiSocialPublisherPage() {
       const url = URL.createObjectURL(blob);
       const image = new Image();
       image.onload = () => {
-        const canvas = document.createElement("canvas"); canvas.width = 1080; canvas.height = 1350;
+        const dimensions = dimensionsFor(format);\n        const canvas = document.createElement("canvas"); canvas.width = dimensions.width; canvas.height = dimensions.height;
         const context = canvas.getContext("2d");
         if (!context) { URL.revokeObjectURL(url); setError("Could not prepare the PNG download."); return; }
-        context.drawImage(image, 0, 0, 1080, 1350);
+        context.drawImage(image, 0, 0, dimensions.width, dimensions.height);
         URL.revokeObjectURL(url);
         canvas.toBlob((png) => {
           if (!png) { setError("PNG export failed."); return; }
@@ -167,7 +168,7 @@ export default function AiSocialPublisherPage() {
     <header style={{ marginBottom: 22 }}>
       <Link href="/social" style={{ color: "#9a6a2c", fontSize: 12, textDecoration: "none" }}>← Social AI workspace</Link>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "start", gap: 15, flexWrap: "wrap" }}>
-        <div><div style={{ fontSize: 10, letterSpacing: 2, color: "#a8752d", fontWeight: 800, marginTop: 13 }}>CREATE · AI POWERED</div><h1 style={{ fontFamily: "Georgia,serif", fontSize: 36, fontWeight: 500, margin: "8px 0 5px" }}>AI Social Publisher</h1><p style={{ color: "#786e60", fontSize: 13, margin: 0 }}>One brief in. A designed Instagram creative and caption out.</p></div>
+        <div><div style={{ fontSize: 10, letterSpacing: 2, color: "#a8752d", fontWeight: 800, marginTop: 13 }}>CREATE · AI POWERED</div><h1 style={{ fontFamily: "Georgia,serif", fontSize: 36, fontWeight: 500, margin: "8px 0 5px" }}>AI Social Publisher</h1><p style={{ color: "#786e60", fontSize: 13, margin: 0 }}>One brief in. AI-written copy, a styled poster and a ready-to-use caption out.</p></div>
         <span style={{ border: "1px solid #e4d7c2", background: "#fffaf0", borderRadius: 30, padding: "8px 12px", fontSize: 10, color: "#8b642e" }}>CREATE &amp; SAVE · PUBLISHING OFF</span>
       </div>
     </header>
@@ -180,11 +181,11 @@ export default function AiSocialPublisherPage() {
           <label style={{ display: "grid", gap: 7, fontSize: 10, color: "#88765d" }}>LANGUAGE<select value={language} onChange={e => setLanguage(e.target.value)} style={field}><option>English</option><option>Telugu-English</option><option>Telugu</option></select></label>
         </div>
         <button type="button" disabled={generating || !brief.trim()} onClick={() => void generate()} style={{ ...primary, width: "100%", opacity: generating || !brief.trim() ? .6 : 1 }}>{generating ? "OWN is creating your post…" : "✦ Generate Instagram post"}</button>
-        <p style={{ fontSize: 10, color: "#8b8173", lineHeight: 1.6, margin: "12px 0 0" }}>OWN uses your saved Brand Brain for tone and guardrails. Review the result before saving it.</p>
+        <p style={{ fontSize: 10, color: "#8b8173", lineHeight: 1.6, margin: "12px 0 0" }}>Qwen creates the copy and design direction; OWN turns it into an editable vector-style poster. Review before saving.</p>
       </section>
       <section style={{ display: "grid", gap: 14 }}>
         <div style={panel}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}><h2 style={{ fontFamily: "Georgia,serif", fontSize: 21, fontWeight: 500, margin: 0 }}>Creative preview</h2><span style={{ fontSize: 9, letterSpacing: 1, color: "#9a6a2c" }}>1080 × 1350</span></div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, marginBottom: 12 }}><h2 style={{ fontFamily: "Georgia,serif", fontSize: 21, fontWeight: 500, margin: 0 }}>Creative preview</h2><span style={{ fontSize: 9, letterSpacing: 1, color: "#9a6a2c" }}>{dimensionsFor(format).width} × {dimensionsFor(format).height}</span></div>
           {poster ? <img src={poster} alt="Generated On A Trip Holidays Instagram post preview" style={{ display: "block", width: "100%", maxWidth: 430, margin: "0 auto", borderRadius: 9, boxShadow: "0 10px 28px rgba(48,35,20,.15)" }} /> : <div style={{ minHeight: 360, display: "grid", placeItems: "center", textAlign: "center", color: "#928675", background: "#f7f2e8", border: "1px dashed #ddcfb8", borderRadius: 12, padding: 20 }}><div><div style={{ fontSize: 38, marginBottom: 10 }}>✧</div><b style={{ fontFamily: "Georgia,serif", fontSize: 18, fontWeight: 500 }}>Your design will appear here</b><p style={{ fontSize: 11 }}>Enter a brief and ask OWN to create your first post.</p></div></div>}
         </div>
         {creative && <div style={panel}>
@@ -201,6 +202,6 @@ export default function AiSocialPublisherPage() {
     </div>
     {error && <p role="alert" style={{ marginTop: 14, padding: 12, borderRadius: 9, background: "#fff0ed", color: "#a33d2e", fontSize: 12 }}>{error}</p>}
     {notice && <p role="status" style={{ marginTop: 14, padding: 12, borderRadius: 9, background: "#f5eddd", color: "#77521e", fontSize: 12 }}>{notice}</p>}
-    <p style={{ marginTop: 18, fontSize: 10, color: "#8b8173", lineHeight: 1.6 }}>This first version creates and saves a visual draft only. Instagram publishing, scheduling and account write permissions are intentionally not called.</p>
+    <p style={{ marginTop: 18, fontSize: 10, color: "#8b8173", lineHeight: 1.6 }}>This version uses Qwen for text and design direction, then renders the artwork as a scalable SVG poster. It does not generate photorealistic AI images. Instagram publishing remains disabled.</p>
   </main>;
 }
