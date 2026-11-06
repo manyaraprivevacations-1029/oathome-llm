@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const state = createComposioState();
+    const state = createComposioState(user.id);
     const callback = new URL("/api/social/instagram/callback", request.url);
     callback.searchParams.set("state", state);
     const result = await composioRequest<LinkResponse>("/connected_accounts/link", {
