@@ -5,6 +5,7 @@ import Link from "next/link";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 const modules = [
+  { icon:"✦", name:"AI Social Publisher", desc:"Turn one instruction into an Instagram creative and caption, ready for review.", href:"/social/publisher", group:"CREATE" },
   { icon:"✦", name:"Idea Studio", desc:"Find content angles and campaign ideas for your travel audience.", href:"/social/trends", group:"CREATE" },
   { icon:"▤", name:"Content Planner", desc:"Create drafts, organise ideas and approve content before publishing.", href:"/social/planner", group:"CREATE" },
   { icon:"▻", name:"Reel Studio", desc:"Build editable reel storyboards, scripts and production briefs.", href:"/social/reels", group:"CREATE" },
