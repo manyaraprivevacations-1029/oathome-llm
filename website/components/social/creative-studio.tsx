@@ -166,7 +166,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const brandedSlides = result.slides ? await Promise.all(result.slides.map(async slide => ({...slide, image: slide.image ? await composeWithBrandLogo(slide.image, brandLogo) : undefined}))) : undefined;
       const id = await saveCreation({
         topic, destination, format, tone, facts,
-        draft: { ...result, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? await composeWithBrandLogo(singleImage, brandLogo) : undefined, type: carousel ? "carousel" : "post"
+        draft: { ...result, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? (carousel ? await composeWithBrandLogo(singleImage, brandLogo) : await jpegFromImage(await composeWithBrandLogo(singleImage, brandLogo), format)) : undefined, type: carousel ? "carousel" : "post"
       });
       setSavedId(id);
       setNotice("Saved successfully to Creations. You can view or delete it there.");
