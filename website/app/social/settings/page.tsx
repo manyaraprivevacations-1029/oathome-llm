@@ -1,5 +1,4 @@
 import Link from "next/link";
-import BackupManager from "@/components/social/backup-manager";
 export default function SocialSettingsPage() {
   return <main className="social-theme" style={{minHeight:"calc(100vh - 70px)",padding:"8px 0 32px",background:"transparent",color:"#30291f"}}>
     <h1 style={{fontSize:32}}>Workspace settings</h1>
@@ -9,6 +8,5 @@ export default function SocialSettingsPage() {
       <p>Update brand voice, language and content guidelines in <Link href="/social/brand">Brand Brain</Link>. Manage saved drafts in <Link href="/social/creations">Creations</Link> and restore removed drafts in <Link href="/social/recycle">Recycle Bin</Link>.</p>
       <p style={{fontSize:13,color:"#756957"}}>Billing and team-management settings are not available yet. No payment or publishing actions are performed here.</p>
     </section>
-    <BackupManager />
   </main>;
 }
