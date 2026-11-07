@@ -5,6 +5,7 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 import { generateSocialDraft } from "@/lib/social/generate";
 import { saveCreation } from "@/lib/social/creations";
 import { formatPublicPost, cleanPublicCaption } from "@/lib/social/caption-format";
+import { composeWithBrandLogo, logoPosition, useBrandLogo } from "@/lib/social/brand-logo";
 
 type Slide = { title: string; body: string; image_prompt: string; image?: string };
 type Result = { headline?: string; caption: string; hashtags?: string; visual_prompt?: string; slides?: Slide[] };
@@ -16,6 +17,7 @@ const panel: React.CSSProperties = { border: "1px solid #e7dfd1", borderRadius: 
 
 export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) {
   const carousel = mode === "carousel";
+  const brandLogo = useBrandLogo();
   const [topic, setTopic] = useState("");
   const [destination, setDestination] = useState("");
   const [facts, setFacts] = useState("");
@@ -131,7 +133,8 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       // was still processing. Creating a fresh container could duplicate a live post.
       let id = savedId;
       if (!id) {
-        const jpeg = await jpegFromImage(singleImage, format);
+        const branded = await composeWithBrandLogo(singleImage, brandLogo);
+        const jpeg = await jpegFromImage(branded, format);
         if (!jpeg.startsWith("data:image/jpeg;base64,") || jpeg.length > 16_000_000) throw new Error("The converted image is too large. Try a smaller photo.");
         const finalDraft = { ...result, caption: parts.caption, hashtags: parts.hashtags };
         id = await saveCreation({topic,destination,format,tone,facts,draft:finalDraft,image:jpeg,type:"post"});
@@ -160,9 +163,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     if (!result || saving) return;
     setSaving(true); setError(""); setNotice("");
     try {
+      const brandedSlides = result.slides ? await Promise.all(result.slides.map(async slide => ({...slide, image: slide.image ? await composeWithBrandLogo(slide.image, brandLogo) : undefined}))) : undefined;
       const id = await saveCreation({
         topic, destination, format, tone, facts,
-        draft: { ...result, caption: cleanPublicCaption(result.caption) }, image: singleImage, type: carousel ? "carousel" : "post"
+        draft: { ...result, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? await composeWithBrandLogo(singleImage, brandLogo) : undefined, type: carousel ? "carousel" : "post"
       });
       setSavedId(id);
       setNotice("Saved successfully to Creations. You can view or delete it there.");
@@ -171,6 +175,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     } finally { setSaving(false); }
   }
   const [singleImage, setSingleImage] = useState("");
+  async function downloadBranded(data: string, name: string) {
+    try { download(await composeWithBrandLogo(data, brandLogo), name); }
+    catch(e) { setError(e instanceof Error ? e.message : "Could not export image with logo."); }
+  }
   function download(data: string, name: string) {
     const mime = /^data:([^;,]+)/i.exec(data)?.[1]?.toLowerCase() || "";
     const extension = mime === "application/json" ? "json"
@@ -208,10 +216,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <section aria-label="Generated image result" style={{ border: "1px dashed #cbb99e", borderRadius: 14, padding: 16, background: "#faf6ee", display: "grid", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <div><strong style={{ display: "block", fontSize: 14 }}>3. Image result</strong><span style={{ color: "#746957", fontSize: 11 }}>{singleImage ? "Your selected artwork is ready to review." : "Upload a travel photo or artwork to preview it here."}</span></div>
-            {singleImage && <button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(singleImage, "oat-social-post")}>Download image</button>}
+            {singleImage && <button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(singleImage, "oat-social-post")}>Download image</button>}
           </div>
           <div style={{ minHeight: 250, maxWidth: 620, width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: 11, border: "1px solid #e7dfd1", background: "linear-gradient(135deg,#eee4d3,#f8f3e9)" }}>
-            {singleImage ? <img src={singleImage} alt="Selected Instagram post image" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Upload an image to preview it in this box.</span></div>}
+            {singleImage ? <div style={{position:"relative",width:"100%",height:"100%"}}><img src={singleImage} alt="Selected Instagram post image" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} />{brandLogo?.url && <img src={brandLogo.url} alt="Brand logo overlay" style={{...logoPosition(brandLogo.placement),width:brandLogo.size_percent+"%",maxHeight:"20%",objectFit:"contain"}} />}</div> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Upload an image to preview it in this box.</span></div>}
           </div>
           <label style={{ ...label, display: "block" }}>UPLOAD IMAGE (FREE — FROM YOUR DEVICE)<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0])} style={{ ...input, marginTop: 8 }} /></label>
         </section>
@@ -225,7 +233,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
             <span aria-hidden="true" style={{ marginLeft: "auto", fontSize: 20, color: "#5c5145" }}>···</span>
           </div>
           <div style={{ width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", maxHeight: 550, background: "#eee5d7", display: "grid", placeItems: "center", overflow: "hidden" }}>
-            {singleImage ? <img src={singleImage} alt="Your selected Instagram post photograph" style={{ width: "100%", height: "100%", objectFit: "contain" }} /> : <div style={{ textAlign: "center", padding: 25, color: "#8b7b64" }}>Upload an image above to see your post preview</div>}
+            {singleImage ? <div style={{position:"relative",width:"100%",height:"100%"}}><img src={singleImage} alt="Your selected Instagram post photograph" style={{ width: "100%", height: "100%", objectFit: "contain" }} />{brandLogo?.url && <img src={brandLogo.url} alt="Brand logo overlay" style={{...logoPosition(brandLogo.placement),width:brandLogo.size_percent+"%",maxHeight:"20%",objectFit:"contain"}} />}</div> : <div style={{ textAlign: "center", padding: 25, color: "#8b7b64" }}>Upload an image above to see your post preview</div>}
           </div>
           <div style={{ padding: "11px 14px 17px" }}>
             <div aria-hidden="true" style={{ display: "flex", gap: 14, fontSize: 22, marginBottom: 10, color: "#292929" }}><span>♡</span><span>♧</span><span>➤</span><span style={{ marginLeft: "auto" }}>♧</span></div>
@@ -242,7 +250,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <label style={label}>YOUR MUSIC NOTES<input style={input} value={musicHint} onChange={e=>setMusicHint(e.target.value)} placeholder="Example: peaceful sunset instrumental" /></label>
         <p style={{fontSize:11,color:"#8a7b68",lineHeight:1.5}}>Instagram's licensed music library cannot be attached to an API-published photo. Open Instagram to choose a permitted song manually. Suggestions are not embedded or published as audio.</p>
       </section>}
-      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><img src={slide.image} alt={"Uploaded carousel slide " + (i + 1)} style={{ width: "100%", maxWidth: 460, borderRadius: 10 }} /><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(slide.image!, "oat-carousel-slide-" + (i + 1))}>Download slide image</button></>}</article>)}</div>}
+      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><div style={{position:"relative",width:"100%",maxWidth:460}}><img src={slide.image} alt={"Uploaded carousel slide " + (i + 1)} style={{ width: "100%", borderRadius: 10 }} />{brandLogo?.url && <img src={brandLogo.url} alt="Brand logo overlay" style={{...logoPosition(brandLogo.placement),width:brandLogo.size_percent+"%",maxHeight:"20%",objectFit:"contain"}} />}</div><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(slide.image!, "oat-carousel-slide-" + (i + 1))}>Download slide image</button></>}</article>)}</div>}
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} disabled={saving} onClick={() => void save()}>{saving ? "Saving…" : savedId ? "Save another copy" : "Save to Creations"}</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => window.location.assign("/social/creations")}>View Creations</button><button style={button} onClick={() => void copy(formatPublicPost(result.caption, result.hashtags || "").fullCaption)}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify({ ...result, caption: cleanPublicCaption(result.caption) }, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button>{!carousel && <>
       <button type="button" style={{ ...button, background: published ? "#398357" : "#a8752d", opacity: publishing ? 0.65 : 1 }} disabled={publishing || published || instagram === "loading"} onClick={() => void publish()}>{published ? "Published to Instagram" : publishing ? "Publishing…" : "Publish to Instagram"}</button>
 
