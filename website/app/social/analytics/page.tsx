@@ -29,7 +29,7 @@ const metricLabels: Record<string, string> = {
   profile_links_taps: "External link taps",
 };
 const number = (value: number) => new Intl.NumberFormat("en-IN", { maximumFractionDigits: 0 }).format(value);
-const shell: CSSProperties = { minHeight: "100vh", padding: "30px clamp(18px,4vw,56px) 56px", background: "#f5f2eb", color: "#28251f" };
+const shell: CSSProperties = { minHeight: "calc(100vh - 70px)", padding: "8px 0 32px", background: "transparent", color: "#28251f" };
 const panel: CSSProperties = { background: "#fff", border: "1px solid #e8e3d9", borderRadius: 15, padding: 18, boxShadow: "0 2px 10px rgba(40,35,25,.025)" };
 
 export default function SocialAnalyticsPage() {
