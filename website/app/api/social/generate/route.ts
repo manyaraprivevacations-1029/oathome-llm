@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
       body: JSON.stringify({
         systemInstruction: { parts: [{ text: system }] },
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.5, maxOutputTokens: /caption/i.test(prompt) ? 1300 : 2400 }
+        generationConfig: { temperature: 0.5, maxOutputTokens: /caption/i.test(prompt) ? 1300 : 2400, ...(/return only valid json/i.test(prompt) ? { responseMimeType: "application/json" } : {}) }
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(55000)
