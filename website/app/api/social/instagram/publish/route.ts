@@ -1,0 +1,117 @@
+import { NextRequest, NextResponse } from "next/server";
+import { composioConfigured, composioRequest } from "@/lib/social/composio-server";
+import { getSocialAdmin, requireSocialUser } from "@/lib/social/meta-server";
+
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
+
+type ProxyResponse = { status?: number; data?: Record<string, unknown> };
+function errorResponse(message: string, status: number) {
+  return NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
+}
+function responseData(response: ProxyResponse): Record<string, unknown> {
+  const value = response.data || {};
+  return value.data && typeof value.data === "object" && !Array.isArray(value.data)
+    ? value.data as Record<string, unknown> : value;
+}
+function remoteError(response: ProxyResponse): string | null {
+  const value = responseData(response);
+  const detail = value.error;
+  const message = detail && typeof detail === "object" && "message" in detail
+    ? String((detail as { message?: unknown }).message || "")
+    : typeof detail === "string" ? detail : "";
+  return message || (response.status && response.status >= 400 ? "Instagram rejected the request." : null);
+}
+async function instagramProxy(accountId: string, userId: string, endpoint: string, method: "GET" | "POST", body?: Record<string, unknown>) {
+  return composioRequest<ProxyResponse>("/tools/execute/proxy", {
+    method: "POST",
+    body: JSON.stringify({
+      connected_account_id: accountId, user_id: userId, endpoint, method,
+      ...(body ? { body } : {}),
+    }),
+  });
+}
+
+export async function POST(request: NextRequest) {
+  const user = await requireSocialUser(request);
+  if (!user) return errorResponse("Your session expired. Please sign in again.", 401);
+  if (!composioConfigured()) return errorResponse("Instagram is not configured. Open Accounts to connect it.", 503);
+
+  let id: unknown;
+  try { ({ creationId: id } = await request.json()); } catch { return errorResponse("Invalid publishing request.", 400); }
+  if (typeof id !== "string" || !/^[0-9a-f-]{36}$/i.test(id)) return errorResponse("Save the post before publishing.", 400);
+
+  try {
+    const admin = getSocialAdmin();
+    const { data: creation, error: readError } = await admin.from("social_content_items")
+      .select("id,user_id,content_type,status,caption,asset_path,metadata,deleted_at")
+      .eq("id", id).eq("user_id", user.id).single();
+    if (readError || !creation) return errorResponse("Saved post not found.", 404);
+    if (creation.deleted_at) return errorResponse("Restore the deleted post before publishing.", 409);
+    if (creation.content_type !== "post") return errorResponse("Only single-image Instagram posts are supported here.", 400);
+    if (creation.status === "published") return errorResponse("This post is already marked as published.", 409);
+    if (creation.status === "scheduled") return errorResponse("This post is scheduled; publishing is blocked to avoid duplicates.", 409);
+    const path = creation.asset_path;
+    if (typeof path !== "string" || !path.startsWith(user.id + "/") || !/\.jpe?g$/i.test(path))
+      return errorResponse("Upload a JPEG image, save the post and then publish. Instagram requires JPEG for this publishing flow.", 400);
+
+    const { data: account, error: accountError } = await admin.from("social_platform_accounts")
+      .select("composio_connected_account_id").eq("user_id", user.id).eq("platform", "instagram")
+      .order("connected_at", { ascending: false }).limit(1).maybeSingle();
+    if (accountError) throw accountError;
+    if (!account?.composio_connected_account_id) return errorResponse("Instagram is not connected. Open Accounts and authorize Instagram first.", 409);
+
+    const connectedAccountId = account.composio_connected_account_id;
+    const remote = await composioRequest<{ id?: string; user_id?: string; status?: string; toolkit?: { slug?: string } }>(
+      "/connected_accounts/" + encodeURIComponent(connectedAccountId)
+    );
+    if (remote.id !== connectedAccountId || remote.user_id !== user.id ||
+        remote.status !== "ACTIVE" || remote.toolkit?.slug?.toLowerCase() !== "instagram")
+      return errorResponse("Your Instagram connection is not active. Reconnect it from Accounts.", 409);
+
+    const { data: signed, error: signedError } = await admin.storage.from("social-creation-images").createSignedUrl(path, 1800);
+    if (signedError || !signed?.signedUrl) return errorResponse("Could not prepare the saved image for Instagram.", 502);
+    // Signed HTTPS URL permits Meta to retrieve the image for the next 30 minutes;
+    // the storage bucket remains private to the owner at all other times.
+    if (!signed.signedUrl.startsWith("https://")) return errorResponse("Image hosting must use HTTPS.", 502);
+
+    const profileResponse = await instagramProxy(connectedAccountId, user.id, "/me?fields=id,username,account_type", "GET");
+    if (remoteError(profileResponse)) return errorResponse("Unable to read your Instagram profile. Check account permissions in Composio.", 502);
+    const profile = responseData(profileResponse);
+    const igId = profile.id;
+    if (typeof igId !== "string" || !/^\d+$/.test(igId))
+      return errorResponse("Instagram did not provide a professional account ID. Reconnect a Business or Creator account.", 409);
+
+    const metadata = creation.metadata && typeof creation.metadata === "object" ? creation.metadata as Record<string, unknown> : {};
+    const caption = [String(creation.caption || "").trim(), String(metadata.hashtags || "").trim()].filter(Boolean).join("\n\n").slice(0, 2200);
+    if (!caption) return errorResponse("The saved post has no caption.", 400);
+
+    const containerResponse = await instagramProxy(connectedAccountId, user.id, "/" + igId + "/media", "POST",
+      { image_url: signed.signedUrl, caption });
+    const container = responseData(containerResponse);
+    const containerId = container.id;
+    if (remoteError(containerResponse) || typeof containerId !== "string")
+      return errorResponse("Instagram could not create the media container. Verify your JPEG image and content publishing permissions.", 502);
+
+    // Exactly one publish call for each user click; no automatic retries that might duplicate a real post.
+    const publishResponse = await instagramProxy(connectedAccountId, user.id, "/" + igId + "/media_publish", "POST",
+      { creation_id: containerId });
+    const published = responseData(publishResponse);
+    if (remoteError(publishResponse) || typeof published.id !== "string") {
+      console.error("[OAT Social AI] Instagram media container could not be published", { creationId: id, status: publishResponse.status });
+      return errorResponse("Instagram created the media container but did not confirm publication. Check Instagram before trying again.", 502);
+    }
+
+    const { error: writeError } = await admin.from("social_content_items")
+      .update({ status: "published", published_at: new Date().toISOString(),
+        metadata: { ...metadata, instagram_media_id: published.id, instagram_published_at: new Date().toISOString() } })
+      .eq("id", id).eq("user_id", user.id);
+    if (writeError) console.error("[OAT Social AI] Published successfully but saving post state failed", { creationId: id });
+    return NextResponse.json({ published: true, mediaId: published.id,
+      warning: writeError ? "Instagram confirmed publishing, but the saved record could not be updated." : null },
+      { headers: { "Cache-Control": "no-store" } });
+  } catch (e) {
+    console.error("[OAT Social AI] Instagram publish failed", e instanceof Error ? e.message : "unknown");
+    return errorResponse("Instagram publishing could not be completed. Check connection and permissions; confirm the post is not already live before retrying.", 502);
+  }
+}
