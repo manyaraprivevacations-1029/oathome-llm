@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 import { generateSocialDraft } from "@/lib/social/generate";
+import { saveCreation } from "@/lib/social/creations";
 
 type Slide = { title: string; body: string; image_prompt: string; image?: string };
 type Result = { headline?: string; caption: string; hashtags?: string; visual_prompt?: string; slides?: Slide[] };
@@ -21,12 +22,14 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   const [format, setFormat] = useState(carousel ? "4:5" : "4:5");
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [savedId, setSavedId] = useState("");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
   async function create() {
     if (!topic.trim()) { setError("Enter a topic or campaign idea first."); return; }
-    setBusy(true); setError(""); setNotice(""); setResult(null);
+    setBusy(true); setError(""); setNotice(""); setResult(null); setSavedId(""); setSingleImage("");
     const shape = carousel
       ? '{"caption":"Instagram caption","hashtags":"hashtags","slides":[{"title":"short slide headline","body":"supporting slide copy","image_prompt":"detailed image prompt for this slide"}]}'
       : '{"headline":"post headline","caption":"Instagram caption","hashtags":"hashtags","visual_prompt":"detailed image prompt for the post"}';
@@ -37,6 +40,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const parsed = JSON.parse(clean) as Result;
       if (!parsed.caption || (carousel ? !Array.isArray(parsed.slides) || !parsed.slides.length : !parsed.visual_prompt)) throw new Error("OWN returned incomplete content. Please generate again.");
       setResult(parsed);
+      setSavedId("");
       setNotice("Draft created with Google Gemini. Verify your package details before publishing.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create this draft.");
@@ -52,11 +56,25 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       if (!image) { setError("Could not read this image."); return; }
       if (carousel) setResult(prev => prev ? { ...prev, slides: prev.slides?.map((slide, i) => i === index ? { ...slide, image } : slide) } : prev);
       else setSingleImage(image);
-      setError("");
+      setError(""); setSavedId("");
       setNotice("Image loaded from your device. Review rights and quality before publishing.");
     };
     reader.onerror = () => setError("Could not read the image file.");
     reader.readAsDataURL(file);
+  }
+  async function save() {
+    if (!result || saving) return;
+    setSaving(true); setError(""); setNotice("");
+    try {
+      const id = await saveCreation({
+        topic, destination, format, tone, facts,
+        draft: result, image: singleImage, type: carousel ? "carousel" : "post"
+      });
+      setSavedId(id);
+      setNotice("Saved successfully to Creations. You can view or delete it there.");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not save this creation.");
+    } finally { setSaving(false); }
   }
   const [singleImage, setSingleImage] = useState("");
   function download(data: string, name: string) {
@@ -105,7 +123,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         </section>
       </>}
       {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><img src={slide.image} alt={"AI-generated carousel slide " + (i + 1)} style={{ width: "100%", maxWidth: 460, borderRadius: 10 }} /><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(slide.image!, "oat-carousel-slide-" + (i + 1))}>Download slide image</button></>}</article>)}</div>}
-      <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} onClick={() => void copy([result.caption, result.hashtags || ""].filter(Boolean).join("\n\n"))}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(result, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button></div>
+      <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} disabled={saving} onClick={() => void save()}>{saving ? "Saving…" : savedId ? "Save another copy" : "Save to Creations"}</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => window.location.assign("/social/creations")}>View Creations</button><button style={button} onClick={() => void copy([result.caption, result.hashtags || ""].filter(Boolean).join("\n\n"))}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(result, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button></div>
     </section>}
     {error && <p role="alert" style={{ color: "#b42318", fontSize: 12, whiteSpace: "pre-wrap" }}>{error}</p>}
     {notice && <p role="status" style={{ color: "#0878d8", fontSize: 12 }}>{notice}</p>}
