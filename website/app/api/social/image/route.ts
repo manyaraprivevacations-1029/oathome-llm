@@ -47,7 +47,9 @@ export async function POST(request: NextRequest) {
   const model = process.env.CLOUDFLARE_IMAGE_MODEL?.trim() || "@cf/black-forest-labs/flux-1-schnell";
 
   try {
-    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${encodeURIComponent(model)}`, {
+    if (!/^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i.test(model)) return jsonError("The configured Cloudflare image model ID is invalid.", 503);
+
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(accountId)}/ai/run/${model}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${apiToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({ prompt: prompt.trim(), steps: 4 }),
