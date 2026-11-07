@@ -13,10 +13,11 @@ const groups = [
   { label: "CREATE", items: [
     { label: "Idea Studio", icon: "✧", href: "/social/trends" },
     { label: "Create reel", icon: "✎", href: "/social/reels" },
-    { label: "Creations", icon: "▱", href: "/social/planner" },
+    { label: "Create post", icon: "▧", href: "/social/posts" },
+    { label: "Create carousel", icon: "▤", href: "/social/carousels" },
+    { label: "Creations", icon: "▱", href: "/social/creations" },
     { label: "AI avatar", icon: "♙", href: "/social/voice", badge: "NEW" },
     { label: "Brand Brain", icon: "♧", href: "/social/brand" },
-    { label: "Reel style", icon: "◉", href: "/social/reels?mode=style" },
     { label: "Outreach", icon: "♧", href: "/social/approvals" },
   ] },
   { label: "CONFIGURE", items: [
@@ -25,6 +26,7 @@ const groups = [
     { label: "Billing", icon: "▱", href: "/social/settings?tab=billing", badge: "SOON" },
     { label: "Team", icon: "♙", href: "/social/settings?tab=team", badge: "SOON" },
     { label: "Settings", icon: "⚙", href: "/social/settings", badge: "SOON" },
+    { label: "Recycle Bin", icon: "♻", href: "/social/recycle" },
     { label: "Guide", icon: "▤", href: "/social/guide", badge: "NEW" },
   ] },
 ];
