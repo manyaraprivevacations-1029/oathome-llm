@@ -10,10 +10,11 @@ const groups: { title: string; items: { icon: string; name: string; description:
   { title: "CREATE", items: [
     { icon: "✧", name: "Idea Studio", description: "Discover travel content ideas and campaign angles.", href: "/social/trends" },
     { icon: "✎", name: "Create reel", description: "Build reel scripts, storyboards and production briefs.", href: "/social/reels" },
+    { icon: "▧", name: "Create post", description: "Create an Instagram single-image post with AI copy and artwork.", href: "/social/posts" },
+    { icon: "▤", name: "Create carousel", description: "Build multi-slide Instagram carousels with individual slide copy and visuals.", href: "/social/carousels" },
     { icon: "▱", name: "Creations", description: "Manage your saved drafts and creative work.", href: "/social/planner" },
     { icon: "♙", name: "AI avatar", description: "Prepare voice and avatar-led content.", href: "/social/voice", badge: "NEW" },
     { icon: "♧", name: "Brand Brain", description: "Keep your brand voice and travel offers organised.", href: "/social/brand" },
-    { icon: "◉", name: "Reel style", description: "Explore and prepare a consistent reel style.", href: "/social/reels" },
     { icon: "♧", name: "Outreach", description: "Review content and prepare customer follow-ups.", href: "/social/approvals" },
   ]},
   { title: "CONFIGURE", items: [
