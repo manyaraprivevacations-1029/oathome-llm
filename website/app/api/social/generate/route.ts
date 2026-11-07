@@ -93,7 +93,8 @@ export async function POST(request: NextRequest) {
       headers: { Authorization: `Bearer ${config.apiToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
-        max_tokens: /caption/i.test(prompt) ? 700 : 1600,\n        reasoning_effort: "low",\n        temperature: 0.4
+        max_tokens: /caption/i.test(prompt) ? 700 : 1600,
+        temperature: 0.4
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(60000)
