@@ -91,7 +91,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       setError("Connect your Instagram Business or Creator account in Accounts before publishing.");
       return;
     }
-    if (!/^data:image\\/jpeg;base64,/i.test(singleImage)) {
+    if (!singleImage.toLowerCase().startsWith("data:image/jpeg;base64,")) {
       setError("Instagram publishing currently requires a JPEG image. Upload a .jpg or .jpeg file and try again.");
       return;
     }
