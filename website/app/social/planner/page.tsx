@@ -7,12 +7,12 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 import { generateSocialDraft } from "@/lib/social/generate";
 
 type Item = { id:string; title:string; content_type:"reel"|"carousel"|"post"|"story"; status:"draft"|"in_review"|"approved"|"rejected"|"scheduled"|"published"; caption:string|null; script:string|null; created_at:string };
-const shell:CSSProperties={minHeight:"100vh",padding:"34px clamp(18px,5vw,64px)",background:"#f4f8fd",color:"#10264a"};
-const panel:CSSProperties={border:"1px solid #dce8f5",borderRadius:15,padding:21,background:"#ffffff"};
-const label:CSSProperties={display:"grid",gap:7,color:"#5d708a",fontSize:10,letterSpacing:".09em"};
-const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #cbdced",borderRadius:8,background:"#ffffff",color:"#142b4f",fontSize:13};
-const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#0878d8",color:"white",fontWeight:700,cursor:"pointer"};
-const muted:CSSProperties={padding:"8px 11px",border:"1px solid #cbdced",borderRadius:8,background:"#edf5fc",color:"#174a7c",fontSize:11,cursor:"pointer"};
+const shell:CSSProperties={minHeight:"calc(100vh - 70px)",padding:"8px 0 32px",background:"transparent",color:"#30291f"};
+const panel:CSSProperties={border:"1px solid #e7dfd1",borderRadius:15,padding:21,background:"#ffffff"};
+const label:CSSProperties={display:"grid",gap:7,color:"#746957",fontSize:10,letterSpacing:".09em"};
+const field:CSSProperties={width:"100%",boxSizing:"border-box",padding:"11px 12px",border:"1px solid #ded5c6",borderRadius:8,background:"#ffffff",color:"#30291f",fontSize:13};
+const primary:CSSProperties={padding:"10px 14px",border:0,borderRadius:8,background:"#a8752d",color:"white",fontWeight:700,cursor:"pointer"};
+const muted:CSSProperties={padding:"8px 11px",border:"1px solid #ded5c6",borderRadius:8,background:"#edf5fc",color:"#8a5d20",fontSize:11,cursor:"pointer"};
 
 export default function ContentPlannerPage(){
   const router=useRouter();
@@ -65,10 +65,10 @@ export default function ContentPlannerPage(){
     catch(e){setError(e instanceof Error?e.message:"Could not update status.");}
   }
   const visible=filter==="all"?items:items.filter(x=>x.status===filter);
-  const statusColor=(s:string)=>s==="approved"?"#0878d8":s==="rejected"?"#b42318":s==="in_review"?"#986b16":"#8aa4bf";
+  const statusColor=(s:string)=>s==="approved"?"#a8752d":s==="rejected"?"#b42318":s==="in_review"?"#986b16":"#8aa4bf";
 
   return <main style={shell}>
-    <header style={{marginBottom:24}}><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Content Planner</h1><p style={{color:"#60738d",fontSize:13,margin:0}}>Create drafts, organise ideas and approve content before it leaves your workspace.</p></header>
+    <header style={{marginBottom:24}}><Link href="/social" style={{color:"#a8752d",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Content Planner</h1><p style={{color:"#746957",fontSize:13,margin:0}}>Create drafts, organise ideas and approve content before it leaves your workspace.</p></header>
     <section style={{...panel,marginBottom:18}}>
       <h2 style={{fontSize:17,margin:"0 0 16px"}}>Create a content draft</h2>
       <form onSubmit={create} style={{display:"grid",gap:13}}>
@@ -84,12 +84,12 @@ export default function ContentPlannerPage(){
     </section>
     <section style={panel}>
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:12,flexWrap:"wrap",marginBottom:15}}><h2 style={{fontSize:17,margin:0}}>Your content library <span style={{fontSize:11,color:"#71839a"}}>({items.length})</span></h2><select value={filter} onChange={e=>setFilter(e.target.value)} style={{...field,width:"auto"}}><option value="all">All statuses</option><option value="draft">Draft</option><option value="in_review">In review</option><option value="approved">Approved</option><option value="rejected">Rejected</option></select></div>
-      {error&&<p role="alert" style={{color:"#b42318",fontSize:12}}>{error}</p>}{notice&&<p role="status" style={{color:"#0878d8",fontSize:12}}>{notice}</p>}
-      {loading?<p style={{color:"#5d708a",fontSize:12}}>Loading drafts…</p>:visible.length===0?<p style={{color:"#60738d",fontSize:12}}>No drafts here yet. Create your first one above.</p>:<div style={{display:"grid",gap:11}}>
-        {visible.map(item=><article key={item.id} style={{border:"1px solid #dce8f5",borderRadius:11,padding:15,background:"#f7fbff"}}>
-          <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><h3 style={{fontSize:14,margin:"0 0 5px"}}>{item.title}</h3><span style={{fontSize:10,color:"#60738d"}}>{item.content_type.toUpperCase()} · {new Date(item.created_at).toLocaleDateString()}</span></div><span style={{fontSize:10,color:statusColor(item.status),border:"1px solid #c6def5",borderRadius:20,padding:"5px 8px",height:"fit-content"}}>{item.status.replace("_"," ").toUpperCase()}</span></div>
+      {error&&<p role="alert" style={{color:"#b42318",fontSize:12}}>{error}</p>}{notice&&<p role="status" style={{color:"#a8752d",fontSize:12}}>{notice}</p>}
+      {loading?<p style={{color:"#746957",fontSize:12}}>Loading drafts…</p>:visible.length===0?<p style={{color:"#746957",fontSize:12}}>No drafts here yet. Create your first one above.</p>:<div style={{display:"grid",gap:11}}>
+        {visible.map(item=><article key={item.id} style={{border:"1px solid #e7dfd1",borderRadius:11,padding:15,background:"#fffaf1"}}>
+          <div style={{display:"flex",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><div><h3 style={{fontSize:14,margin:"0 0 5px"}}>{item.title}</h3><span style={{fontSize:10,color:"#746957"}}>{item.content_type.toUpperCase()} · {new Date(item.created_at).toLocaleDateString()}</span></div><span style={{fontSize:10,color:statusColor(item.status),border:"1px solid #c6def5",borderRadius:20,padding:"5px 8px",height:"fit-content"}}>{item.status.replace("_"," ").toUpperCase()}</span></div>
           {item.caption&&<p style={{fontSize:12,color:"#314968",lineHeight:1.6,whiteSpace:"pre-wrap"}}>{item.caption}</p>}
-          {item.script&&<details style={{fontSize:11,color:"#62758e"}}><summary style={{cursor:"pointer"}}>View script / notes</summary><p style={{whiteSpace:"pre-wrap",lineHeight:1.7}}>{item.script}</p></details>}
+          {item.script&&<details style={{fontSize:11,color:"#746957"}}><summary style={{cursor:"pointer"}}>View script / notes</summary><p style={{whiteSpace:"pre-wrap",lineHeight:1.7}}>{item.script}</p></details>}
           <div style={{display:"flex",gap:8,flexWrap:"wrap",marginTop:12}}>
             {item.status==="draft"&&<button style={muted} onClick={()=>void setStatus(item.id,"in_review")}>Send to review</button>}
             {item.status==="in_review"&&<><button style={primary} onClick={()=>void setStatus(item.id,"approved")}>Approve draft</button><button style={muted} onClick={()=>void setStatus(item.id,"rejected")}>Reject</button></>}
