@@ -12,24 +12,6 @@ const label: React.CSSProperties = { display: "grid", gap: 7, color: "#746957", 
 const button: React.CSSProperties = { border: 0, borderRadius: 9, padding: "11px 16px", background: "#a8752d", color: "#fff", fontWeight: 700, cursor: "pointer" };
 const panel: React.CSSProperties = { border: "1px solid #e7dfd1", borderRadius: 15, padding: 20, background: "#fffdf8" };
 
-async function generateImage(prompt: string) {
-  const sb = getSocialSupabase();
-  let { data } = await sb.auth.getSession();
-  if (!data.session) data = (await sb.auth.refreshSession()).data;
-  let token = data.session?.access_token || "";
-  if (!token) throw new Error("Your session expired. Please sign in again.");
-  const send = (value: string) => fetch("/api/social/image", { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${value}` }, body: JSON.stringify({ prompt }), cache: "no-store" });
-  let response = await send(token);
-  if (response.status === 401) {
-    const refreshed = await sb.auth.refreshSession();
-    token = refreshed.data.session?.access_token || "";
-    if (token) response = await send(token);
-  }
-  const payload = await response.json().catch(() => ({})) as { image?: string; error?: string };
-  if (!response.ok || !payload.image) throw new Error(payload.error || "Image generation failed.");
-  return payload.image;
-}
-
 export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) {
   const carousel = mode === "carousel";
   const [topic, setTopic] = useState("");
@@ -39,7 +21,6 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   const [format, setFormat] = useState(carousel ? "4:5" : "4:5");
   const [result, setResult] = useState<Result | null>(null);
   const [busy, setBusy] = useState(false);
-  const [imageBusy, setImageBusy] = useState(-1);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -56,24 +37,26 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const parsed = JSON.parse(clean) as Result;
       if (!parsed.caption || (carousel ? !Array.isArray(parsed.slides) || !parsed.slides.length : !parsed.visual_prompt)) throw new Error("OWN returned incomplete content. Please generate again.");
       setResult(parsed);
-      setNotice("Draft created with Cloudflare AI. Review every fact and visual before publishing.");
+      setNotice("Draft created with Google Gemini. Verify your package details before publishing.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create this draft.");
     } finally { setBusy(false); }
   }
 
-  async function makeImage(index = -1) {
-    if (!result) return;
-    const prompt = carousel ? result.slides?.[index]?.image_prompt : result.visual_prompt;
-    if (!prompt) return;
-    setImageBusy(index); setError("");
-    try {
-      const image = await generateImage(prompt + ". Instagram " + format + " composition. Premium travel campaign art direction for On A Trip Holidays.");
+  function uploadImage(file: File | undefined, index = -1) {
+    if (!file || !file.type.startsWith("image/")) { setError("Select an image file."); return; }
+    if (file.size > 12 * 1024 * 1024) { setError("Image must be 12 MB or smaller."); return; }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const image = typeof reader.result === "string" ? reader.result : "";
+      if (!image) { setError("Could not read this image."); return; }
       if (carousel) setResult(prev => prev ? { ...prev, slides: prev.slides?.map((slide, i) => i === index ? { ...slide, image } : slide) } : prev);
-      else setResult(prev => prev ? { ...prev, visual_prompt: prev.visual_prompt, headline: prev.headline, caption: prev.caption, hashtags: prev.hashtags, slides: undefined, } : prev), setSingleImage(image);
-      setNotice("Image generated. Review it before using it in a post.");
-    } catch (e) { setError(e instanceof Error ? e.message : "Image generation failed."); }
-    finally { setImageBusy(-1); }
+      else setSingleImage(image);
+      setError("");
+      setNotice("Image loaded from your device. Review rights and quality before publishing.");
+    };
+    reader.onerror = () => setError("Could not read the image file.");
+    reader.readAsDataURL(file);
   }
   const [singleImage, setSingleImage] = useState("");
   function download(data: string, name: string) { const a = document.createElement("a"); a.href = data; a.download = name + ".jpg"; a.click(); }
@@ -81,7 +64,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
 
   return <main className="social-theme" style={{ minHeight: "100vh", padding: "34px clamp(18px,5vw,64px)", background: "#f6f2e9", color: "#30291f" }}>
     <header style={{ marginBottom: 22 }}><span style={{ color: "#a8752d", fontSize: 10, letterSpacing: ".12em", fontWeight: 800 }}>OAT SOCIAL AI · CREATE</span><h1 style={{ fontSize: 34, letterSpacing: "-.04em", margin: "10px 0 5px" }}>{carousel ? "Carousel Creation Studio" : "Instagram Post Studio"}</h1><p style={{ color: "#60738d", fontSize: 13, margin: 0 }}>{carousel ? "Plan a swipe-worthy story, one clear slide at a time." : "Create a polished single-image Instagram post with AI-written copy and artwork."}</p></header>
-    <section style={{ ...panel, marginBottom: 16, background: "#f2e7d2" }}><strong style={{ color: "#8a5d20", fontSize: 13 }}>AI creation workspace</strong><p style={{ color: "#746957", fontSize: 12, lineHeight: 1.7, marginBottom: 0 }}>OWN uses Cloudflare Workers AI for copy and image generation. Image generation uses your Cloudflare daily allowance. Generated visuals are AI-created artwork, not verified destination photography. Check all package details and brand assets before publishing.</p></section>
+    <section style={{ ...panel, marginBottom: 16, background: "#f2e7d2" }}><strong style={{ color: "#8a5d20", fontSize: 13 }}>AI creation workspace</strong><p style={{ color: "#746957", fontSize: 12, lineHeight: 1.7, marginBottom: 0 }}>Google Gemini powers post and carousel text on its eligible free API tier. Automated AI image generation is not included in the free tier. Upload your own authorized travel photograph or artwork for each post or slide. Check package facts and image rights before publishing.</p></section>
     <section style={{ ...panel, display: "grid", gap: 14 }}>
       <h2 style={{ fontSize: 17, margin: 0 }}>1. Creative brief</h2>
       <label style={label}>TOPIC / CAMPAIGN IDEA<input style={input} value={topic} onChange={e => setTopic(e.target.value)} placeholder={carousel ? "Example: 5 reasons to visit Kashmir" : "Example: Kashmir winter escape"} /></label>
@@ -102,16 +85,16 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 80, resize: "vertical" }} value={result.visual_prompt || ""} onChange={e => setResult(p => p ? { ...p, visual_prompt: e.target.value } : p)} /></label>
         <section aria-label="Generated image result" style={{ border: "1px dashed #cbb99e", borderRadius: 14, padding: 16, background: "#faf6ee", display: "grid", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
-            <div><strong style={{ display: "block", fontSize: 14 }}>3. Image result</strong><span style={{ color: "#746957", fontSize: 11 }}>{singleImage ? "Your generated artwork is ready to review." : "Your generated Instagram artwork will appear here."}</span></div>
+            <div><strong style={{ display: "block", fontSize: 14 }}>3. Image result</strong><span style={{ color: "#746957", fontSize: 11 }}>{singleImage ? "Your selected artwork is ready to review." : "Upload a travel photo or artwork to preview it here."}</span></div>
             {singleImage && <button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(singleImage, "oat-social-post")}>Download image</button>}
           </div>
           <div style={{ minHeight: 250, maxWidth: 620, width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: 11, border: "1px solid #e7dfd1", background: "linear-gradient(135deg,#eee4d3,#f8f3e9)" }}>
-            {singleImage ? <img src={singleImage} alt="AI-generated Instagram post artwork" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image generated yet</strong><span style={{ fontSize: 11 }}>Generate artwork to preview it in this box.</span></div>}
+            {singleImage ? <img src={singleImage} alt="AI-generated Instagram post artwork" style={{ width: "100%", height: "100%", objectFit: "contain", display: "block" }} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Upload an image to preview it in this box.</span></div>}
           </div>
-          <div><button style={button} disabled={imageBusy !== -1} onClick={() => void makeImage()}>{imageBusy === -1 ? singleImage ? "Regenerate image with FLUX" : "Generate image with FLUX" : "Generating image…"}</button></div>
+          <label style={{ ...label, display: "block" }}>UPLOAD IMAGE (FREE — FROM YOUR DEVICE)<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0])} style={{ ...input, marginTop: 8 }} /></label>
         </section>
       </>}
-      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><button style={{ ...button, justifySelf: "start" }} disabled={imageBusy !== -1} onClick={() => void makeImage(i)}>{imageBusy === i ? "Generating…" : slide.image ? "Regenerate slide image" : "Generate slide image"}</button>{slide.image && <><img src={slide.image} alt={"AI-generated carousel slide " + (i + 1)} style={{ width: "100%", maxWidth: 460, borderRadius: 10 }} /><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(slide.image!, "oat-carousel-slide-" + (i + 1))}>Download slide image</button></>}</article>)}</div>}
+      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><img src={slide.image} alt={"AI-generated carousel slide " + (i + 1)} style={{ width: "100%", maxWidth: 460, borderRadius: 10 }} /><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(slide.image!, "oat-carousel-slide-" + (i + 1))}>Download slide image</button></>}</article>)}</div>}
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} onClick={() => void copy([result.caption, result.hashtags || ""].filter(Boolean).join("\n\n"))}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(result, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button></div>
     </section>}
     {error && <p role="alert" style={{ color: "#b42318", fontSize: 12, whiteSpace: "pre-wrap" }}>{error}</p>}
