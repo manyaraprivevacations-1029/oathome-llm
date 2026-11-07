@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { composioConfigured, composioRequest } from "@/lib/social/composio-server";
 import { getSocialAdmin, requireSocialUser } from "@/lib/social/meta-server";
+import { formatPublicPost } from "@/lib/social/caption-format";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -83,7 +84,7 @@ export async function POST(request: NextRequest) {
       return errorResponse("Instagram did not provide a professional account ID. Reconnect a Business or Creator account.", 409);
 
     const metadata = creation.metadata && typeof creation.metadata === "object" ? creation.metadata as Record<string, unknown> : {};
-    const caption = [String(creation.caption || "").trim(), String(metadata.hashtags || "").trim()].filter(Boolean).join("\n\n").slice(0, 2200);
+    const caption = formatPublicPost(String(creation.caption || ""), String(metadata.hashtags || "")).fullCaption.slice(0, 2200);
     if (!caption) return errorResponse("The saved post has no caption.", 400);
 
     const containerResponse = await instagramProxy(connectedAccountId, user.id, "/" + igId + "/media", "POST",
@@ -102,12 +103,20 @@ export async function POST(request: NextRequest) {
       return errorResponse("Instagram created the media container but did not confirm publication. Check Instagram before trying again.", 502);
     }
 
+    // Best-effort permalink lookup. Publishing success does not depend on this read.
+    let permalink: string | null = null;
+    try {
+      const linkResponse = await instagramProxy(connectedAccountId, user.id, "/" + published.id + "?fields=permalink", "GET");
+      const linkData = responseData(linkResponse);
+      if (typeof linkData.permalink === "string" && linkData.permalink.startsWith("https://www.instagram.com/")) permalink = linkData.permalink;
+    } catch { /* the media ID is sufficient to confirm publishing */ }
+
     const { error: writeError } = await admin.from("social_content_items")
       .update({ status: "published", published_at: new Date().toISOString(),
-        metadata: { ...metadata, instagram_media_id: published.id, instagram_published_at: new Date().toISOString() } })
+        metadata: { ...metadata, instagram_media_id: published.id, ...(permalink ? { instagram_permalink: permalink } : {}), instagram_published_at: new Date().toISOString() } })
       .eq("id", id).eq("user_id", user.id);
     if (writeError) console.error("[OAT Social AI] Published successfully but saving post state failed", { creationId: id });
-    return NextResponse.json({ published: true, mediaId: published.id,
+    return NextResponse.json({ published: true, mediaId: published.id, permalink,
       warning: writeError ? "Instagram confirmed publishing, but the saved record could not be updated." : null },
       { headers: { "Cache-Control": "no-store" } });
   } catch (e) {
