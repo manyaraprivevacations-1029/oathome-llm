@@ -18,6 +18,7 @@ const groups = [
     { label: "Creations", icon: "▱", href: "/social/creations" },
     { label: "AI avatar", icon: "♙", href: "/social/voice", badge: "NEW" },
     { label: "Brand Brain", icon: "♧", href: "/social/brand" },
+    { label: "Logos", icon: "◈", href: "/social/logos" },
     { label: "Outreach", icon: "♧", href: "/social/approvals" },
   ] },
   { label: "CONFIGURE", items: [
@@ -25,7 +26,7 @@ const groups = [
     { label: "Reports", icon: "⌕", href: "/social/analytics" },
     { label: "Billing", icon: "▱", href: "/social/settings?tab=billing", badge: "SOON" },
     { label: "Team", icon: "♙", href: "/social/settings?tab=team", badge: "SOON" },
-    { label: "Settings", icon: "⚙", href: "/social/settings", badge: "SOON" },
+    { label: "Settings", icon: "⚙", href: "/social/settings" },
     { label: "Recycle Bin", icon: "♻", href: "/social/recycle" },
     { label: "Guide", icon: "▤", href: "/social/guide", badge: "NEW" },
   ] },
