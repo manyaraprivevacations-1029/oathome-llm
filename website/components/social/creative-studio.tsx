@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 import { generateSocialDraft } from "@/lib/social/generate";
 import { saveCreation } from "@/lib/social/creations";
+import { formatPublicPost, cleanPublicCaption } from "@/lib/social/caption-format";
 
 type Slide = { title: string; body: string; image_prompt: string; image?: string };
 type Result = { headline?: string; caption: string; hashtags?: string; visual_prompt?: string; slides?: Slide[] };
@@ -26,13 +27,15 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   const [savedId, setSavedId] = useState("");
   const [publishing, setPublishing] = useState(false);
   const [published, setPublished] = useState(false);
+  const [publishedUrl, setPublishedUrl] = useState("");
+  const [musicHint, setMusicHint] = useState("");
   const [instagram, setInstagram] = useState<"loading" | "connected" | "disconnected">("loading");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
   async function create() {
     if (!topic.trim()) { setError("Enter a topic or campaign idea first."); return; }
-    setBusy(true); setError(""); setNotice(""); setResult(null); setSavedId(""); setSingleImage(""); setPublished(false);
+    setBusy(true); setError(""); setNotice(""); setResult(null); setSavedId(""); setSingleImage(""); setPublished(false); setPublishedUrl("");
     const shape = carousel
       ? '{"caption":"Instagram caption","hashtags":"hashtags","slides":[{"title":"short slide headline","body":"supporting slide copy","image_prompt":"detailed image prompt for this slide"}]}'
       : '{"headline":"post headline","caption":"Instagram caption","hashtags":"hashtags","visual_prompt":"detailed image prompt for the post"}';
@@ -42,7 +45,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const clean = raw.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "").trim();
       const parsed = JSON.parse(clean) as Result;
       if (!parsed.caption || (carousel ? !Array.isArray(parsed.slides) || !parsed.slides.length : !parsed.visual_prompt)) throw new Error("OWN returned incomplete content. Please generate again.");
-      setResult(parsed);
+      setResult({ ...parsed, caption: cleanPublicCaption(parsed.caption) });
       setSavedId("");
       setNotice("Draft created with Google Gemini. Verify your package details before publishing.");
     } catch (e) {
@@ -59,7 +62,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       if (!image) { setError("Could not read this image."); return; }
       if (carousel) setResult(prev => prev ? { ...prev, slides: prev.slides?.map((slide, i) => i === index ? { ...slide, image } : slide) } : prev);
       else setSingleImage(image);
-      setError(""); setSavedId(""); setPublished(false);
+      setError(""); setSavedId(""); setPublished(false); setPublishedUrl("");
       setNotice("Image loaded from your device. Review rights and quality before publishing.");
     };
     reader.onerror = () => setError("Could not read the image file.");
@@ -84,12 +87,6 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     return () => { active = false; };
   }, [carousel]);
 
-  function combineCaption(caption: string, hashtags: string) {
-    const existing = new Set((caption.match(/#[\\p{L}\\p{N}_]+/gu) || []).map(t => t.toLowerCase()));
-    const extra = (hashtags.match(/#[\\p{L}\\p{N}_]+/gu) || [])
-      .filter(tag => { const key = tag.toLowerCase(); if (existing.has(key)) return false; existing.add(key); return true; });
-    return { caption: caption.trim(), hashtags: extra.join(" ") };
-  }
   function jpegFromImage(dataUrl: string, ratio: string): Promise<string> {
     return new Promise((resolve, reject) => {
       const picture = new Image();
@@ -121,8 +118,8 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       return;
     }
     if (!singleImage) { setError("Upload a photo to preview and publish."); return; }
-    const parts = combineCaption(result.caption, result.hashtags || "");
-    const message = [parts.caption, parts.hashtags].filter(Boolean).join("\n\n");
+    const parts = formatPublicPost(result.caption, result.hashtags || "");
+    const message = parts.fullCaption;
     if (!message.trim()) { setError("Add an Instagram caption before publishing."); return; }
     if (!window.confirm("Publish this photo and caption to your connected Instagram account now? This will be visible to your followers.")) return;
     setPublishing(true);
@@ -147,9 +144,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         body: JSON.stringify({ creationId: id }),
         cache: "no-store"
       });
-      const value = await response.json() as { published?: boolean; mediaId?: string; error?: string; warning?: string };
+      const value = await response.json() as { published?: boolean; mediaId?: string; permalink?: string; error?: string; warning?: string };
       if (!response.ok || !value.published) throw new Error(value.error || "Instagram did not confirm publication.");
       setPublished(true);
+      setPublishedUrl(typeof value.permalink === "string" ? value.permalink : "");
       setNotice("Instagram confirmed publication. " + (value.warning || "Your post is live and saved in Creations."));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Unable to publish to Instagram.");
@@ -161,7 +159,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     try {
       const id = await saveCreation({
         topic, destination, format, tone, facts,
-        draft: result, image: singleImage, type: carousel ? "carousel" : "post"
+        draft: { ...result, caption: cleanPublicCaption(result.caption) }, image: singleImage, type: carousel ? "carousel" : "post"
       });
       setSavedId(id);
       setNotice("Saved successfully to Creations. You can view or delete it there.");
@@ -228,15 +226,24 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
           </div>
           <div style={{ padding: "11px 14px 17px" }}>
             <div aria-hidden="true" style={{ display: "flex", gap: 14, fontSize: 22, marginBottom: 10, color: "#292929" }}><span>♡</span><span>♧</span><span>➤</span><span style={{ marginLeft: "auto" }}>♧</span></div>
-            <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.6, color: "#2e2b26" }}><strong>ON A TRIP HOLIDAYS</strong>{" "}{result.caption || "Your caption appears here."}</div>
-            {!!combineCaption(result.caption, result.hashtags || "").hashtags && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.65, color: "#215a88", margin: "8px 0 0" }}>{combineCaption(result.caption, result.hashtags || "").hashtags}</p>}
+            <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.6, color: "#2e2b26" }}><strong>ON A TRIP HOLIDAYS</strong>{" "}{cleanPublicCaption(result.caption) || "Your caption appears here."}</div>
+            {!!formatPublicPost(result.caption, result.hashtags || "").hashtags && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.65, color: "#215a88", margin: "8px 0 0" }}>{formatPublicPost(result.caption, result.hashtags || "").hashtags}</p>}
             <div style={{ color: "#998b79", fontSize: 10, marginTop: 12 }}>{published ? "Published to Instagram" : "Preview only · Not published"}</div>
           </div>
         </div>
       </section>}
+
+      {!carousel && <section aria-label="Instagram music idea" style={{padding:14,background:"#fffaf1",border:"1px solid #e7dfd1",borderRadius:12}}>
+        <strong style={{fontSize:13}}>Music suggestion for this post</strong>
+        <p style={{fontSize:12,color:"#746957",lineHeight:1.6,margin:"6px 0"}}>Suggested vibe: {musicHint || (/dubai/i.test(destination+" "+topic)?"Cinematic Arabian-inspired instrumental":/kerala|alleppey|backwater/i.test(destination+" "+topic)?"Calm tropical acoustic and flute":/manali|kashmir|himachal/i.test(destination+" "+topic)?"Uplifting mountain-travel instrumental":"Warm cinematic travel instrumental")}.</p>
+        <label style={label}>YOUR MUSIC NOTES<input style={input} value={musicHint} onChange={e=>setMusicHint(e.target.value)} placeholder="Example: peaceful sunset instrumental" /></label>
+        <p style={{fontSize:11,color:"#8a7b68",lineHeight:1.5}}>Instagram's licensed music library cannot be attached to an API-published photo. Open Instagram to choose a permitted song manually. Suggestions are not embedded or published as audio.</p>
+      </section>}
       {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input type="file" accept="image/*" onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><img src={slide.image} alt={"Uploaded carousel slide " + (i + 1)} style={{ width: "100%", maxWidth: 460, borderRadius: 10 }} /><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download(slide.image!, "oat-carousel-slide-" + (i + 1))}>Download slide image</button></>}</article>)}</div>}
-      <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} disabled={saving} onClick={() => void save()}>{saving ? "Saving…" : savedId ? "Save another copy" : "Save to Creations"}</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => window.location.assign("/social/creations")}>View Creations</button><button style={button} onClick={() => void copy([result.caption, result.hashtags || ""].filter(Boolean).join("\n\n"))}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify(result, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button>{!carousel && <>
+      <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} disabled={saving} onClick={() => void save()}>{saving ? "Saving…" : savedId ? "Save another copy" : "Save to Creations"}</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => window.location.assign("/social/creations")}>View Creations</button><button style={button} onClick={() => void copy(formatPublicPost(result.caption, result.hashtags || "").fullCaption)}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify({ ...result, caption: cleanPublicCaption(result.caption) }, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button>{!carousel && <>
       <button type="button" style={{ ...button, background: published ? "#398357" : "#a8752d", opacity: publishing ? 0.65 : 1 }} disabled={publishing || published || instagram === "loading"} onClick={() => void publish()}>{published ? "Published to Instagram" : publishing ? "Publishing…" : "Publish to Instagram"}</button>
+
+      {published && <button type="button" style={{...button,background:"#fff",color:"#a12c20",border:"1px solid #d7a59e"}} onClick={()=>{ if (!window.confirm("Open Instagram to delete this published post manually? Deleting a saved draft does NOT remove Instagram media.")) return; window.open(publishedUrl || "https://www.instagram.com/", "_blank", "noopener,noreferrer"); }}>Delete on Instagram</button>}
       {instagram === "disconnected" && <a href="/social/instagram" style={{ alignSelf: "center", color: "#8a5d20", fontSize: 12, fontWeight: 700 }}>Connect Instagram first</a>}
       </>}</div>
     </section>}
