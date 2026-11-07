@@ -12,7 +12,7 @@ const groups: { title: string; items: { icon: string; name: string; description:
     { icon: "✎", name: "Create reel", description: "Build reel scripts, storyboards and production briefs.", href: "/social/reels" },
     { icon: "▧", name: "Create post", description: "Create an Instagram single-image post with AI copy and artwork.", href: "/social/posts" },
     { icon: "▤", name: "Create carousel", description: "Build multi-slide Instagram carousels with individual slide copy and visuals.", href: "/social/carousels" },
-    { icon: "▱", name: "Creations", description: "Manage your saved drafts and creative work.", href: "/social/planner" },
+    { icon: "▱", name: "Creations", description: "Manage your saved posts and carousels.", href: "/social/creations" },
     { icon: "♙", name: "AI avatar", description: "Prepare voice and avatar-led content.", href: "/social/voice", badge: "NEW" },
     { icon: "♧", name: "Brand Brain", description: "Keep your brand voice and travel offers organised.", href: "/social/brand" },
     { icon: "♧", name: "Outreach", description: "Review content and prepare customer follow-ups.", href: "/social/approvals" },
@@ -22,8 +22,8 @@ const groups: { title: string; items: { icon: string; name: string; description:
     { icon: "⌕", name: "Reports", description: "Review Instagram performance and content results.", href: "/social/analytics" },
     { icon: "▱", name: "Billing", description: "Manage plans and workspace billing.", soon: true },
     { icon: "♙", name: "Team", description: "Manage workspace members and access.", soon: true },
-    { icon: "⚙", name: "Settings", description: "Configure your workspace preferences.", soon: true },
-    { icon: "▤", name: "Guide", description: "Learn how to use your OWN workspace.", soon: true, badge: "NEW" },
+    { icon: "⚙", name: "Settings", description: "Manage workspace settings.", href: "/social/settings" },
+    { icon: "▤", name: "Guide", description: "Learn how to use your OAT Social AI workspace.", href: "/social/guide", badge: "NEW" },
   ]}
 ];
 
