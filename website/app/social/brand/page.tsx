@@ -30,7 +30,7 @@ const defaults: BrandProfile = {
   }
 };
 
-const shell: CSSProperties = { minHeight:"100vh", padding:"34px clamp(18px,5vw,64px)", background:"transparent",color:"#30291f" };
+const shell: CSSProperties = { minHeight:"calc(100vh - 70px)", padding:"8px 0 32px", background:"transparent",color:"#30291f" };
 const panel: CSSProperties = { border:"1px solid #e7dfd1", borderRadius:15, padding:22, background:"#ffffff" };
 const label: CSSProperties = { display:"grid", gap:7, color:"#746957", fontSize:10, letterSpacing:".09em" };
 const input: CSSProperties = { width:"100%", boxSizing:"border-box", padding:"11px 12px", border:"1px solid #ded5c6", borderRadius:8, background:"#ffffff", color:"#30291f", fontSize:13 };
