@@ -87,20 +87,75 @@ export async function POST(request: NextRequest) {
     const caption = formatPublicPost(String(creation.caption || ""), String(metadata.hashtags || "")).fullCaption.slice(0, 2200);
     if (!caption) return errorResponse("The saved post has no caption.", 400);
 
-    const containerResponse = await instagramProxy(connectedAccountId, user.id, "/" + igId + "/media", "POST",
-      { image_url: signed.signedUrl, caption });
-    const container = responseData(containerResponse);
-    const containerId = container.id;
-    if (remoteError(containerResponse) || typeof containerId !== "string")
-      return errorResponse("Instagram could not create the media container. Verify your JPEG image and content publishing permissions.", 502);
+    // Preserve a media container across attempts. Do not create another if Instagram
+    // already accepted one but could not confirm publication.
+    let containerId = typeof metadata.instagram_pending_container_id === "string"
+      ? metadata.instagram_pending_container_id : null;
+    if (!containerId) {
+      const containerResponse = await instagramProxy(connectedAccountId, user.id, "/" + igId + "/media", "POST",
+        { image_url: signed.signedUrl, caption });
+      const container = responseData(containerResponse);
+      if (remoteError(containerResponse) || typeof container.id !== "string") {
+        const problem = container.error && typeof container.error === "object"
+          ? container.error as Record<string, unknown> : {};
+        console.error("[OAT Social AI] Instagram container create rejected", {
+          status: containerResponse.status, code: problem.code, subcode: problem.error_subcode
+        });
+        return errorResponse("Instagram could not prepare the image. Check its permissions, dimensions and account connection.", 502);
+      }
+      containerId = container.id;
+      const { error: pendingError } = await admin.from("social_content_items")
+        .update({ metadata: { ...metadata, instagram_pending_container_id: containerId } })
+        .eq("id", id).eq("user_id", user.id);
+      if (pendingError) {
+        console.error("[OAT Social AI] Could not persist pending Instagram container", { creationId: id });
+        return errorResponse("The image was prepared, but its reference could not be saved. Check Instagram and your Creations record before trying again.", 502);
+      }
+    }
 
-    // Exactly one publish call for each user click; no automatic retries that might duplicate a real post.
+    // Meta processes photo uploads asynchronously. Only FINISHED is safe to publish.
+    // Bounded read-only checks; never submit publication until the container is ready.
+    let containerState = "";
+    let containerDetails = "";
+    for (let check = 0; check < 5; check++) {
+      const statusResponse = await instagramProxy(connectedAccountId, user.id,
+        "/" + encodeURIComponent(containerId) + "?fields=status_code,status", "GET");
+      const status = responseData(statusResponse);
+      if (remoteError(statusResponse)) {
+        console.error("[OAT Social AI] Could not read container readiness", { status: statusResponse.status });
+        return errorResponse("Instagram has the image, but its readiness could not be checked. Your draft is saved; try publishing the same draft again later.", 502);
+      }
+      containerState = String(status.status_code || "").toUpperCase();
+      containerDetails = String(status.status || "");
+      if (containerState !== "IN_PROGRESS" && containerState !== "PENDING") break;
+      if (check < 4) await new Promise(resolve => setTimeout(resolve, 3500));
+    }
+    if (containerState === "PUBLISHED")
+      return errorResponse("Instagram reports this photo container is already published. Check your Instagram profile before trying another post.", 409);
+    if (containerState === "ERROR" || containerState === "EXPIRED") {
+      console.error("[OAT Social AI] Instagram container failed", { state: containerState, detail: containerDetails.slice(0, 160) });
+      return errorResponse("Instagram could not process this image (" + containerState + "). Check the photo and your Instagram account.", 422);
+    }
+    if (containerState !== "FINISHED")
+      return errorResponse("Instagram is still processing your image. Your creation is saved. Wait a little and select Publish again to continue the same upload.", 409);
+
+    // Exactly one publish call per explicit user action. Failed/unconfirmed responses
+    // never trigger automatic retries, since the photo could already be live.
     const publishResponse = await instagramProxy(connectedAccountId, user.id, "/" + igId + "/media_publish", "POST",
       { creation_id: containerId });
     const published = responseData(publishResponse);
     if (remoteError(publishResponse) || typeof published.id !== "string") {
-      console.error("[OAT Social AI] Instagram media container could not be published", { creationId: id, status: publishResponse.status });
-      return errorResponse("Instagram created the media container but did not confirm publication. Check Instagram before trying again.", 502);
+      const issue = published.error && typeof published.error === "object"
+        ? published.error as Record<string, unknown> : {};
+      console.error("[OAT Social AI] Instagram publish rejected", {
+        creationId: id, status: publishResponse.status,
+        code: issue.code, subcode: issue.error_subcode,
+        reason: String(issue.message || "").slice(0, 200)
+      });
+      return errorResponse("Instagram rejected publication (HTTP " + (publishResponse.status || 400)
+        + (issue.code !== undefined ? ", code " + String(issue.code) : "")
+        + (issue.error_subcode !== undefined ? "/" + String(issue.error_subcode) : "")
+        + "). Your upload is saved. Check Instagram before another attempt.", 502);
     }
 
     // Best-effort permalink lookup. Publishing success does not depend on this read.
