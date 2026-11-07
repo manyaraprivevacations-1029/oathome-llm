@@ -84,6 +84,35 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     return () => { active = false; };
   }, [carousel]);
 
+  function combineCaption(caption: string, hashtags: string) {
+    const existing = new Set((caption.match(/#[\\p{L}\\p{N}_]+/gu) || []).map(t => t.toLowerCase()));
+    const extra = (hashtags.match(/#[\\p{L}\\p{N}_]+/gu) || [])
+      .filter(tag => { const key = tag.toLowerCase(); if (existing.has(key)) return false; existing.add(key); return true; });
+    return { caption: caption.trim(), hashtags: extra.join(" ") };
+  }
+  function jpegFromImage(dataUrl: string, ratio: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const picture = new Image();
+      picture.onload = () => {
+        try {
+          const targetRatio = ratio === "1:1" ? 1 : ratio === "9:16" ? 9 / 16 : 4 / 5;
+          const canvas = document.createElement("canvas");
+          canvas.width = 1080;
+          canvas.height = Math.round(canvas.width / targetRatio);
+          const ctx = canvas.getContext("2d");
+          if (!ctx) { reject(new Error("Could not prepare the image on this device.")); return; }
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          const scale = Math.min(canvas.width / picture.naturalWidth, canvas.height / picture.naturalHeight);
+          const width = picture.naturalWidth * scale, height = picture.naturalHeight * scale;
+          ctx.drawImage(picture, (canvas.width - width) / 2, (canvas.height - height) / 2, width, height);
+          resolve(canvas.toDataURL("image/jpeg", 0.88));
+        } catch { reject(new Error("Could not convert this image to JPEG.")); }
+      };
+      picture.onerror = () => reject(new Error("Could not read this image. Upload a different JPG, PNG or WebP."));
+      picture.src = dataUrl;
+    });
+  }
   async function publish() {
     if (!result || publishing || published || carousel) return;
     setError(""); setNotice("");
@@ -91,11 +120,9 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       setError("Connect your Instagram Business or Creator account in Accounts before publishing.");
       return;
     }
-    if (!singleImage.toLowerCase().startsWith("data:image/jpeg;base64,")) {
-      setError("Instagram publishing currently requires a JPEG image. Upload a .jpg or .jpeg file and try again.");
-      return;
-    }
-    const message = [result.caption, result.hashtags || ""].filter(Boolean).join("\\n\\n");
+    if (!singleImage) { setError("Upload a photo to preview and publish."); return; }
+    const parts = combineCaption(result.caption, result.hashtags || "");
+    const message = [parts.caption, parts.hashtags].filter(Boolean).join("\n\n");
     if (!message.trim()) { setError("Add an Instagram caption before publishing."); return; }
     if (!window.confirm("Publish this photo and caption to your connected Instagram account now? This will be visible to your followers.")) return;
     setPublishing(true);
@@ -103,9 +130,14 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const sb = getSocialSupabase();
       const { data: session } = await sb.auth.getSession();
       if (!session.session?.access_token) throw new Error("Your session expired. Please sign in again.");
-      // Save the exact copy and image currently displayed, never an earlier unsaved version.
-      const id = await saveCreation({topic,destination,format,tone,facts,draft:result,image:singleImage,type:"post"});
+      // Prepare a JPEG with the chosen format, preserving the complete photograph with white padding.
+      // This also converts an already-uploaded PNG or WebP without requiring the user to upload again.
+      const jpeg = await jpegFromImage(singleImage, format);
+      if (!jpeg.startsWith("data:image/jpeg;base64,") || jpeg.length > 16_000_000) throw new Error("The converted image is too large. Try a smaller photo.");
+      const finalDraft = { ...result, caption: parts.caption, hashtags: parts.hashtags };
+      const id = await saveCreation({topic,destination,format,tone,facts,draft:finalDraft,image:jpeg,type:"post"});
       setSavedId(id);
+      setSingleImage(jpeg);
       const response = await fetch("/api/social/instagram/publish", {
         method: "POST",
         headers: {
@@ -197,8 +229,8 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
           <div style={{ padding: "11px 14px 17px" }}>
             <div aria-hidden="true" style={{ display: "flex", gap: 14, fontSize: 22, marginBottom: 10, color: "#292929" }}><span>♡</span><span>♧</span><span>➤</span><span style={{ marginLeft: "auto" }}>♧</span></div>
             <div style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.6, color: "#2e2b26" }}><strong>ON A TRIP HOLIDAYS</strong>{" "}{result.caption || "Your caption appears here."}</div>
-            {!!result.hashtags?.trim() && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.65, color: "#215a88", margin: "8px 0 0" }}>{result.hashtags}</p>}
-            <div style={{ color: "#998b79", fontSize: 10, marginTop: 12 }}>Preview only · Not published</div>
+            {!!combineCaption(result.caption, result.hashtags || "").hashtags && <p style={{ whiteSpace: "pre-wrap", overflowWrap: "anywhere", fontSize: 12, lineHeight: 1.65, color: "#215a88", margin: "8px 0 0" }}>{combineCaption(result.caption, result.hashtags || "").hashtags}</p>}
+            <div style={{ color: "#998b79", fontSize: 10, marginTop: 12 }}>{published ? "Published to Instagram" : "Preview only · Not published"}</div>
           </div>
         </div>
       </section>}
