@@ -111,7 +111,7 @@ export default function IdeaBoard(){
    setFrequency(value);setError("");setNotice("");
    try{
     const uid=await user(),stamp=new Date().toISOString();
-    const {error}=await getSocialSupabase().from("social_idea_preferences").upsert({user_id:uid,frequency:value,updated_at:stamp});
+    const {error}=await getSocialSupabase().from("social_idea_preferences").upsert({user_id:uid,frequency:value,updated_at:stamp,...(value==="once"?{last_generated_at:null}:{})});
     if(error)throw error;
     setNotice(value==="off"?"Automatic refresh is off.":value==="once"?"A new batch will be generated the next time you open Idea Studio.":"Idea Studio will check for a new batch when you open it, at your selected frequency.");
    }catch(e){setError(e instanceof Error?e.message:"Could not save frequency");}
