@@ -30,6 +30,33 @@ async function verifySocialSession(request: NextRequest): Promise<NextResponse |
   }
 }
 
+function extractGeneratedText(value: unknown): string {
+  if (typeof value === "string") return value.trim();
+  if (Array.isArray(value)) {
+    return value.map(extractGeneratedText).filter(Boolean).join("\\n").trim();
+  }
+  if (!value || typeof value !== "object") return "";
+  const record = value as Record<string, unknown>;
+  for (const key of ["response", "content", "text", "output_text", "generated_text"]) {
+    const candidate = extractGeneratedText(record[key]);
+    if (candidate) return candidate;
+  }
+  const choices = record.choices;
+  if (Array.isArray(choices)) {
+    for (const choice of choices) {
+      if (!choice || typeof choice !== "object") continue;
+      const message = (choice as Record<string, unknown>).message;
+      const candidate = extractGeneratedText(message);
+      if (candidate) return candidate;
+      const delta = extractGeneratedText((choice as Record<string, unknown>).delta);
+      if (delta) return delta;
+      const text = extractGeneratedText((choice as Record<string, unknown>).text);
+      if (text) return text;
+    }
+  }
+  return "";
+}
+
 function cloudflareConfig() {
   const accountId = process.env.CLOUDFLARE_ACCOUNT_ID?.trim();
   const apiToken = process.env.CLOUDFLARE_API_TOKEN?.trim();
@@ -66,7 +93,7 @@ export async function POST(request: NextRequest) {
       headers: { Authorization: `Bearer ${config.apiToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
         messages: [{ role: "system", content: system }, { role: "user", content: prompt }],
-        max_tokens: /caption/i.test(prompt) ? 350 : 900
+        max_tokens: /caption/i.test(prompt) ? 700 : 1600,\n        reasoning_effort: "low",\n        temperature: 0.4
       }),
       cache: "no-store",
       signal: AbortSignal.timeout(60000)
@@ -75,7 +102,7 @@ export async function POST(request: NextRequest) {
     const payload = await response.json().catch(() => null) as {
       success?: boolean;
       errors?: Array<{ message?: string; code?: number }>;
-      result?: { response?: unknown; choices?: Array<{ message?: { content?: unknown } }> };
+      result?: unknown;
     } | null;
 
     if (!response.ok || payload?.success === false) {
