@@ -61,20 +61,20 @@ export default function IdeaBoard(){
    setLast(prefs.data?.last_generated_at||null);
    return {frequency:(prefs.data?.frequency||"off") as Frequency,last:prefs.data?.last_generated_at||null};
  },[user]);
- const generate=useCallback(async(only?:Idea)=>{
+ const generate=useCallback(async(only?:Idea, selectedFrequency?:Frequency)=>{
   if(generating.current)return;
   generating.current=true;setBusy(true);setError("");setNotice("");
   try{
     const uid=await user(),sb=getSocialSupabase();
     const prompt=[
      "You are an Instagram content strategist for ON A TRIP HOLIDAYS, a Telugu-first India travel business.",
-     "Return ONLY valid JSON, shape: {\\\"ideas\\\":[{\\\"title\\\":\\\"...\\\",\\\"concept\\\":\\\"...\\\",\\\"angle\\\":\\\"...\\\",\\\"format\\\":\\\"Reel\\\",\\\"category\\\":\\\"...\\\",\\\"hooks\\\":[\\\"Hook 1\\\",\\\"Hook 2\\\"]}]}.",
+     "Return ONLY valid JSON. Structure: an object with an ideas array. Each idea has string fields title, concept, angle, format, category and a hooks array of two strings.",
      "Give "+(only?"1":"3")+" distinct actionable ideas with 2 short Telugu-English hooks each. Topic: "+(only?only.title:topic)+".",
      "Formats may be Reel, Carousel or Post. Focus on Hyderabad, Telangana and Andhra Pradesh travellers, budgets, family travel, pilgrimages, groups and authentic destination experiences.",
      "For every idea include a concise engaging title, content concept, specific angle or shot sequence and category.",
      "Do not assert any actual post performance or measured results. Do not invent package pricing, dates, availability, weather or customer testimonials. Suggestions are not trend evidence.",
      "Use the verified brand tone: premium, friendly, natural Telugu-English."
-    ].join("\\n");
+    ].join("\n");
     const parsed=parseIdeas(await generateSocialDraft(prompt));
     if(only){
       const item=parsed[0];
@@ -89,7 +89,7 @@ export default function IdeaBoard(){
       if(error)throw error;
       // New ideas lead the queue; old positions are best-effort (a failed update must not lose generated content).
       await Promise.all(ordered.map(x=>sb.from("social_idea_cards").update({position:x.position}).eq("id",x.id).eq("user_id",uid)));
-      const {error:prefError}=await sb.from("social_idea_preferences").upsert({user_id:uid,frequency,last_generated_at:stamp,updated_at:stamp});
+      const {error:prefError}=await sb.from("social_idea_preferences").upsert({user_id:uid,frequency:selectedFrequency||frequency,last_generated_at:stamp,updated_at:stamp});
       if(prefError)throw prefError;
       setLast(stamp);setNotice("New Gemini ideas saved to your private idea board.");
     }
@@ -103,7 +103,7 @@ export default function IdeaBoard(){
      setLoading(false);
      if(setting.frequency!=="off"&&due(setting.frequency,setting.last)){
        // The selected frequency is checked when Studio opens; no background server cron is implied.
-       await generate();
+       await generate(undefined,setting.frequency);
      }
    }).catch(e=>{setError(e instanceof Error?e.message:"Could not load ideas");setLoading(false)});
  },[]); // Startup check deliberately runs once, with the user's persisted frequency.
@@ -151,7 +151,7 @@ export default function IdeaBoard(){
     const uid=await user(),sb=getSocialSupabase();
     const {error}=await sb.from("social_content_items").insert({
       user_id:uid,title:idea.title,content_type:/carousel/i.test(idea.format)?"carousel":/post/i.test(idea.format)?"post":"reel",status:"draft",
-      caption:idea.concept+"\\n\\nSuggested angle: "+idea.angle+"\\n\\nHook: "+(idea.hooks[0]||"")+"\\n\\nVerify package facts before publishing.",
+      caption:idea.concept+"\n\nSuggested angle: "+idea.angle+"\n\nHook: "+(idea.hooks[0]||"")+"\n\nVerify package facts before publishing.",
       metadata:{source:"gemini-idea-board",idea_id:idea.id,evidence_status:"not_verified"}
     });
     if(error)throw error;setNotice("Draft saved in the Content Planner for review.");
