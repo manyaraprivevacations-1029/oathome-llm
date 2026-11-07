@@ -116,12 +116,30 @@ export async function POST(request: NextRequest) {
     }
 
     const result = payload?.result;
-    const content = typeof result?.response === "string"
-      ? result.response.trim()
-      : typeof result?.choices?.[0]?.message?.content === "string"
-        ? result.choices[0].message.content.trim()
+    const resultRecord = result && typeof result === "object"
+      ? result as Record<string, unknown>
+      : {};
+    const choices = Array.isArray(resultRecord.choices) ? resultRecord.choices : [];
+    const firstChoice = choices[0] && typeof choices[0] === "object"
+      ? choices[0] as Record<string, unknown>
+      : {};
+    const message = firstChoice.message && typeof firstChoice.message === "object"
+      ? firstChoice.message as Record<string, unknown>
+      : {};
+    const contentValue = typeof resultRecord.response === "string"
+      ? resultRecord.response
+      : typeof message.content === "string"
+        ? message.content
         : "";
-    if (!content) return jsonError("The AI model returned an empty response. Please try again.", 502);
+    const content = contentValue.trim();
+    if (!content) {
+      console.error("[OAT Social AI] Cloudflare text response contained no extractable text:", {
+        model,
+        resultKeys: Object.keys(resultRecord).slice(0, 20),
+        responseStatus: response.status
+      });
+      return jsonError("Cloudflare returned no text for this request. Check the model response and Workers AI usage, then try again.", 502);
+    }
 
     return NextResponse.json({ content, provider: "cloudflare", model }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
