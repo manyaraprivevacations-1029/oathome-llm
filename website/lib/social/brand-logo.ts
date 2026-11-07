@@ -1,5 +1,5 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 export type BrandLogo = {
@@ -8,8 +8,8 @@ export type BrandLogo = {
  created_at?:string; url?:string;
 };
 export const logoBucket="social-brand-logos";
-export function logoPosition(placement:BrandLogo["placement"]):React.CSSProperties {
- const pos:React.CSSProperties={position:"absolute",pointerEvents:"none",zIndex:3};
+export function logoPosition(placement:BrandLogo["placement"]):CSSProperties {
+ const pos:CSSProperties={position:"absolute",pointerEvents:"none",zIndex:3};
  if(placement.includes("bottom"))pos.bottom="4%";else pos.top="4%";
  if(placement.includes("right"))pos.right="4%";else pos.left="4%";
  return pos;
