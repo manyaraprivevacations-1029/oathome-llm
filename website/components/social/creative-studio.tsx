@@ -95,7 +95,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const picture = new Image();
       picture.onload = () => {
         try {
-          const targetRatio = ratio === "1:1" ? 1 : ratio === "9:16" ? 9 / 16 : 4 / 5;
+          const targetRatio = ratio === "1:1" ? 1 : 4 / 5; // Feed publishing accepts 4:5 or square; 9:16 is padded to 4:5.
           const canvas = document.createElement("canvas");
           canvas.width = 1080;
           canvas.height = Math.round(canvas.width / targetRatio);
