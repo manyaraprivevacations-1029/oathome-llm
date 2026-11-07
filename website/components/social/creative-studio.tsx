@@ -127,14 +127,17 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const sb = getSocialSupabase();
       const { data: session } = await sb.auth.getSession();
       if (!session.session?.access_token) throw new Error("Your session expired. Please sign in again.");
-      // Prepare a JPEG with the chosen format, preserving the complete photograph with white padding.
-      // This also converts an already-uploaded PNG or WebP without requiring the user to upload again.
-      const jpeg = await jpegFromImage(singleImage, format);
-      if (!jpeg.startsWith("data:image/jpeg;base64,") || jpeg.length > 16_000_000) throw new Error("The converted image is too large. Try a smaller photo.");
-      const finalDraft = { ...result, caption: parts.caption, hashtags: parts.hashtags };
-      const id = await saveCreation({topic,destination,format,tone,facts,draft:finalDraft,image:jpeg,type:"post"});
-      setSavedId(id);
-      setSingleImage(jpeg);
+      // Reuse the same saved creation and media container when an earlier request
+      // was still processing. Creating a fresh container could duplicate a live post.
+      let id = savedId;
+      if (!id) {
+        const jpeg = await jpegFromImage(singleImage, format);
+        if (!jpeg.startsWith("data:image/jpeg;base64,") || jpeg.length > 16_000_000) throw new Error("The converted image is too large. Try a smaller photo.");
+        const finalDraft = { ...result, caption: parts.caption, hashtags: parts.hashtags };
+        id = await saveCreation({topic,destination,format,tone,facts,draft:finalDraft,image:jpeg,type:"post"});
+        setSavedId(id);
+        setSingleImage(jpeg);
+      }
       const response = await fetch("/api/social/instagram/publish", {
         method: "POST",
         headers: {
@@ -197,11 +200,11 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     </section>
     {result && <section style={{ ...panel, marginTop: 16, display: "grid", gap: 15 }}>
       <div><h2 style={{ fontSize: 17, margin: "0 0 8px" }}>2. Review your content</h2><p style={{ fontSize: 12, color: "#60738d", margin: 0 }}>Edit and verify the copy before using it.</p></div>
-      {!carousel && <label style={label}>HEADLINE<input style={input} value={result.headline || ""} onChange={e => setResult(p => p ? { ...p, headline: e.target.value } : p)} /></label>}
-      <label style={label}>INSTAGRAM CAPTION<textarea style={{ ...input, minHeight: 120, resize: "vertical" }} value={result.caption} onChange={e => setResult(p => p ? { ...p, caption: e.target.value } : p)} /></label>
-      <label style={label}>HASHTAGS<textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={result.hashtags || ""} onChange={e => setResult(p => p ? { ...p, hashtags: e.target.value } : p)} /></label>
+      {!carousel && <label style={label}>HEADLINE<input style={input} value={result.headline || ""} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, headline: e.target.value } : p); }} /></label>}
+      <label style={label}>INSTAGRAM CAPTION<textarea style={{ ...input, minHeight: 120, resize: "vertical" }} value={result.caption} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, caption: e.target.value } : p); }} /></label>
+      <label style={label}>HASHTAGS<textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={result.hashtags || ""} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, hashtags: e.target.value } : p); }} /></label>
       {!carousel && <>
-        <label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 80, resize: "vertical" }} value={result.visual_prompt || ""} onChange={e => setResult(p => p ? { ...p, visual_prompt: e.target.value } : p)} /></label>
+        <label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 80, resize: "vertical" }} value={result.visual_prompt || ""} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, visual_prompt: e.target.value } : p); }} /></label>
         <section aria-label="Generated image result" style={{ border: "1px dashed #cbb99e", borderRadius: 14, padding: 16, background: "#faf6ee", display: "grid", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <div><strong style={{ display: "block", fontSize: 14 }}>3. Image result</strong><span style={{ color: "#746957", fontSize: 11 }}>{singleImage ? "Your selected artwork is ready to review." : "Upload a travel photo or artwork to preview it here."}</span></div>
