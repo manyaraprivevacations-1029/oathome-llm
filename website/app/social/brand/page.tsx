@@ -30,11 +30,11 @@ const defaults: BrandProfile = {
   }
 };
 
-const shell: CSSProperties = { minHeight:"100vh", padding:"34px clamp(18px,5vw,64px)", background:"#f4f8fd", color:"#10264a" };
-const panel: CSSProperties = { border:"1px solid #dce8f5", borderRadius:15, padding:22, background:"#ffffff" };
-const label: CSSProperties = { display:"grid", gap:7, color:"#5d708a", fontSize:10, letterSpacing:".09em" };
-const input: CSSProperties = { width:"100%", boxSizing:"border-box", padding:"11px 12px", border:"1px solid #cbdced", borderRadius:8, background:"#ffffff", color:"#142b4f", fontSize:13 };
-const button: CSSProperties = { padding:"11px 15px", border:0, borderRadius:9, background:"#0878d8", color:"white", fontWeight:700, cursor:"pointer" };
+const shell: CSSProperties = { minHeight:"100vh", padding:"34px clamp(18px,5vw,64px)", background:"transparent",color:"#30291f" };
+const panel: CSSProperties = { border:"1px solid #e7dfd1", borderRadius:15, padding:22, background:"#ffffff" };
+const label: CSSProperties = { display:"grid", gap:7, color:"#746957", fontSize:10, letterSpacing:".09em" };
+const input: CSSProperties = { width:"100%", boxSizing:"border-box", padding:"11px 12px", border:"1px solid #ded5c6", borderRadius:8, background:"#ffffff", color:"#30291f", fontSize:13 };
+const button: CSSProperties = { padding:"11px 15px", border:0, borderRadius:9, background:"#a8752d", color:"white", fontWeight:700, cursor:"pointer" };
 
 export default function BrandBrainPage() {
   const router = useRouter();
@@ -92,7 +92,7 @@ export default function BrandBrainPage() {
 
   return <main style={shell}>
     <header style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:14,flexWrap:"wrap",marginBottom:25}}>
-      <div><Link href="/social" style={{color:"#0878d8",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Brand Brain</h1><p style={{color:"#5d708a",fontSize:13,margin:0}}>One trusted source for your brand voice and content rules.</p></div>
+      <div><Link href="/social" style={{color:"#a8752d",fontSize:12,textDecoration:"none"}}>← Social AI workspace</Link><h1 style={{fontSize:34,letterSpacing:"-.04em",margin:"12px 0 5px"}}>Brand Brain</h1><p style={{color:"#746957",fontSize:13,margin:0}}>One trusted source for your brand voice and content rules.</p></div>
       <span style={{fontSize:9,letterSpacing:".1em",padding:"7px 10px",border:"1px solid #c6def5",borderRadius:20,color:"#1769aa"}}>PRIVATE WORKSPACE</span>
     </header>
     <section style={{...panel,marginBottom:17}}>
@@ -106,13 +106,13 @@ export default function BrandBrainPage() {
         <span style={{fontSize:10,padding:"6px 9px",borderRadius:20,background:"#e9fbf2",color:"#137b4e",border:"1px solid #b5e5d0"}}>CONNECTED</span>
       </div>
       <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(150px,1fr))",gap:10,marginTop:15}}>
-        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#0878d8"}}>{travelKnowledge.packages.length}</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Package records</div></div>
-        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#0878d8"}}>{travelKnowledge.services.length}</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Service categories</div></div>
-        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#0878d8"}}>1</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Official travel knowledge source</div></div>
+        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#a8752d"}}>{travelKnowledge.packages.length}</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Package records</div></div>
+        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#a8752d"}}>{travelKnowledge.services.length}</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Service categories</div></div>
+        <div style={{padding:13,borderRadius:10,background:"#f2f7fc"}}><strong style={{fontSize:22,color:"#a8752d"}}>1</strong><div style={{fontSize:10,color:"#627b95",marginTop:4}}>Official travel knowledge source</div></div>
       </div>
       <h3 style={{fontSize:12,margin:"17px 0 9px"}}>Available package knowledge</h3>
       <div style={{display:"grid",gap:8}}>
-        {travelKnowledge.packages.map((item,index)=><div key={item.name} style={{padding:"10px 12px",border:"1px solid #dce8f5",borderRadius:9,background:"#fbfdff"}}>
+        {travelKnowledge.packages.map((item,index)=><div key={item.name} style={{padding:"10px 12px",border:"1px solid #e7dfd1",borderRadius:9,background:"#fbfdff"}}>
           <strong style={{fontSize:12}}>{item.name}</strong>
           <p style={{fontSize:11,color:"#627b95",margin:"4px 0 0",lineHeight:1.5}}>{item.duration} · {item.destination}</p>
           <p style={{fontSize:10,color:"#9b6a10",margin:"5px 0 0"}}>Price and departure details must be reconfirmed before promotion.</p>
@@ -120,7 +120,7 @@ export default function BrandBrainPage() {
       </div>
       <p style={{fontSize:10,color:"#71839a",lineHeight:1.6,margin:"12px 0 0"}}>Package records are displayed from the existing knowledge file; this page does not edit them. Ask the travel team to update the source when package information changes.</p>
     </section>
-    {loading ? <p style={{color:"#5d708a"}}>Loading your brand profile…</p> : <form onSubmit={save} style={{display:"grid",gap:15}}>
+    {loading ? <p style={{color:"#746957"}}>Loading your brand profile…</p> : <form onSubmit={save} style={{display:"grid",gap:15}}>
       <section style={panel}>
         <h2 style={{fontSize:16,margin:"0 0 17px"}}>Brand identity</h2>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(230px,1fr))",gap:14}}>
@@ -146,7 +146,7 @@ export default function BrandBrainPage() {
         </div>
       </section>
       {error && <p role="alert" style={{color:"#b42318",fontSize:12}}>{error}</p>}
-      {message && <p role="status" style={{color:"#0878d8",fontSize:12}}>{message}</p>}
+      {message && <p role="status" style={{color:"#a8752d",fontSize:12}}>{message}</p>}
       <div style={{display:"flex",gap:10,alignItems:"center",flexWrap:"wrap"}}><button disabled={saving} type="submit" style={button}>{saving?"Saving…":"Save Brand Brain"}</button><span style={{fontSize:11,color:"#71839a"}}>Saved privately to your signed-in Social AI account.</span></div>
     </form>}
   </main>;
