@@ -59,7 +59,17 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     reader.readAsDataURL(file);
   }
   const [singleImage, setSingleImage] = useState("");
-  function download(data: string, name: string) { const a = document.createElement("a"); a.href = data; a.download = name + ".jpg"; a.click(); }
+  function download(data: string, name: string) {
+    const mime = /^data:([^;,]+)/i.exec(data)?.[1]?.toLowerCase() || "";
+    const extension = mime === "application/json" ? "json"
+      : mime === "image/png" ? "png"
+      : mime === "image/webp" ? "webp"
+      : "jpg";
+    const a = document.createElement("a");
+    a.href = data;
+    a.download = name + "." + extension;
+    a.click();
+  }
   async function copy(text: string) { await navigator.clipboard.writeText(text); setNotice("Copied to clipboard."); }
 
   return <main className="social-theme" style={{ minHeight: "100vh", padding: "34px clamp(18px,5vw,64px)", background: "#f6f2e9", color: "#30291f" }}>
