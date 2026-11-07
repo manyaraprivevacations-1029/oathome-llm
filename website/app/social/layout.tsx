@@ -47,6 +47,7 @@ function SocialLayoutContent({ children }: { children: ReactNode }) {
   const authPage = pathname === "/social/login" || pathname === "/social/reset-password";
   const [email,setEmail] = useState("");
   const [checking,setChecking] = useState(true);
+  const [authenticated,setAuthenticated] = useState(false);
   const [mobileOpen,setMobileOpen] = useState(false);
   const [collapsed,setCollapsed] = useState(false);
 
@@ -54,16 +55,23 @@ function SocialLayoutContent({ children }: { children: ReactNode }) {
     if (authPage) { setChecking(false); return; }
     let alive = true;
     const supabase = getSocialSupabase();
-    supabase.auth.getSession().then(({data}) => {
+    setChecking(true);
+    supabase.auth.getUser().then(({data,error}) => {
       if (!alive) return;
-      if (!data.session) router.replace("/social/login");
-      else setEmail(data.session.user.email || "Workspace account");
+      if (error || !data.user) {
+        setAuthenticated(false);
+        router.replace("/social/login");
+      } else {
+        setEmail(data.user.email || "Workspace account");
+        setAuthenticated(true);
+      }
       setChecking(false);
-    }).catch(() => { if (alive) { setChecking(false); router.replace("/social/login"); } });
+    }).catch(() => {
+      if (alive) { setAuthenticated(false); setChecking(false); router.replace("/social/login"); }
+    });
     const {data:{subscription}} = supabase.auth.onAuthStateChange((_event,session) => {
       if (!alive) return;
-      if (!session && !authPage) router.replace("/social/login");
-      else if (session) setEmail(session.user.email || "Workspace account");
+      if (!session) { setAuthenticated(false); router.replace("/social/login"); }
     });
     return () => { alive=false; subscription.unsubscribe(); };
   },[authPage,router]);
@@ -77,7 +85,7 @@ function SocialLayoutContent({ children }: { children: ReactNode }) {
   }
 
   if (authPage) return <>{children}</>;
-  if (checking) return <div className="oat-shell-loading">Loading your workspace…</div>;
+  if (checking || !authenticated) return <div className="oat-shell-loading">Checking your secure session…</div>;
 
   return <div className={"oat-workspace"+(collapsed?" is-collapsed":"")}>
     {mobileOpen && <button className="oat-mobile-scrim" aria-label="Close navigation" onClick={()=>setMobileOpen(false)} />}
