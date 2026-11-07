@@ -142,7 +142,7 @@ async function restoreMissing(backup:Backup,progress:(v:string)=>void){
   for(let i=0;i<rows.length;i+=100){
    const part=rows.slice(i,i+100);
    // Ignore existing rows by primary key and never overwrite newer records.
-   const {data,error}=await sb.from(name).upsert(part,{onConflict:name==="social_idea_preferences"?"user_id":"id",ignoreDuplicates:true}).select("id");
+   const {data,error}=await sb.from(name).upsert(part,{onConflict:name==="social_idea_preferences"?"user_id":"id",ignoreDuplicates:true}).select(name==="social_idea_preferences"?"user_id":"id");
    if(error)throw new Error("Restore stopped at "+name+": "+error.message);
    records+=(data||[]).length;
    skipped+=part.length-(data||[]).length;
