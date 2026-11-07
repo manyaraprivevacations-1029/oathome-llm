@@ -9,6 +9,8 @@ function cleanGeneratedText(value: string): string {
     if (typeof parsed === "string") return parsed.trim();
     if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
       const record = parsed as Record<string, unknown>;
+      // Keep structured post/carousel drafts intact for the editor JSON parser.
+      if ("visual_prompt" in record || "slides" in record || ("caption" in record && "hashtags" in record)) return trimmed;
       for (const key of ["caption", "content", "text", "response", "output"]) {
         if (typeof record[key] === "string" && record[key].trim()) {
           return (record[key] as string).trim();
@@ -67,8 +69,8 @@ export async function generateSocialDraft(prompt: string): Promise<string> {
   });
 
   if (!response.ok) {
-    const detail = await response.text().catch(() => "");
-    throw new Error(detail || "OWN could not generate a draft. Please try again.");
+    const detail = await response.json().catch(() => null) as { error?: string } | null;
+    throw new Error(detail?.error || "Gemini could not generate a draft. Please try again.");
   }
 
   const payload = await response.json().catch(() => null) as { content?: unknown; error?: unknown } | null;
