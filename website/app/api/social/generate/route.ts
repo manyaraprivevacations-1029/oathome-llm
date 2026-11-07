@@ -59,7 +59,9 @@ export async function POST(request: NextRequest) {
   ].join(" ");
 
   try {
-    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run/${encodeURIComponent(model)}`, {
+    if (!/^@cf\/[a-z0-9._-]+\/[a-z0-9._-]+$/i.test(model)) return jsonError("The configured Cloudflare text model ID is invalid.", 503);
+
+    const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${encodeURIComponent(config.accountId)}/ai/run/${model}`, {
       method: "POST",
       headers: { Authorization: `Bearer ${config.apiToken}`, "Content-Type": "application/json" },
       body: JSON.stringify({
