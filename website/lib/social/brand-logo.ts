@@ -5,7 +5,7 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 export type BrandLogo = {
  id:string; user_id:string; title:string; asset_path:string; enabled:boolean; is_primary:boolean;
  placement:"bottom-right"|"bottom-left"|"top-right"|"top-left"; size_percent:number;
- created_at?:string; url?:string;
+ position_x?:number|null;position_y?:number|null;created_at?:string; url?:string;
 };
 export const logoBucket="social-brand-logos";
 export type StudioLogoPlacement={enabled:boolean;x:number;y:number;size:number};
@@ -13,7 +13,9 @@ export const defaultStudioLogo:StudioLogoPlacement={enabled:false,x:83,y:85,size
 export function studioLogoCss(position:StudioLogoPlacement):CSSProperties{
  return {position:"absolute",left:position.x+"%",top:position.y+"%",transform:"translate(-50%,-50%)",width:position.size+"%",maxHeight:"25%",height:"auto",objectFit:"contain",pointerEvents:"none",zIndex:5};
 }
-export function logoPosition(placement:BrandLogo["placement"]):CSSProperties {
+export function logoPosition(placement:BrandLogo["placement"]|BrandLogo):CSSProperties {
+ if(typeof placement!=="string"&&placement.position_x!=null&&placement.position_y!=null)return {...studioLogoCss({enabled:true,x:Number(placement.position_x),y:Number(placement.position_y),size:placement.size_percent})};
+ if(typeof placement!=="string")placement=placement.placement;
  const pos:CSSProperties={position:"absolute",pointerEvents:"none",zIndex:3};
  if(placement.includes("bottom"))pos.bottom="4%";else pos.top="4%";
  if(placement.includes("right"))pos.right="4%";else pos.left="4%";
@@ -65,8 +67,8 @@ export async function composeWithBrandLogo(imageDataUrl:string,logo:BrandLogo|nu
  const scale=Math.min(maxWidth/brand.naturalWidth,maxHeight/brand.naturalHeight);
  const width=brand.naturalWidth*scale,height=brand.naturalHeight*scale;
  const gap=Math.min(canvas.width,canvas.height)*0.035;
- const x=position?Math.max(gap,Math.min(canvas.width-width-gap,canvas.width*position.x/100-width/2)):(logo.placement.includes("right")?canvas.width-width-gap:gap);
- const y=position?Math.max(gap,Math.min(canvas.height-height-gap,canvas.height*position.y/100-height/2)):(logo.placement.includes("bottom")?canvas.height-height-gap:gap);
+ const x=position?Math.max(gap,Math.min(canvas.width-width-gap,canvas.width*position.x/100-width/2)):(logo.position_x!=null?Math.max(gap,Math.min(canvas.width-width-gap,canvas.width*Number(logo.position_x)/100-width/2)):(logo.placement.includes("right")?canvas.width-width-gap:gap));
+ const y=position?Math.max(gap,Math.min(canvas.height-height-gap,canvas.height*position.y/100-height/2)):(logo.position_y!=null?Math.max(gap,Math.min(canvas.height-height-gap,canvas.height*Number(logo.position_y)/100-height/2)):(logo.placement.includes("bottom")?canvas.height-height-gap:gap));
  context.drawImage(brand,x,y,width,height);
  return canvas.toDataURL("image/png");
 }
