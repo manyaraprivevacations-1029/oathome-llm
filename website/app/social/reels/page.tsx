@@ -18,9 +18,11 @@ function segmentPrompts(input:Scene[], duration:number, destination:string, rati
  const count=Math.ceil(duration/10);
  return Array.from({length:count},(_,i)=>{
   const source=input[Math.min(input.length-1,Math.floor(i*input.length/count))]||emptyScene();
+  const previous=i?input[Math.min(input.length-1,Math.floor((i-1)*input.length/count))]:null;
   const seconds=Math.min(10,duration-i*10);
-  const details=[source.visual,source.footage_needed?"Footage: "+source.footage_needed:"",source.onscreen_text?"On-screen text: "+source.onscreen_text:"",source.voiceover?"Spoken voiceover: "+source.voiceover:"",source.transition?"Transition: "+source.transition:""].filter(Boolean).join(". ");
-  return {scene:i+1,duration_seconds:seconds,visual:`Generate one cinematic ${seconds}-second ${ratio} vertical-ready travel video clip for ${destination}. Language: ${language}. ${details}. Realistic natural lighting, consistent characters and locations, clean readable captions, no inaccurate package claims, and only approved brand assets. This is one continuous production prompt, not a shot-by-shot storyboard.`,voiceover:source.voiceover,onscreen_text:source.onscreen_text,footage_needed:source.footage_needed,transition:source.transition};
+  const details=[source.visual,source.footage_needed?"Use or source this footage: "+source.footage_needed:"",source.onscreen_text?"On-screen text: "+source.onscreen_text:"",source.voiceover?"Voiceover: "+source.voiceover:"",source.transition?"Transition: "+source.transition:""].filter(Boolean).join(". ");
+  const opening=i===0?`Generate a cinematic ${seconds}-second ${ratio} travel video for ${destination}, in ${language}. This is clip 1 of ${count} in one continuous ${duration}-second reel. Establish the visual style, narrator, aspect ratio, soundtrack and color grade for every following clip. `:`CONTINUATION — CLIP ${i+1} OF ${count} (${seconds} seconds). Begin at the exact moment the previous clip ends. Keep the SAME narrator voice, people, clothing, location continuity, lighting, music, framing, color grade and camera motion. Previous clip ends with: ${previous?.visual||"the preceding shot"}. Do not restart with an introduction, logo, new travel title or establishing shot. Continue the story naturally: `;
+  return {scene:i+1,duration_seconds:seconds,visual:opening+details+". Maintain realistic visuals, licensed assets, factually accurate travel details and mobile-readable overlays."+(i===count-1?" Conclude with the approved travel brand CTA.":" End on an action or camera movement the next clip can continue seamlessly."),voiceover:source.voiceover,onscreen_text:source.onscreen_text,footage_needed:source.footage_needed,transition:source.transition};
  });
 }
 
@@ -51,8 +53,26 @@ export default function ReelStudioPage(){
  const brandLogo=useBrandLogo();
  const router=useRouter();
  const [title,setTitle]=useState("");const [destination,setDestination]=useState("");const [duration,setDuration]=useState(30);const [ratio,setRatio]=useState("9:16");const [language,setLanguage]=useState("Telugu-English");const [tone,setTone]=useState("Energetic, friendly travel host");const [audience,setAudience]=useState("Hyderabad travellers");const [facts,setFacts]=useState("");const [footage,setFootage]=useState("");const [cta,setCta]=useState("DM On A Trip Holidays to check current trip details.");
- const [script,setScript]=useState("");const [caption,setCaption]=useState("");const [notes,setNotes]=useState("");const [scenes,setScenes]=useState<Scene[]>([]);const [previewUrl,setPreviewUrl]=useState("");const [previewName,setPreviewName]=useState("");
+ const [script,setScript]=useState("");const [caption,setCaption]=useState("");const [notes,setNotes]=useState("");const [scenes,setScenes]=useState<Scene[]>([]);const [previewUrl,setPreviewUrl]=useState("");const [previewName,setPreviewName]=useState("");const [previewFile,setPreviewFile]=useState<File|null>(null);const [savedReelId,setSavedReelId]=useState("");const [publishedReelUrl,setPublishedReelUrl]=useState("");
  const [projects,setProjects]=useState<Project[]>([]);const [busy,setBusy]=useState(false);const [saving,setSaving]=useState(false);const [error,setError]=useState("");const [notice,setNotice]=useState("");const [activeId,setActiveId]=useState("");
+ async function saveFinishedReel(){
+  if(!previewFile){setError("Choose a finished reel video before saving.");return;}
+  if(!title.trim()){setError("Enter a reel title before saving.");return;}
+  setSaving(true);setError("");setNotice("");
+  try{
+   const {saveReelCreation}=await import("@/lib/social/creations");
+   const id=await saveReelCreation({title:title.trim(),caption,script,video:previewFile,destination,ratio,language,productionNotes:notes});
+   setSavedReelId(id);setNotice("Reel and caption saved to Creations. Nothing has been published to Instagram.");
+  }catch(e){setError(e instanceof Error?e.message:"Could not save reel.");}finally{setSaving(false);}
+ }
+ async function publishReel(){
+  setError("Instagram reel publishing is not configured for your NEW account yet. The existing API only publishes photos. No video has been uploaded or published. Connect the new account and enable an approved Reels publishing workflow first.");
+ }
+ function deletePublishedReel(){
+  if(!publishedReelUrl){setError("No Instagram reel has been published from this studio. You can remove a saved reel from Creations.");return;}
+  window.open(publishedReelUrl,"_blank","noopener,noreferrer");
+  setNotice("Delete the published reel manually in Instagram. Removing a saved creation does not remove it from Instagram.");
+ }
  async function refresh(){const sb=getSocialSupabase();const {data:auth}=await sb.auth.getUser();if(!auth.user){router.replace("/social/login");return;}const {data,error}=await sb.from("social_reel_projects").select("id,title,destination,target_duration_seconds,aspect_ratio,language_style,status,created_at,storyboard").eq("user_id",auth.user.id).order("created_at",{ascending:false}).limit(50);if(error)throw error;setProjects((data||[]) as Project[]);}
  useEffect(()=>{let alive=true;(async()=>{try{await refresh();}catch(e){if(alive)setError(e instanceof Error?e.message:"Could not load Reel Studio projects. Apply the Reel Studio migration first.");}})();return()=>{alive=false;};},[router]);
  async function generate(){if(!title.trim()||!destination.trim()){setError("Enter a reel title and destination.");return;}setBusy(true);setError("");setNotice("");const prompt="Create a production-ready Instagram travel reel storyboard for On A Trip Holidays. Return ONLY valid JSON with this exact shape: {\"voiceover_script\":\"complete spoken script\",\"caption\":\"Instagram caption\",\"production_notes\":\"editor guidance\",\"storyboard\":[{\"duration_seconds\":5,\"visual\":\"shot description\",\"voiceover\":\"spoken line for this scene\",\"onscreen_text\":\"short overlay text\",\"footage_needed\":\"specific footage or asset\",\"transition\":\"transition\"}]}. Make 5 to 8 scenes whose durations add up to approximately "+duration+" seconds. Format "+ratio+". Language "+language+". Tone "+tone+". Audience "+audience+". Reel title "+title+". Destination "+destination+". Confirmed facts supplied by the user: "+(facts.trim()||"No package facts supplied; do not invent price, dates, inclusions, batch availability or travel guarantees.")+". Available footage/assets: "+(footage.trim()||"Not supplied; recommend real, licensed footage and label any missing shots as assets to source.")+". CTA: "+cta+". Include a hook, clear story arc and CTA. Avoid claiming generated footage exists. Use practical editor instructions, no brand logo assumptions. Keep overlays short and readable. The approved brand logo should be used on opening/closing brand cards if available; do not invent a logo. Do not invent customer testimonials, snowfall conditions or live destination status.";
@@ -99,13 +119,21 @@ export default function ReelStudioPage(){
 </article>)}</div><p style={{fontSize:11,color:"#746957",marginBottom:0}}>Total prompt duration: {scenes.reduce((n,s)=>n+(Number(s.duration_seconds)||0),0)} seconds · Target: {duration} seconds.</p>
 </section></>}
  <section style={{...panel,marginBottom:16}}><h2 style={{fontSize:17,margin:"0 0 12px"}}>4. Reel upload & preview</h2>
-<p style={{fontSize:12,color:"#746957",lineHeight:1.6}}>Choose your finished MP4 or other supported video file to preview it in a vertical Instagram-style player. This is a local preview only; the video is not uploaded to the server or Instagram.</p>
-<input aria-label="Choose finished reel video" type="file" accept="video/mp4,video/webm,video/quicktime,video/*" style={{...field,maxWidth:460}} onChange={e=>{const file=e.currentTarget.files?.[0];if(!file)return;if(!file.type.startsWith("video/")){setError("Select a video file.");return;}if(previewUrl)URL.revokeObjectURL(previewUrl);setPreviewUrl(URL.createObjectURL(file));setPreviewName(file.name);setError("");}}/>
+<p style={{fontSize:12,color:"#746957",lineHeight:1.6}}>Choose your finished MP4 to preview it. Select Save this reel to store it privately in Creations; this does not publish to Instagram.</p>
+<input aria-label="Choose finished reel video" type="file" accept="video/mp4" style={{...field,maxWidth:460}} onChange={e=>{const file=e.currentTarget.files?.[0];if(!file)return;if(file.type!=="video/mp4"){setError("Select an MP4 file.");return;}if(file.size>100*1024*1024){setError("Reel must be 100 MB or smaller.");return;}if(previewUrl)URL.revokeObjectURL(previewUrl);setPreviewUrl(URL.createObjectURL(file));setPreviewName(file.name);setPreviewFile(file);setSavedReelId("");setPublishedReelUrl("");setError("");}}/>
 {previewUrl&&<div style={{display:"flex",flexWrap:"wrap",gap:20,marginTop:16,alignItems:"flex-start"}}>
 <div style={{width:260,maxWidth:"100%",borderRadius:19,overflow:"hidden",background:"#181818",padding:7}}>
 <video key={previewUrl} src={previewUrl} controls playsInline style={{width:"100%",aspectRatio:"9 / 16",objectFit:"contain",background:"#000",borderRadius:12}} />
 <div style={{color:"#fff",fontSize:12,padding:"10px 5px"}}><strong>On A Trip Holidays</strong><p style={{whiteSpace:"pre-wrap",overflowWrap:"anywhere",lineHeight:1.6}}>{caption}</p></div>
-</div><div style={{flex:"1 1 230px"}}><strong style={{fontSize:13}}>{previewName}</strong><p style={{fontSize:12,color:"#746957"}}>Preview only · no Instagram account connected · nothing published.</p><button style={muted} onClick={()=>{URL.revokeObjectURL(previewUrl);setPreviewUrl("");setPreviewName("");}}>Remove preview</button></div>
+</div><div style={{flex:"1 1 230px"}}><strong style={{fontSize:13}}>{previewName}</strong><p style={{fontSize:12,color:"#746957"}}>{savedReelId?"Saved to Creations · not published":"Local preview · not saved or published"}</p>
+<div style={{display:"flex",gap:8,flexWrap:"wrap",margin:"12px 0"}}>
+<button style={primary} disabled={saving} onClick={()=>void saveFinishedReel()}>{saving?"Saving reel…":savedReelId?"Save another copy":"Save this reel"}</button>
+<Link href="/social/creations" style={{...muted,textDecoration:"none",display:"inline-flex",alignItems:"center"}}>View Creations</Link>
+<button style={muted} disabled={saving} onClick={()=>void saveFinishedReel()}>{saving?"Saving…":"Save to Creations"}</button>
+<button style={muted} onClick={()=>void publishReel()}>Upload to Instagram</button>
+<button style={{...muted,color:"#a12c20"}} onClick={()=>deletePublishedReel()}>Delete from Instagram</button>
+</div><p style={{fontSize:11,color:"#746957",lineHeight:1.6}}>Instagram actions remain unavailable until the NEW Instagram account is connected through an approved reel publishing integration. No prior Instagram or Meta account will be used.</p>
+<button style={muted} onClick={()=>{URL.revokeObjectURL(previewUrl);setPreviewUrl("");setPreviewName("");setPreviewFile(null);setSavedReelId("");}}>Remove preview</button></div>
 </div>}
 </section>
 <section style={{...panel,marginBottom:16}}><h2 style={{fontSize:17,margin:"0 0 8px"}}>5. Production checklist</h2><ul style={{fontSize:12,color:"#746957",lineHeight:1.9,paddingLeft:20,margin:0}}><li>Source original travel footage or assets with permission for commercial use.</li><li>Record or generate the voiceover using an approved audio tool; check pronunciation and timing.</li><li>Edit to the selected aspect ratio and target duration; keep important text within safe margins.</li><li>Check spelling, subtitles, music rights, package facts, price validity and departure dates.</li><li>Export and preview the MP4 on a phone before requesting internal approval.</li><li>Only use the Approval Library for review; approval here does not publish.</li></ul></section>
