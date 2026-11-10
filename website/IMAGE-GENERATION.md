@@ -21,3 +21,11 @@ Each request requires server-verified Supabase identity. Prompts are limited to 
 Run `npm run typecheck`, `node --test tests/social-image.test.cjs`, and `npm run build` from `website/`. After deployment, sign in, generate post text, generate an image, verify the crop/logo preview, save to Creations and download. For carousel, generate two different slide images and verify each stays on its selected slide. Check refresh recovery, rejected/expired sessions, and generation failures. Publishing remains a separate explicit action.
 
 References: https://developers.cloudflare.com/workers-ai/models/flux-1-schnell/ and https://developers.cloudflare.com/workers-ai/platform/pricing/
+
+## Destination poster text
+
+Post Studio and Carousel Studio now compose editable typography onto the artwork locally, without another AI request. Enable **Add text directly onto the image**, choose Light editorial or Dark cinematic, and edit the destination title, details and call to action. Carousel slides use their slide title and copy. Gemini supplies initial poster text for new drafts; restored older drafts can be filled manually. Keep prices, dates and inclusions limited to confirmed package facts.
+
+The preview uses the same canvas compositor as download, Creations storage and Instagram publishing, with the existing optional logo applied afterward. Original artwork stays separate so edits and repeated saves never accumulate lettering. Poster settings and text are restored with private studio drafts; rendered images and poster text metadata are saved in Creations. Export is 1080 pixels wide in the selected ratio; feed publishing retains the existing 9:16-to-4:5 padding behavior. Text wraps and shrinks to fit rather than clipping. Very long text produces an explicit shortening error.
+
+Run `node --test tests/social-poster.test.cjs` from `website/` to check text fitting and the original-image mode.
