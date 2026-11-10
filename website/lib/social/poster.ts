@@ -1,13 +1,13 @@
 "use client";
 
 export type PosterText = { title: string; details: string; cta: string };
-export type PosterStyle = "light" | "dark";
+export type PosterStyle = "light" | "dark" | "photo";
 export type PosterBlock = { x: number; y: number; size: number; width: number };
 export type PosterLayout = { title: PosterBlock; details: PosterBlock; cta: PosterBlock };
 export const defaultPosterLayout: PosterLayout = {
-  title: { x:50, y:16, size:140, width:86 },
-  details: { x:50, y:37, size:36, width:86 },
-  cta: { x:50, y:89, size:40, width:86 }
+  title: { x:50, y:5, size:84, width:88 },
+  details: { x:50, y:27, size:30, width:88 },
+  cta: { x:50, y:91, size:32, width:88 }
 };
 export function safePosterLayout(value?: Partial<PosterLayout>): PosterLayout {
   function block(name: keyof PosterLayout): PosterBlock {
@@ -44,7 +44,7 @@ export function fitPosterText(ctx: CanvasRenderingContext2D, text: string, width
   throw new Error("Poster text is too long. Shorten it before exporting.");
 }
 
-export async function composePoster(source: string, ratio: string, text: PosterText, enabled: boolean, style: PosterStyle, layout?: PosterLayout): Promise<string> {
+export async function composePoster(source: string, ratio: string, text: PosterText, enabled: boolean, style: PosterStyle, layout?: PosterLayout, overlayStrength = 70): Promise<string> {
   if (!enabled) return source;
   await document.fonts?.ready;
   const photo = await new Promise<HTMLImageElement>((resolve, reject) => {
@@ -61,15 +61,19 @@ export async function composePoster(source: string, ratio: string, text: PosterT
   const scale = Math.max(w / photo.naturalWidth, h / photo.naturalHeight);
   ctx.drawImage(photo, (w - photo.naturalWidth * scale) / 2, (h - photo.naturalHeight * scale) / 2, photo.naturalWidth * scale, photo.naturalHeight * scale);
   const positions = safePosterLayout(layout);
+  const photoFirst = style === "photo";
   const light = style === "light";
-  const top = ctx.createLinearGradient(0, 0, 0, h * .55);
+  const strength = Number.isFinite(overlayStrength) ? Math.max(0,Math.min(100,overlayStrength))/100 : .7;
+  ctx.globalAlpha = photoFirst ? strength * .65 : strength;
+  const top = ctx.createLinearGradient(0, 0, 0, h * (photoFirst ? .42 : .55));
   top.addColorStop(0, light ? "rgba(255,255,250,1)" : "rgba(6,28,24,.98)");
   top.addColorStop(.65, light ? "rgba(255,255,250,.94)" : "rgba(6,28,24,.90)");
   top.addColorStop(1, light ? "rgba(255,255,250,0)" : "rgba(6,28,24,0)");
-  ctx.fillStyle = top; ctx.fillRect(0, 0, w, h * .55);
+  ctx.fillStyle = top; ctx.fillRect(0, 0, w, h * (photoFirst ? .42 : .55));
   const bottom = ctx.createLinearGradient(0, h * .78, 0, h);
   bottom.addColorStop(0, "rgba(3,25,18,0)"); bottom.addColorStop(1, "rgba(3,25,18,.9)");
   ctx.fillStyle = bottom; ctx.fillRect(0, h * .78, w, h * .22);
+  ctx.globalAlpha = 1;
   ctx.textAlign = "center"; ctx.textBaseline = "top";
   function draw(value: string, position: PosterBlock, height: number, family: string, color: string) {
     if (!value.trim()) return;
@@ -78,6 +82,7 @@ export async function composePoster(source: string, ratio: string, text: PosterT
     const y = h * position.y / 100;
     const fitted = fitPosterText(ctx!, value, width, Math.min(height,h*.97-y), position.size, family);
     ctx!.font = `${fitted.size}px ${family}`; ctx!.fillStyle = color;
+    ctx!.shadowColor = photoFirst ? "rgba(0,0,0,.8)" : "transparent"; ctx!.shadowBlur = photoFirst ? 5 : 0;
     fitted.lines.forEach((line, index) => ctx!.fillText(line, x, y + index * fitted.size * 1.2));
   }
   draw(text.title, positions.title, h * .20, 'Georgia, "Times New Roman", serif', light ? "#173c21" : "#fffbed");

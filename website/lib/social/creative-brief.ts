@@ -1,8 +1,24 @@
 export type StudioLanguage = "Telugu-English" | "Telugu" | "English";
 export type CreativeSlide = { title: string; body: string; image_prompt: string; image_prompts?: string[]; selected_prompt?: number; image?: string; poster_layout?: import("./poster").PosterLayout };
 export type CreativeResult = { poster_title?: string; poster_details?: string; poster_cta?: string; headline?: string; caption: string; hashtags?: string; visual_prompt?: string; image_prompts?: string[]; selected_prompt?: number; slides?: CreativeSlide[] };
-export type CreativeBrief = { topic: string; destination: string; facts: string; tone: string; format: string; language: StudioLanguage; carousel: boolean };
+export type CreativeBrief = { topic: string; destination: string; facts: string; tone: string; format: string; language: StudioLanguage; carousel: boolean; slideCount?: number };
 
+export function requestedSlideCount(topic: string): number | undefined {
+  const numeric = /(?:^|\s)(\d{1,2})\s*[- ]?\s*(?:slides?|స్లైడ్లు|స్లైడ్స్|స్లైడ్)(?:\b|\s|$)/i.exec(topic);
+  if (numeric) return Number(numeric[1]);
+  const words: Record<string,number> = {two:2,three:3,four:4,five:5,six:6,seven:7,eight:8,nine:9,ten:10,"రెండు":2,"మూడు":3,"నాలుగు":4,"ఐదు":5};
+  for(const [word,count] of Object.entries(words)) if(new RegExp("(?:^|\\s)"+word+"\\s+(?:slides?|స్లైడ్లు|స్లైడ్స్|స్లైడ్)(?:\\b|\\s|$)","i").test(topic))return count;
+  return undefined;
+}
+export function carouselSlideCount(brief: Pick<CreativeBrief,"topic"|"slideCount">) {
+  const count = brief.slideCount ?? requestedSlideCount(brief.topic) ?? 5;
+  if (!Number.isInteger(count) || count < 2 || count > 10) throw new Error("Choose 2 to 10 carousel slides. Use Post Studio for a single image.");
+  return count;
+}
+export function visualActionDirections(prompt: string) {
+  if (/(?:ganga|ganges).{0,15}aar?ti|aar?ti.{0,30}(?:ganga|dashash|kashi|varanasi)/i.test(prompt)) return "Show the Ganga Aarti ceremony itself: a priest actively raising a large multi-tier brass aarti lamp with clearly visible flames and smoke, both hands and the whole lamp in frame, devotees behind, ghat steps and river context. Use a medium close side-angle view, realistic anatomy, natural faces and warm firelight. Do not replace the ritual with a generic sadhu portrait, bathing scene or candles alone.";
+  return "Show the specific action, main subject and distinctive props requested, with natural faces, believable anatomy and realistic lighting. Keep the main action prominent instead of substituting a generic portrait or scenery.";
+}
 export function briefKey(brief: CreativeBrief) { return JSON.stringify(brief); }
 export function isHimalayanCharDham(value: string) {
   return /char\s*dham|chardhma|చార్\s*ధామ్|చార్ధామ్/i.test(value) && !/dwarka|puri|rameswaram|rameshwaram|pan.india/i.test(value);
@@ -22,14 +38,14 @@ export function creativePrompt(brief: CreativeBrief) {
     ? '{"caption":"caption","hashtags":"hashtags","poster_cta":"short CTA","slides":[{"title":"short specific title","body":"max 160 characters","image_prompts":["35-word scenic prompt","35-word landmark prompt","35-word human-interest prompt"]}]}'
     : '{"headline":"short headline","poster_title":"destination name","poster_details":"max 180 characters","poster_cta":"max 70 characters","caption":"caption","hashtags":"hashtags","image_prompts":["35-word scenic prompt","35-word landmark prompt","35-word human-interest prompt"]}';
   return [
-    "Create " + (brief.carousel ? "5 to 7 connected Instagram carousel slides" : "one Instagram post") + " for On A Trip Holidays. Return ONLY valid JSON in this exact shape: " + schema,
+    "Create " + (brief.carousel ? "exactly " + carouselSlideCount(brief) + " connected Instagram carousel slides, no more and no fewer" : "one Instagram post") + " for On A Trip Holidays. Return ONLY valid JSON in this exact shape: " + schema,
     "CURRENT BRIEF (takes priority over previous examples, brand defaults and unrelated destinations): " + JSON.stringify(brief),
     "Destination grounding: " + destinationContext(brief),
     "Use only the confirmed package facts supplied in this brief. Never invent prices, dates, departures, inclusions or current conditions. If facts are empty, write destination inspiration with an enquiry CTA. Do not put internal confirmation notes into public copy.",
     languageInstruction(brief.language),
-    "Every slide must explain a specific point from the CURRENT topic. Make the first slide a hook, subsequent slides distinct and relevant, and the final slide an enquiry CTA. No generic filler or recycling copy from another destination.",
+    "Every slide must explain a specific point from the CURRENT topic. Use exactly the selected slide count. Combine a hook or CTA with useful information when the count is small; never add extra cover or closing slides beyond that count. No generic filler or recycling copy from another destination.",
     "For EVERY image provide exactly THREE DISTINCT image_prompts: 1 scenic setting featuring a named local landmark, 2 closer landmark/architecture view, 3 respectful human-interest view with the named landmark. Each prompt must explicitly name the destination AND a real relevant landmark, and describe how that subject relates to that slide. A mountain-only or generic landscape prompt is insufficient for a pilgrimage topic. Never substitute a different region's monument. Do not invent architectural details you cannot identify.",
-    "Prompts are English, concise (about 35 words each, under 500 characters), realistic travel imagery, no text, no logo. Keep the main subject in the lower 60 percent and leave uncluttered upper space for editable typography. For a four-shrine overview, name the four shrines in a clearly separated editorial montage rather than merging them into a fictional temple. AI imagery is illustrative, not a verified photograph. Return no surrounding commentary."
+    "Prompts are English, concise (about 35 words each, under 500 characters), realistic travel imagery, no text, no logo. Make the main subject and action prominent in the frame. Leave only modest uncluttered space for optional typography, not a large empty upper half. For rituals, describe the actual action and distinctive ceremonial props, not just a generic priest or crowd. For Ganga Aarti show a priest raising a flaming multi-tier brass aarti lamp, with the full lamp, hands and devotees visible. For a four-shrine overview, name the four shrines in a clearly separated editorial montage rather than merging them into a fictional temple. AI imagery is illustrative, not a verified photograph. Return no surrounding commentary."
   ].join("\n\n");
 }
 const telugu = /[\u0c00-\u0c7f]/;
@@ -50,7 +66,8 @@ export function normalizeCreativeResult(raw: string, brief: CreativeBrief): Crea
   if (needsLanguage(caption,brief.language)) throw new Error("The caption did not follow the selected language. Include actual Telugu script and English when requested.");
   const output: CreativeResult = {caption,hashtags:text(data.hashtags,2000),poster_cta:text(data.poster_cta,100)};
   if (brief.carousel) {
-    if (!Array.isArray(data.slides) || data.slides.length < 5 || data.slides.length > 7) throw new Error("Return 5 to 7 complete slides.");
+    const count = carouselSlideCount(brief);
+    if (!Array.isArray(data.slides) || data.slides.length !== count) throw new Error("Return exactly " + count + " complete slides, including any cover and CTA within this count.");
     output.slides=data.slides.map((item: unknown)=>{
       if (!item || typeof item !== "object") throw new Error("Incomplete slide.");
       const slide=item as Record<string,unknown>,title=text(slide.title,160),body=text(slide.body,240);
@@ -76,6 +93,7 @@ export function normalizeCreativeResult(raw: string, brief: CreativeBrief): Crea
   const namedDestination = brief.destination.trim();
   if (!isHimalayanCharDham(brief.destination+" "+brief.topic) && /^[a-z ,.-]+$/i.test(namedDestination)) {
     const anchors = namedDestination.toLowerCase().split(/[^a-z]+/).filter(word=>word.length>2 && !["india","trip","tour","yatra"].includes(word));
+    if(anchors.some(word=>["kashi","varanasi","banaras","benares"].includes(word)))anchors.push("kashi","varanasi","banaras","benares");
     const all=output.slides?.flatMap(slide=>slide.image_prompts||[]) || output.image_prompts || [];
     if(anchors.length && all.some(prompt=>!anchors.some(word=>prompt.toLowerCase().includes(word)))) throw new Error("Each image prompt must explicitly name the current destination, not a different place.");
   }
@@ -92,7 +110,7 @@ export function anchoredImagePrompt(prompt: string, brief: CreativeBrief, title:
   if (!prompt.trim()) throw new Error("Choose or enter an image prompt first.");
   if (isHimalayanCharDham(brief.destination+" "+brief.topic) && !/(yamunotri|gangotri|kedarnath|badrinath)/i.test(prompt)) throw new Error("Name the Char Dham shrine in this image prompt: Yamunotri, Gangotri, Kedarnath or Badrinath.");
   // Keep destination context in every provider request, even after a prompt is edited.
-  const suffix = "\nSubject must match: " + destinationContext(brief) + ". Slide/topic: " + title.slice(0,160) + ". Keep the chosen named landmark as the primary subject; other circuit names are context only. No unrelated landmarks, no lettering or logo.";
+  const suffix = "\n" + visualActionDirections(prompt) + "\nSubject must match: " + destinationContext(brief) + ". Slide/topic: " + title.slice(0,160) + ". Keep the chosen named landmark as the primary subject; other circuit names are context only. No unrelated landmarks, no lettering or logo.";
   if (prompt.length + suffix.length > 1600) throw new Error("Shorten the prompt to leave room for destination context (about 900 characters). ");
   return prompt + suffix;
 }

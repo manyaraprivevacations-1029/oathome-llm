@@ -13,7 +13,7 @@ import { composeWithBrandLogo, defaultStudioLogo, type StudioLogoPlacement, useB
 import { composePoster, defaultPosterLayout, type PosterLayout, type PosterStyle } from "@/lib/social/poster";
 import { PosterPreview } from "@/components/social/poster-preview";
 
-import { creativePrompt, normalizeCreativeResult, briefKey, selectedImagePrompt, anchoredImagePrompt, isHimalayanCharDham, type CreativeBrief, type CreativeResult as Result, type StudioLanguage } from "@/lib/social/creative-brief";
+import { requestedSlideCount, creativePrompt, normalizeCreativeResult, briefKey, selectedImagePrompt, anchoredImagePrompt, isHimalayanCharDham, type CreativeBrief, type CreativeResult as Result, type StudioLanguage } from "@/lib/social/creative-brief";
 import { ImagePromptControl } from "@/components/social/image-prompt-control";
 import { PosterTextControl } from "@/components/social/poster-text-control";
 
@@ -34,6 +34,9 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     return () => { controller.abort(); imageRequest.current?.abort(); };
   }, []);
   const brandLogo = useBrandLogo();
+  const [slideCount,setSlideCount]=useState(5);
+  const [overlayStrength,setOverlayStrength]=useState(70);
+  const [showArtwork,setShowArtwork]=useState(false);
   const [language,setLanguage]=useState<StudioLanguage>("Telugu-English");
   const [posterLayout,setPosterLayout]=useState<PosterLayout>(defaultPosterLayout);
   const [generatedBrief,setGeneratedBrief]=useState("");
@@ -58,8 +61,8 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   const [logoPlacement,setLogoPlacement]=useState<StudioLogoPlacement>(defaultStudioLogo);
 
   const [posterEnabled, setPosterEnabled] = useState(true);
-  const [posterStyle, setPosterStyle] = useState<PosterStyle>("light");
-  const currentBrief: CreativeBrief = { topic, destination, facts, tone, format, language, carousel };
+  const [posterStyle, setPosterStyle] = useState<PosterStyle>("photo");
+  const currentBrief: CreativeBrief = { topic, destination, facts, tone, format, language, carousel, slideCount };
   const currentBriefKey = briefKey(currentBrief);
   const stale = Boolean(result) && generatedBrief !== currentBriefKey;
   function imageOptions(index = -1) {
@@ -89,14 +92,15 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       cta: result?.poster_cta ?? (carousel ? "Swipe to explore" : "Plan your trip with us") };
   }
   async function finalImage(data: string, index = -1) {
-    const poster = await composePoster(data, format, posterText(index), posterEnabled, posterStyle, layoutFor(index));
+    const poster = await composePoster(data, format, posterText(index), posterEnabled, posterStyle, layoutFor(index), overlayStrength);
     return composeWithBrandLogo(poster, brandLogo, logoPlacement);
   }
   // A saved image must never be reused after its text, artwork or branding changes.
-  useEffect(() => { setSavedId(""); setPublished(false); setPublishedUrl(""); }, [result, singleImage, posterEnabled, posterStyle, logoPlacement, brandLogo, format, destination, posterLayout, currentBriefKey]);
+  useEffect(() => { setSavedId(""); setPublished(false); setPublishedUrl(""); }, [result, singleImage, posterEnabled, posterStyle, logoPlacement, brandLogo, format, destination, posterLayout, currentBriefKey, overlayStrength]);
 
-  const draftSnapshot=useMemo(()=>({topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle,posterLayout,language,generatedBrief}),[topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle,posterLayout,language,generatedBrief]);
+  const draftSnapshot=useMemo(()=>({topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle,posterLayout,language,generatedBrief,slideCount,overlayStrength}),[topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle,posterLayout,language,generatedBrief,slideCount,overlayStrength]);
   const draftState=useStudioDraft(carousel?"carousel":"post",draftSnapshot,saved=>{
+   setSlideCount(saved.slideCount || requestedSlideCount(saved.topic || "") || 5);setOverlayStrength(saved.overlayStrength ?? 70);
    setLanguage(saved.language || "Telugu-English");setPosterLayout(saved.posterLayout || defaultPosterLayout);setGeneratedBrief(saved.generatedBrief || "");
    setPosterEnabled(saved.posterEnabled ?? true);setPosterStyle(saved.posterStyle || "light");
    setTopic(saved.topic||"");setDestination(saved.destination||"");setFacts(saved.facts||"");
@@ -108,10 +112,11 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     if (busy || saving || publishing || imageBusy !== null || !draftState.loaded) return;
     if (!window.confirm("Start a new " + mode + "? This clears the current browser draft. Saved Creations and published posts will remain.")) return;
     draftEpoch.current++;
-    const empty = {topic:"",destination:"",facts:"",tone:"Premium, inspiring and trustworthy",format:"4:5",result:null,singleImage:"",logoPlacement:defaultStudioLogo,musicHint:"",posterEnabled:true,posterStyle:"light" as PosterStyle,posterLayout:defaultPosterLayout,language:"Telugu-English" as StudioLanguage,generatedBrief:""};
+    const empty = {topic:"",destination:"",facts:"",tone:"Premium, inspiring and trustworthy",format:"4:5",result:null,singleImage:"",logoPlacement:defaultStudioLogo,musicHint:"",posterEnabled:true,posterStyle:"photo" as PosterStyle,posterLayout:defaultPosterLayout,language:"Telugu-English" as StudioLanguage,generatedBrief:"",slideCount:5,overlayStrength:70};
     setTopic("");setDestination("");setFacts("");setTone(empty.tone);setFormat("4:5");
     setResult(null);setSingleImage("");setLogoPlacement(defaultStudioLogo);setMusicHint("");
-    setPosterEnabled(true);setPosterStyle("light");setPosterLayout(defaultPosterLayout);setLanguage("Telugu-English");setGeneratedBrief("");
+    setPosterEnabled(true);setPosterStyle("photo");setPosterLayout(defaultPosterLayout);setLanguage("Telugu-English");setGeneratedBrief("");
+    setSlideCount(5);setOverlayStrength(70);setShowArtwork(false);
     setSavedId("");setPublished(false);setPublishedUrl("");setError("");setUploadKey(key=>key+1);
     setNotice("New " + mode + " ready. Your saved Creations remain available.");
     void draftState.replace(empty);
@@ -119,11 +124,13 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   }
   async function create() {
     if (!topic.trim()) { setError("Enter a topic or campaign idea first."); return; }
+    const countInTopic=requestedSlideCount(topic);
+    if(carousel && countInTopic!==undefined && (countInTopic<2 || countInTopic>10)) {setError("Choose 2 to 10 carousel slides; use Post Studio for a single image.");return;}
     draftEpoch.current++;
     setBusy(true); setError(""); setNotice("");
     const requested = {...currentBrief};
-    const prompt = creativePrompt(requested);
     try {
+      const prompt = creativePrompt(requested);
       let accepted: Result | null = null;
       let repair = "";
       // One bounded correction for malformed, off-topic or wrong-language output.
@@ -254,7 +261,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         const branded = await finalImage(singleImage);
         const jpeg = await jpegFromImage(branded, format);
         if (!jpeg.startsWith("data:image/jpeg;base64,") || jpeg.length > 16_000_000) throw new Error("The converted image is too large. Try a smaller photo.");
-        const finalDraft = { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, poster_layout: posterLayout, language, caption: parts.caption, hashtags: parts.hashtags };
+        const finalDraft = { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, poster_layout: posterLayout, overlay_strength:overlayStrength, slide_count:carousel?slideCount:undefined, language, caption: parts.caption, hashtags: parts.hashtags };
         id = await saveCreation({topic,destination,format,tone,facts,draft:finalDraft,image:jpeg,type:"post"});
         setSavedId(id);
 
@@ -284,7 +291,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const brandedSlides = result.slides ? await Promise.all(result.slides.map(async (slide, index) => ({...slide, image: slide.image ? await finalImage(slide.image, index) : undefined}))) : undefined;
       const id = await saveCreation({
         topic, destination, format, tone, facts,
-        draft: { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, poster_layout: posterLayout, language, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? (carousel ? await finalImage(singleImage) : await jpegFromImage(await finalImage(singleImage), format)) : undefined, type: carousel ? "carousel" : "post"
+        draft: { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, poster_layout: posterLayout, overlay_strength:overlayStrength, slide_count:carousel?slideCount:undefined, language, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? (carousel ? await finalImage(singleImage) : await jpegFromImage(await finalImage(singleImage), format)) : undefined, type: carousel ? "carousel" : "post"
       });
       setSavedId(id);
       setNotice("Saved successfully to Creations. You can view or delete it there.");
@@ -316,13 +323,15 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     {draftState.message&&<p role="status" style={{fontSize:12,color:"#87601f"}}>{draftState.message}</p>}
     <section style={{ ...panel, display: "grid", gap: 14 }}>
       <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><h2 style={{ fontSize: 17, margin: 0 }}>1. Creative brief</h2><button type="button" disabled={busy || saving || publishing || imageBusy !== null || !draftState.loaded} onClick={resetStudio} style={{...button,background:"#fff",color:"#8a5d20",border:"1px solid #d7c7ae",padding:"8px 12px",fontSize:12}}>↻ New {carousel?"Carousel":"Post"} / Reset</button></div>
-      <label style={label}>TOPIC / CAMPAIGN IDEA<input style={input} value={topic} onChange={e => setTopic(e.target.value)} placeholder={carousel ? "Example: 5 reasons to visit Kashmir" : "Example: Kashmir winter escape"} /></label>
+      <label style={label}>TOPIC / CAMPAIGN IDEA<input style={input} value={topic} onChange={e => {setTopic(e.target.value);const count=requestedSlideCount(e.target.value);if(carousel && count!==undefined && count>=2 && count<=10)setSlideCount(count);}} placeholder={carousel ? "Example: 5 reasons to visit Kashmir" : "Example: Kashmir winter escape"} /></label>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12 }}>
         <label style={label}>DESTINATION (OPTIONAL)<input style={input} value={destination} onChange={e => setDestination(e.target.value)} placeholder="Kashmir" /></label>
         <label style={label}>FORMAT<select style={input} value={format} disabled={imageBusy !== null} onChange={e => setFormat(e.target.value)}><option>4:5</option><option>1:1</option><option>9:16</option></select></label>
+        {carousel && <label style={label}>NUMBER OF SLIDES<select style={input} value={slideCount} disabled={busy || imageBusy !== null} onChange={e=>setSlideCount(Number(e.target.value))}>{Array.from({length:9},(_,i)=>i+2).map(count=><option key={count} value={count}>{count} slides</option>)}</select></label>}
         <label style={label}>LANGUAGE<select style={input} value={language} onChange={e=>setLanguage(e.target.value as StudioLanguage)} disabled={busy || imageBusy !== null}><option value="Telugu-English">Telugu + English</option><option value="Telugu">Telugu</option><option value="English">English</option></select></label>
         <label style={label}>TONE<select style={input} value={tone} onChange={e => setTone(e.target.value)}><option>Premium, inspiring and trustworthy</option><option>Energetic and youthful</option><option>Warm and emotional</option><option>Informative and practical</option><option>Promotional and direct</option></select></label>
       </div>
+      {carousel && <p style={{fontSize:11,color:"#746957",margin:0}}>Exactly {slideCount} slides, including any cover and closing slide. Typing “3 slides” in the topic updates this count; you can also select it above.</p>}
       {isHimalayanCharDham(destination+" "+topic) && <p style={{fontSize:12,color:"#746957",margin:0}}>Char Dham here means Yamunotri, Gangotri, Kedarnath and Badrinath in Uttarakhand. Specify a different circuit in Destination if needed.</p>}
       <StudioLogoControl logo={brandLogo} placement={logoPlacement} onChange={setLogoPlacement} label={carousel ? "Add logo to carousel" : "Add logo to post"} />
       <label style={label}>CONFIRMED PACKAGE FACTS (OPTIONAL)<textarea style={{ ...input, minHeight: 92, resize: "vertical" }} value={facts} onChange={e => setFacts(e.target.value)} placeholder="Add verified price, dates, inclusions and conditions. Leave blank if not confirmed." /></label>
@@ -335,7 +344,9 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <legend style={{fontWeight:700,fontSize:14}}>Destination poster design</legend>
         <label style={{fontSize:13}}><input type="checkbox" checked={posterEnabled} onChange={e=>setPosterEnabled(e.target.checked)} /> Add text directly onto the image</label>
         <p style={{fontSize:12,color:"#746957",margin:0}}>Large destination title, readable details and a call to action, like a travel poster. Your saved, downloaded and published images include this design. Edit prices and dates only when confirmed.</p>
-        <label style={label}>POSTER STYLE<select style={input} value={posterStyle} onChange={e=>setPosterStyle(e.target.value as PosterStyle)}><option value="light">Light editorial · green title</option><option value="dark">Dark cinematic · white title</option></select></label>
+        <label style={label}>POSTER STYLE<select style={input} value={posterStyle} onChange={e=>{setPosterStyle(e.target.value as PosterStyle);if(e.target.value==="photo")setPosterLayout(defaultPosterLayout);}}><option value="photo">Photo focus · light shading</option><option value="light">Light editorial · green title</option><option value="dark">Dark cinematic · white title</option></select></label>
+        <label style={label}>OVERLAY STRENGTH · {overlayStrength}%<input type="range" min={0} max={100} value={overlayStrength} onChange={e=>setOverlayStrength(Number(e.target.value))} /></label>
+        <label style={{fontSize:12}}><input type="checkbox" checked={showArtwork} onChange={e=>setShowArtwork(e.target.checked)} /> Preview original artwork without text or logo</label>
         {!carousel && <><label style={label}>DESTINATION TITLE<input style={input} maxLength={100} value={result.poster_title ?? (destination || result.headline || "")} onChange={e=>setResult(p=>p?{...p,poster_title:e.target.value}:p)} /></label>
         <label style={label}>DETAILS ON IMAGE<textarea style={{...input,minHeight:72}} maxLength={240} value={result.poster_details || ""} placeholder="Backwaters • Tea gardens • Beaches • Wildlife" onChange={e=>setResult(p=>p?{...p,poster_details:e.target.value}:p)} /></label></>}
         {carousel && <p style={{fontSize:12,margin:0}}>Each slide uses its editable slide title and slide copy below.</p>}
@@ -350,10 +361,11 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <section aria-label="Generated image result" style={{ border: "1px dashed #cbb99e", borderRadius: 14, padding: 16, background: "#faf6ee", display: "grid", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <div><strong style={{ display: "block", fontSize: 14 }}>3. Image result</strong><span style={{ color: "#746957", fontSize: 11 }}>{singleImage ? "Your selected artwork is ready to review." : "Generate an AI image or upload a travel photo to preview it here."}</span></div>
-            {singleImage && <button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(singleImage, "oat-social-post")}>Download image</button>}
+            {singleImage && <button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(singleImage, "oat-social-post")}>Download poster</button>}
+            {singleImage && <button style={{...button,background:"#fff",color:"#8a5d20",border:"1px solid #d7c7ae"}} onClick={()=>download(singleImage,"oat-artwork-only")}>Download artwork only</button>}
           </div>
           <div style={{ minHeight: 250, maxWidth: 620, width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: 11, border: "1px solid #e7dfd1", background: "linear-gradient(135deg,#eee4d3,#f8f3e9)" }}>
-            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled} style={posterStyle} layout={posterLayout} logo={brandLogo} placement={logoPlacement} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Generate an image above or upload one below.</span></div>}
+            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled && !showArtwork} style={posterStyle} overlayStrength={overlayStrength} layout={posterLayout} logo={showArtwork?null:brandLogo} placement={logoPlacement} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Generate an image above or upload one below.</span></div>}
           </div>
           <div><button type="button" style={{...button,opacity:imageBusy !== null ? 0.65 : 1}} disabled={stale || imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage()}>{imageBusy === -1 ? "Generating image…" : singleImage ? "Regenerate AI image" : "Generate AI image"}</button><p style={{fontSize:11,color:"#746957",lineHeight:1.6}}>Uses the image prompt above. Generated artwork is cropped to {format}; review before downloading or publishing.</p></div>
           <label style={{ ...label, display: "block" }}>UPLOAD IMAGE (FREE — FROM YOUR DEVICE)<input key={uploadKey} type="file" accept="image/*" disabled={busy || saving || publishing || imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0])} style={{ ...input, marginTop: 8 }} /></label>
@@ -368,7 +380,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
             <span aria-hidden="true" style={{ marginLeft: "auto", fontSize: 20, color: "#5c5145" }}>···</span>
           </div>
           <div style={{ width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", maxHeight: 550, background: "#eee5d7", display: "grid", placeItems: "center", overflow: "hidden" }}>
-            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled} style={posterStyle} layout={posterLayout} logo={brandLogo} placement={logoPlacement} /> : <div style={{ textAlign: "center", padding: 25, color: "#8b7b64" }}>Generate or upload an image above to see your post preview</div>}
+            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled && !showArtwork} style={posterStyle} overlayStrength={overlayStrength} layout={posterLayout} logo={showArtwork?null:brandLogo} placement={logoPlacement} /> : <div style={{ textAlign: "center", padding: 25, color: "#8b7b64" }}>Generate or upload an image above to see your post preview</div>}
           </div>
           <div style={{ padding: "11px 14px 17px" }}>
             <div aria-hidden="true" style={{ display: "flex", gap: 14, fontSize: 22, marginBottom: 10, color: "#292929" }}><span>♡</span><span>♧</span><span>➤</span><span style={{ marginLeft: "auto" }}>♧</span></div>
@@ -385,7 +397,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <label style={label}>YOUR MUSIC NOTES<input style={input} value={musicHint} onChange={e=>setMusicHint(e.target.value)} placeholder="Example: peaceful sunset instrumental" /></label>
         <p style={{fontSize:11,color:"#8a7b68",lineHeight:1.5}}>Instagram's licensed music library cannot be attached to an API-published photo. Open Instagram to choose a permitted song manually. Suggestions are not embedded or published as audio.</p>
       </section>}
-      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 54, fontWeight:400, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><ImagePromptControl prompts={imageOptions(i)} selected={imageSelection(i)} disabled={busy || imageBusy !== null} onSelect={selected=>updatePrompt(i,selected)} onEdit={value=>updatePrompt(i,imageSelection(i),value)} /><PosterTextControl value={layoutFor(i)} disabled={saving || publishing} onChange={value=>setResult(p=>p?{...p,slides:p.slides?.map((slide,index)=>index===i?{...slide,poster_layout:value}:slide)}:p)} /><button type="button" style={{...button,justifySelf:"start"}} disabled={stale || imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage(i)}>{imageBusy === i ? "Generating slide image…" : slide.image ? "Regenerate slide image" : "Generate slide image"}</button><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input key={uploadKey} type="file" accept="image/*" disabled={busy || saving || publishing || imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><div style={{maxWidth:460,aspectRatio:format.replace(":"," / ")}}><PosterPreview source={slide.image} ratio={format} text={posterText(i)} enabled={posterEnabled} style={posterStyle} layout={layoutFor(i)} logo={brandLogo} placement={logoPlacement} /></div><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(slide.image!, "oat-carousel-slide-" + (i + 1), i)}>Download slide image</button></>}</article>)}</div>}
+      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 54, fontWeight:400, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><ImagePromptControl prompts={imageOptions(i)} selected={imageSelection(i)} disabled={busy || imageBusy !== null} onSelect={selected=>updatePrompt(i,selected)} onEdit={value=>updatePrompt(i,imageSelection(i),value)} /><PosterTextControl value={layoutFor(i)} disabled={saving || publishing} onChange={value=>setResult(p=>p?{...p,slides:p.slides?.map((slide,index)=>index===i?{...slide,poster_layout:value}:slide)}:p)} /><button type="button" style={{...button,justifySelf:"start"}} disabled={stale || imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage(i)}>{imageBusy === i ? "Generating slide image…" : slide.image ? "Regenerate slide image" : "Generate slide image"}</button><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input key={uploadKey} type="file" accept="image/*" disabled={busy || saving || publishing || imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><div style={{maxWidth:460,aspectRatio:format.replace(":"," / ")}}><PosterPreview source={slide.image} ratio={format} text={posterText(i)} enabled={posterEnabled && !showArtwork} style={posterStyle} overlayStrength={overlayStrength} layout={layoutFor(i)} logo={showArtwork?null:brandLogo} placement={logoPlacement} /></div><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(slide.image!, "oat-carousel-slide-" + (i + 1), i)}>Download slide poster</button><button style={{...button,justifySelf:"start",background:"#fff",color:"#8a5d20",border:"1px solid #d7c7ae"}} onClick={()=>download(slide.image!,"oat-slide-artwork-"+(i+1))}>Download artwork only</button></>}</article>)}</div>}
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} disabled={saving || imageBusy !== null} onClick={() => void save()}>{saving ? "Saving…" : savedId ? "Save another copy" : "Save to Creations"}</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => window.location.assign("/social/creations")}>View Creations</button><button style={button} onClick={() => void copy(formatPublicPost(result.caption, result.hashtags || "").fullCaption)}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify({ ...result, caption: cleanPublicCaption(result.caption) }, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button>{!carousel && <>
       <button type="button" style={{ ...button, background: published ? "#398357" : "#a8752d", opacity: publishing ? 0.65 : 1 }} disabled={publishing || published || imageBusy !== null || instagram === "loading"} onClick={() => void publish()}>{published ? "Published to Instagram" : publishing ? "Publishing…" : "Publish to Instagram"}</button>
 

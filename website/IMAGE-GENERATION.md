@@ -43,3 +43,12 @@ All provider requests carry the current destination context. Char Dham defaults 
 **Adjust text** expands title/details/CTA size, horizontal and vertical positions, and text width controls. Carousel slides have independent overrides; posts use the shared poster layout. These settings persist in drafts and saved metadata and feed the exact same compositor used by preview, download, save and publish. Telugu wrapping respects grapheme clusters.
 
 Validation: `node --test tests/social-creative-brief.test.cjs tests/social-draft-reset.test.cjs tests/social-poster.test.cjs tests/social-image.test.cjs`, plus the normal typecheck and production build.
+
+
+## Exact slide counts and photo visibility
+
+Carousel Studio has a **Number of slides** selector (2–10). A topic containing an explicit request such as “3 slides”, “3-slide”, “three slides”, or “మూడు స్లైడ్లు” updates the selector. Its selected number is included in the private draft, stale-draft key and saved metadata. Both the Gemini instructions and response validation require exactly that many slides, including any introduction and closing CTA. A five-slide response for a three-slide request is corrected once, then rejected rather than silently accepted or sliced. Topic text saying “3 reasons” alone does not override the selector.
+
+New drafts default to **Photo focus**, smaller titles and lighter shading. **Overlay strength** can be reduced to zero; original-artwork preview and **Download artwork only** omit the text, logo and shading without another AI call. Existing saved artwork is not regenerated or edited automatically; choose Photo focus to apply the new layout to a restored draft.
+
+Ganga Aarti prompts now explicitly describe the active ceremony, a flaming multi-tier brass lamp, complete hands and lamp framing, devotees and ghat context rather than a generic priest portrait or candles alone. Image prompts no longer demand that the upper half remain blank. Cloudflare remains the same FLUX.1 Schnell service at four steps, with no model change, paid fallback or billing activation. Better instructions cannot guarantee the same fidelity as ChatGPT image generation.

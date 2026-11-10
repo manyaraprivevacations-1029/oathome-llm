@@ -2,7 +2,7 @@ import { getSocialSupabase } from "@/lib/social/supabase-browser";
 
 export type CreationSlide = { title: string; body: string; image_prompt: string; image?: string };
 export type CreationDraft = {
-  poster_title?: string; poster_details?: string; poster_cta?: string; poster_enabled?: boolean; poster_style?: string; poster_layout?: import("./poster").PosterLayout; language?: string; image_prompts?: string[]; selected_prompt?: number;
+  poster_title?: string; poster_details?: string; poster_cta?: string; poster_enabled?: boolean; poster_style?: string; overlay_strength?: number; slide_count?: number; poster_layout?: import("./poster").PosterLayout; language?: string; image_prompts?: string[]; selected_prompt?: number;
   headline?: string; caption: string; hashtags?: string; visual_prompt?: string; slides?: CreationSlide[];
 };
 export type SavedCreation = {
@@ -55,6 +55,7 @@ export async function saveCreation(brief: {
     const metadata = {
       source: "post-studio", topic: brief.topic, destination: brief.destination,
       format: brief.format, tone: brief.tone, confirmed_facts: brief.facts,
+      overlay_strength:brief.draft.overlay_strength, slide_count:brief.draft.slide_count,
       poster_layout: brief.draft.poster_layout, language: brief.draft.language,
       image_prompts: brief.draft.image_prompts, selected_prompt: brief.draft.selected_prompt,
       poster_title: brief.draft.poster_title || "", poster_details: brief.draft.poster_details || "",

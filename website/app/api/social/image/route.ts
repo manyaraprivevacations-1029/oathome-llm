@@ -51,7 +51,7 @@ export async function POST(request: NextRequest) {
   running.add(user);
   try {
     // Fixed free-allocation eligible model; never fall back to a paid model or enable billing.
-    const prompt = `${value.prompt.trim()}\nPremium travel editorial artwork. Keep the main subject centered with generous safe margins for a ${value.format} crop. Leave clean space for later typography. No text, prices, watermarks or invented brand logos. This is AI-generated concept artwork, not documentary photography.`;
+    const prompt = `${value.prompt.trim()}\nPhotorealistic travel editorial scene, lifelike faces, natural skin texture and realistic hands. Preserve the exact requested action and its distinctive props. Keep the main subject centered with generous safe margins for a ${value.format} crop. Fill the frame with the scene; leave only modest quiet space for optional typography. No text, prices, watermarks or invented brand logos. No generic replacement subject or oversized empty sky.`;
     const response = await fetch(`https://api.cloudflare.com/client/v4/accounts/${process.env.CLOUDFLARE_ACCOUNT_ID!.trim()}/ai/run/${MODEL}`, {
       method: "POST",
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${process.env.CLOUDFLARE_API_TOKEN!.trim()}` },
