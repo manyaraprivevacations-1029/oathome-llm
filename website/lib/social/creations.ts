@@ -5,11 +5,12 @@ export type CreationDraft = {
   headline?: string; caption: string; hashtags?: string; visual_prompt?: string; slides?: CreationSlide[];
 };
 export type SavedCreation = {
-  id: string; user_id: string; title: string; content_type: "post" | "carousel";
+  id: string; user_id: string; title: string; content_type: "post" | "carousel" | "reel";
   caption: string | null; metadata: Record<string, unknown>; asset_path: string | null;
   created_at: string; deleted_at: string | null;
 };
 const bucket = "social-creation-images";
+const reelBucket = "social-reel-videos";
 async function currentUserId() {
   const { data, error } = await getSocialSupabase().auth.getUser();
   if (error || !data.user) throw new Error("Your session expired. Please sign in again.");
@@ -72,7 +73,7 @@ export async function listCreations(recycled: boolean): Promise<SavedCreation[]>
   const userId = await currentUserId();
   let query = getSocialSupabase().from("social_content_items")
     .select("id,user_id,title,content_type,caption,metadata,asset_path,created_at,deleted_at")
-    .eq("user_id", userId).in("content_type", ["post", "carousel"])
+    .eq("user_id", userId).in("content_type", ["post", "carousel", "reel"])
     .order("created_at", { ascending: false }).limit(200);
   query = recycled ? query.not("deleted_at", "is", null) : query.is("deleted_at", null);
   const { data, error } = await query;
@@ -94,7 +95,7 @@ export async function permanentlyDeleteCreation(item: SavedCreation): Promise<vo
   const { data, error } = await getSocialSupabase().from("social_content_items").delete()
     .eq("id", item.id).eq("user_id", userId).not("deleted_at", "is", null).select("id").single();
   if (error || !data) throw new Error(error?.message || "Could not permanently delete this creation.");
-  if (paths.length) await getSocialSupabase().storage.from(bucket).remove(paths);
+  if (paths.length) await getSocialSupabase().storage.from(item.content_type === "reel" ? reelBucket : bucket).remove(paths);
 }
 export async function signedCreationImage(path: string | null | undefined): Promise<string | null> {
   if (!path) return null;
@@ -103,4 +104,32 @@ export async function signedCreationImage(path: string | null | undefined): Prom
   const { data, error } = await getSocialSupabase().storage.from(bucket).createSignedUrl(path, 3600);
   if (error) return null;
   return data.signedUrl;
+}
+
+export async function saveReelCreation(brief:{
+ title:string;caption:string;script:string;video:File;destination:string;ratio:string;language:string;productionNotes:string;
+}):Promise<string>{
+ const sb=getSocialSupabase();
+ const userId=await currentUserId();
+ if(brief.video.type!=="video/mp4")throw new Error("Only MP4 reel files are supported.");
+ if(brief.video.size>100*1024*1024)throw new Error("Reel exceeds the 100 MB storage limit.");
+ const id=crypto.randomUUID();
+ const path=`${userId}/${id}/reel.mp4`;
+ const {error:uploadError}=await sb.storage.from(reelBucket).upload(path,brief.video,{contentType:"video/mp4",upsert:false});
+ if(uploadError)throw new Error("Could not upload reel. Check that the social-reel-videos storage migration has been applied: "+uploadError.message);
+ const {error}=await sb.from("social_content_items").insert({
+  id,user_id:userId,title:brief.title.slice(0,180),content_type:"reel",status:"draft",
+  caption:brief.caption,script:brief.script,asset_path:path,
+  metadata:{source:"reel-studio",destination:brief.destination,aspect_ratio:brief.ratio,language_style:brief.language,production_notes:brief.productionNotes,video_file_name:brief.video.name,video_bytes:brief.video.size,production_status:"saved_video_not_published"}
+ });
+ if(error){await sb.storage.from(reelBucket).remove([path]);throw new Error("Could not save reel creation: "+error.message);}
+ return id;
+}
+export async function signedReelVideo(path:string|null|undefined):Promise<string|null>{
+ if(!path)return null;
+ const userId=await currentUserId();
+ if(!path.startsWith(userId+"/"))return null;
+ const {data,error}=await getSocialSupabase().storage.from(reelBucket).createSignedUrl(path,3600);
+ if(error)return null;
+ return data.signedUrl;
 }
