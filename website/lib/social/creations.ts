@@ -112,7 +112,7 @@ export async function saveReelCreation(brief:{
  const sb=getSocialSupabase();
  const userId=await currentUserId();
  if(brief.video.type!=="video/mp4")throw new Error("Only MP4 reel files are supported.");
- if(brief.video.size>100*1024*1024)throw new Error("Reel exceeds the 100 MB storage limit.");
+ if(brief.video.size>50*1024*1024)throw new Error("Reel exceeds the 50 MB storage limit.");
  const id=crypto.randomUUID();
  const path=`${userId}/${id}/reel.mp4`;
  const {error:uploadError}=await sb.storage.from(reelBucket).upload(path,brief.video,{contentType:"video/mp4",upsert:false});
