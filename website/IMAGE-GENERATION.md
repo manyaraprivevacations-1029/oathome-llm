@@ -29,3 +29,17 @@ Post Studio and Carousel Studio now compose editable typography onto the artwork
 The preview uses the same canvas compositor as download, Creations storage and Instagram publishing, with the existing optional logo applied afterward. Original artwork stays separate so edits and repeated saves never accumulate lettering. Poster settings and text are restored with private studio drafts; rendered images and poster text metadata are saved in Creations. Export is 1080 pixels wide in the selected ratio; feed publishing retains the existing 9:16-to-4:5 padding behavior. Text wraps and shrinks to fit rather than clipping. Very long text produces an explicit shortening error.
 
 Run `node --test tests/social-poster.test.cjs` from `website/` to check text fitting and the original-image mode.
+
+## Reset, language, destination and prompt controls
+
+Both Post Studio and Carousel Studio include **New / Reset**. This replaces the active browser draft with an empty draft, resets layout and file inputs, and leaves saved Creations and published media intact. Draft writes are serialized so a pending autosave cannot restore the previous draft after Reset. Switching studios keeps their private drafts separate.
+
+The brief now explicitly selects **Telugu + English**, **Telugu** or **English**. Telugu modes require actual Telugu Unicode script in captions and slide copy; Telugu + English also requires English words. Explicit brief language takes priority over Brand Brain defaults. An invalid model response gets one bounded correction attempt, then a visible error without replacing the existing draft. No English-only fallback is silently substituted.
+
+Each new image gets three distinct, editable prompt choices in a single compact two-row editor: Scenic, Landmark and People. Choose a tab, edit if needed, then generate one image. Changing the brief marks old output stale and blocks image generation until content is regenerated. Older restored drafts also require regeneration to obtain validated language and three choices.
+
+All provider requests carry the current destination context. Char Dham defaults explicitly to the Uttarakhand circuit and requires named shrines in every prompt, rather than mountain-only landscapes. The grounding is based on Uttarakhand Tourism's four-shrine description: https://uttarakhandtourism.gov.in/experiences/char-dham . The UI states this interpretation; an explicitly pan-India circuit is not treated as Uttarakhand-only. AI renderings still need visual review and are not guaranteed architectural reproductions.
+
+**Adjust text** expands title/details/CTA size, horizontal and vertical positions, and text width controls. Carousel slides have independent overrides; posts use the shared poster layout. These settings persist in drafts and saved metadata and feed the exact same compositor used by preview, download, save and publish. Telugu wrapping respects grapheme clusters.
+
+Validation: `node --test tests/social-creative-brief.test.cjs tests/social-draft-reset.test.cjs tests/social-poster.test.cjs tests/social-image.test.cjs`, plus the normal typecheck and production build.

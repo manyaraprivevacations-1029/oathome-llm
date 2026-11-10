@@ -21,13 +21,17 @@ async function accessDraft<T>(key:string,value?:T):Promise<T|undefined>{
 }
 export function useStudioDraft<T>(studio:string,draft:T,restore:(saved:T)=>void){
  const [loaded,setLoaded]=useState(false),[message,setMessage]=useState("");
+ const pending=useRef<number|undefined>(undefined);
+ const writes=useRef(Promise.resolve());
  const key=useRef(""),latest=useRef(draft),restoreRef=useRef(restore);
  latest.current=draft;restoreRef.current=restore;
  useEffect(()=>{
   let active=true;
+  key.current="";setLoaded(false);
   (async()=>{
    try{
     const {data}=await getSocialSupabase().auth.getUser();
+    if(!active)return;
     if(!data.user)throw new Error("Sign in to restore your private draft.");
     const userKey=data.user.id+":"+studio;key.current=userKey;
     const saved=await accessDraft<T>(userKey);
@@ -37,11 +41,25 @@ export function useStudioDraft<T>(studio:string,draft:T,restore:(saved:T)=>void)
   })();
   return()=>{active=false;};
  },[studio]);
+ function persist(value:T) {
+  const draftKey=key.current;
+  if(!draftKey)return Promise.resolve();
+  const next=writes.current.catch(()=>{}).then(()=>accessDraft(draftKey,value)).then(()=>{});
+  writes.current=next;
+  return next;
+ }
+ async function replace(value:T) {
+  if(pending.current!==undefined)window.clearTimeout(pending.current);
+  latest.current=value;
+  try {await persist(value);setMessage("New draft ready.");}
+  catch {setMessage("The draft was reset, but could not be saved on this device.");}
+ }
  useEffect(()=>{
   if(!loaded||!key.current)return;
-  const id=window.setTimeout(()=>{void accessDraft(key.current,latest.current).catch(()=>setMessage("Could not auto-save this draft on this device."));},350);
-  return()=>{window.clearTimeout(id);void accessDraft(key.current,latest.current).catch(()=>{});};
+  const id=window.setTimeout(()=>{void persist(latest.current).catch(()=>setMessage("Could not auto-save this draft on this device."));},350);
+  pending.current=id;
+  return()=>{window.clearTimeout(id);void persist(latest.current).catch(()=>{});};
  },[loaded,draft]);
  async function discard(){if(!key.current)return;const db=await openDatabase();await new Promise<void>((resolve,reject)=>{const tx=db.transaction(STORE,"readwrite");const req=tx.objectStore(STORE).delete(key.current);req.onsuccess=()=>resolve();req.onerror=()=>reject(req.error);tx.oncomplete=()=>db.close();});setMessage("Autosaved draft cleared.");}
- return {loaded,message,discard};
+ return {loaded,message,discard,replace};
 }

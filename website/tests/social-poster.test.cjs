@@ -20,3 +20,10 @@ test('disabled poster returns original pixels without loading fonts or images',a
 test('excessive copy fails rather than silently removing text',()=>{
  assert.throws(()=>moduleFor().fitPosterText(context(),'x'.repeat(5000),20,20,30,'serif'),/Shorten/);
 });
+test('layout safely clamps restored positions and sizes without mutating defaults',()=>{
+ const api=moduleFor();
+ const layout=api.safePosterLayout({title:{x:-50,y:150,size:Infinity,width:250}});
+ assert.equal(layout.title.x,5);assert.equal(layout.title.y,92);assert.equal(layout.title.width,92);
+ assert.equal(layout.title.size,api.defaultPosterLayout.title.size);
+ assert.equal(api.defaultPosterLayout.title.x,50);
+});

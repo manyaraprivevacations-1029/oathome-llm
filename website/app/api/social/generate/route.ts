@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
           contents: [{ role: "user", parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.4,
-            maxOutputTokens: wantsJson ? 3000 : 1800,
+            maxOutputTokens: wantsJson ? 6000 : 1800,
             thinkingConfig: { thinkingLevel: "minimal" },
             ...(wantsJson ? { responseMimeType: "application/json" } : {})
           }

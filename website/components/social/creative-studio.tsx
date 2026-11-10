@@ -10,11 +10,12 @@ import { saveCreation } from "@/lib/social/creations";
 import { formatPublicPost, cleanPublicCaption } from "@/lib/social/caption-format";
 import { composeWithBrandLogo, defaultStudioLogo, type StudioLogoPlacement, useBrandLogo } from "@/lib/social/brand-logo";
 
-import { composePoster, type PosterStyle } from "@/lib/social/poster";
+import { composePoster, defaultPosterLayout, type PosterLayout, type PosterStyle } from "@/lib/social/poster";
 import { PosterPreview } from "@/components/social/poster-preview";
 
-type Slide = { title: string; body: string; image_prompt: string; image?: string };
-type Result = { poster_title?: string; poster_details?: string; poster_cta?: string; headline?: string; caption: string; hashtags?: string; visual_prompt?: string; slides?: Slide[] };
+import { creativePrompt, normalizeCreativeResult, briefKey, selectedImagePrompt, anchoredImagePrompt, isHimalayanCharDham, type CreativeBrief, type CreativeResult as Result, type StudioLanguage } from "@/lib/social/creative-brief";
+import { ImagePromptControl } from "@/components/social/image-prompt-control";
+import { PosterTextControl } from "@/components/social/poster-text-control";
 
 const input: React.CSSProperties = { width: "100%", boxSizing: "border-box", border: "1px solid #ded5c6", borderRadius: 9, padding: "12px 13px", background: "#fff", color: "#30291f", fontSize: 13 };
 const label: React.CSSProperties = { display: "grid", gap: 7, color: "#746957", fontSize: 10, letterSpacing: ".08em", fontWeight: 700 };
@@ -25,6 +26,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   const carousel = mode === "carousel";
   const [imageService, setImageService] = useState<"loading" | "ready" | "setup" | "error">("loading");
   const [imageBusy, setImageBusy] = useState<number | null>(null);
+  const draftEpoch = useRef(0);
   const imageRequest = useRef<AbortController | null>(null);
   useEffect(() => {
     const controller = new AbortController();
@@ -32,6 +34,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
     return () => { controller.abort(); imageRequest.current?.abort(); };
   }, []);
   const brandLogo = useBrandLogo();
+  const [language,setLanguage]=useState<StudioLanguage>("Telugu-English");
+  const [posterLayout,setPosterLayout]=useState<PosterLayout>(defaultPosterLayout);
+  const [generatedBrief,setGeneratedBrief]=useState("");
+  const [uploadKey,setUploadKey]=useState(0);
   const [topic, setTopic] = useState("");
   const [destination, setDestination] = useState("");
   const [facts, setFacts] = useState("");
@@ -53,6 +59,29 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
 
   const [posterEnabled, setPosterEnabled] = useState(true);
   const [posterStyle, setPosterStyle] = useState<PosterStyle>("light");
+  const currentBrief: CreativeBrief = { topic, destination, facts, tone, format, language, carousel };
+  const currentBriefKey = briefKey(currentBrief);
+  const stale = Boolean(result) && generatedBrief !== currentBriefKey;
+  function imageOptions(index = -1) {
+    const slide=result?.slides?.[index];
+    return slide?.image_prompts || result?.image_prompts || [slide?.image_prompt || result?.visual_prompt || ""];
+  }
+  function imageSelection(index = -1) { return result?.slides?.[index]?.selected_prompt ?? result?.selected_prompt ?? 0; }
+  function updatePrompt(index: number, selected: number, value?: string) {
+    setResult(previous=>{
+      if (!previous) return previous;
+      if (index >= 0) return {...previous, slides:previous.slides?.map((slide,i)=>{
+        if(i!==index)return slide;
+        const options=[...(slide.image_prompts || [slide.image_prompt])];
+        if(value!==undefined)options[selected]=value;
+        return {...slide,image_prompts:options,selected_prompt:selected,image_prompt:options[selected]};
+      })};
+      const options=[...(previous.image_prompts || [previous.visual_prompt || ""])];
+      if(value!==undefined)options[selected]=value;
+      return {...previous,image_prompts:options,selected_prompt:selected,visual_prompt:options[selected]};
+    });
+  }
+  function layoutFor(index=-1) { return result?.slides?.[index]?.poster_layout || posterLayout; }
   function posterText(index = -1) {
     const slide = result?.slides?.[index];
     return { title: slide ? slide.title : result?.poster_title ?? (destination || result?.headline || ""),
@@ -60,35 +89,56 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       cta: result?.poster_cta ?? (carousel ? "Swipe to explore" : "Plan your trip with us") };
   }
   async function finalImage(data: string, index = -1) {
-    const poster = await composePoster(data, format, posterText(index), posterEnabled, posterStyle);
+    const poster = await composePoster(data, format, posterText(index), posterEnabled, posterStyle, layoutFor(index));
     return composeWithBrandLogo(poster, brandLogo, logoPlacement);
   }
   // A saved image must never be reused after its text, artwork or branding changes.
-  useEffect(() => { setSavedId(""); setPublished(false); setPublishedUrl(""); }, [result, singleImage, posterEnabled, posterStyle, logoPlacement, brandLogo, format, destination]);
+  useEffect(() => { setSavedId(""); setPublished(false); setPublishedUrl(""); }, [result, singleImage, posterEnabled, posterStyle, logoPlacement, brandLogo, format, destination, posterLayout, currentBriefKey]);
 
-  const draftSnapshot=useMemo(()=>({topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle}),[topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle]);
+  const draftSnapshot=useMemo(()=>({topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle,posterLayout,language,generatedBrief}),[topic,destination,facts,tone,format,result,singleImage,logoPlacement,musicHint,posterEnabled,posterStyle,posterLayout,language,generatedBrief]);
   const draftState=useStudioDraft(carousel?"carousel":"post",draftSnapshot,saved=>{
+   setLanguage(saved.language || "Telugu-English");setPosterLayout(saved.posterLayout || defaultPosterLayout);setGeneratedBrief(saved.generatedBrief || "");
    setPosterEnabled(saved.posterEnabled ?? true);setPosterStyle(saved.posterStyle || "light");
    setTopic(saved.topic||"");setDestination(saved.destination||"");setFacts(saved.facts||"");
    setTone(saved.tone||"Premium, inspiring and trustworthy");setFormat(saved.format||"4:5");
    setResult(saved.result||null);setSingleImage(saved.singleImage||"");
    setLogoPlacement(saved.logoPlacement||defaultStudioLogo);setMusicHint(saved.musicHint||"");
   });
+  function resetStudio() {
+    if (busy || saving || publishing || imageBusy !== null || !draftState.loaded) return;
+    if (!window.confirm("Start a new " + mode + "? This clears the current browser draft. Saved Creations and published posts will remain.")) return;
+    draftEpoch.current++;
+    const empty = {topic:"",destination:"",facts:"",tone:"Premium, inspiring and trustworthy",format:"4:5",result:null,singleImage:"",logoPlacement:defaultStudioLogo,musicHint:"",posterEnabled:true,posterStyle:"light" as PosterStyle,posterLayout:defaultPosterLayout,language:"Telugu-English" as StudioLanguage,generatedBrief:""};
+    setTopic("");setDestination("");setFacts("");setTone(empty.tone);setFormat("4:5");
+    setResult(null);setSingleImage("");setLogoPlacement(defaultStudioLogo);setMusicHint("");
+    setPosterEnabled(true);setPosterStyle("light");setPosterLayout(defaultPosterLayout);setLanguage("Telugu-English");setGeneratedBrief("");
+    setSavedId("");setPublished(false);setPublishedUrl("");setError("");setUploadKey(key=>key+1);
+    setNotice("New " + mode + " ready. Your saved Creations remain available.");
+    void draftState.replace(empty);
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
   async function create() {
     if (!topic.trim()) { setError("Enter a topic or campaign idea first."); return; }
-    setBusy(true); setError(""); setNotice(""); setResult(null); setSavedId(""); setSingleImage(""); setPublished(false); setPublishedUrl("");
-    const shape = carousel
-      ? '{"poster_cta":"Swipe to explore","caption":"Instagram caption","hashtags":"hashtags","slides":[{"title":"short slide headline","body":"short supporting copy, max 180 characters","image_prompt":"detailed image prompt for this slide"}]}'
-      : '{"poster_title":"destination name","poster_details":"2 to 4 short destination highlights or confirmed package facts, max 180 characters","poster_cta":"short enquiry CTA, max 70 characters","headline":"post headline","caption":"Instagram caption","hashtags":"hashtags","visual_prompt":"detailed image prompt for the post"}';
-    const prompt = "Create " + (carousel ? "a 5 to 7 slide Instagram carousel" : "one Instagram single-image post") + " for On A Trip Holidays. Return ONLY valid JSON in this exact shape: " + shape + ". Topic: " + topic + ". Destination: " + (destination || "not specified") + ". Confirmed facts: " + (facts || "No package facts supplied. Do not invent prices, dates, availability or inclusions.") + ". Tone: " + tone + ". Design ratio: " + format + ". Use concise, polished, mobile-readable copy. Visual prompts should request premium realistic travel photography, authentic locations, no fake logos, no gibberish text in the image, and leave clean negative space for later typography. For the travel poster, arrange authentic destination scenery and a tasteful blended collage of landmarks in the lower 60 percent; keep the upper area uncluttered for a large destination title. Generate scenery only, without lettering. Do not claim generated images are real photographs. Make slide 1 a strong hook and the final slide a clear enquiry CTA. Keep each slide focused on one idea.";
+    draftEpoch.current++;
+    setBusy(true); setError(""); setNotice("");
+    const requested = {...currentBrief};
+    const prompt = creativePrompt(requested);
     try {
-      const raw = await generateSocialDraft(prompt);
-      const clean = raw.replace(/^\`\`\`(?:json)?\s*/i, "").replace(/\s*\`\`\`$/, "").trim();
-      const parsed = JSON.parse(clean) as Result;
-      if (!parsed.caption || (carousel ? !Array.isArray(parsed.slides) || !parsed.slides.length : !parsed.visual_prompt)) throw new Error("OWN returned incomplete content. Please generate again.");
-      setResult({ ...parsed, poster_title: parsed.poster_title || destination || parsed.headline || topic, caption: cleanPublicCaption(parsed.caption) });
-      setSavedId("");
-      setNotice("Draft created with Google Gemini. Verify your package details before publishing.");
+      let accepted: Result | null = null;
+      let repair = "";
+      // One bounded correction for malformed, off-topic or wrong-language output.
+      for (let attempt=0;attempt<2;attempt++) {
+        const raw = await generateSocialDraft(prompt + repair);
+        try { accepted=normalizeCreativeResult(raw,requested); break; }
+        catch (e) {
+          if(attempt===1)throw new Error("The AI draft did not pass the topic/language checks. " + (e instanceof Error?e.message:"Try again."));
+          repair="\nCORRECTION REQUIRED: " + (e instanceof Error?e.message:"Follow the schema.") + ". Recreate the complete draft for the CURRENT brief. Do not substitute English-only copy, generic mountain imagery or another destination.";
+        }
+      }
+      if (!accepted) throw new Error("Could not produce a complete, relevant draft.");
+      setResult({...accepted,caption:cleanPublicCaption(accepted.caption)});setSingleImage("");
+      setGeneratedBrief(briefKey(requested));setSavedId("");setPublished(false);setPublishedUrl("");
+      setNotice("Draft created in " + requested.language + ". Choose one of three prompts for each image and review destination details before use.");
     } catch (e) {
       setError(e instanceof Error ? e.message : "Could not create this draft.");
     } finally { setBusy(false); }
@@ -96,7 +146,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
 
   async function generateImage(index = -1) {
     if (!result || imageRequest.current || busy || saving || publishing) return;
-    const prompt = carousel ? result.slides?.[index]?.image_prompt : result.visual_prompt;
+    if (stale) { setError("Your brief has changed or this is an older draft. Generate content for the current brief before creating images."); return; }
+    let prompt = selectedImagePrompt(result,index);
+    try { prompt=anchoredImagePrompt(prompt,currentBrief,result.slides?.[index]?.title || result.headline || topic); }
+    catch(e) { setError(e instanceof Error?e.message:"Shorten the prompt.");return; }
     if (!prompt?.trim()) { setError("Add an image prompt first."); return; }
     if (prompt.length > 1600) { setError("Shorten the image prompt to 1,600 characters or fewer."); return; }
     const existing = carousel ? result.slides?.[index]?.image : singleImage;
@@ -121,8 +174,10 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
   function uploadImage(file: File | undefined, index = -1) {
     if (!file || !file.type.startsWith("image/")) { setError("Select an image file."); return; }
     if (file.size > 12 * 1024 * 1024) { setError("Image must be 12 MB or smaller."); return; }
+    const epoch = draftEpoch.current;
     const reader = new FileReader();
     reader.onload = () => {
+      if(epoch !== draftEpoch.current)return;
       const image = typeof reader.result === "string" ? reader.result : "";
       if (!image) { setError("Could not read this image."); return; }
       if (carousel) setResult(prev => prev ? { ...prev, slides: prev.slides?.map((slide, i) => i === index ? { ...slide, image } : slide) } : prev);
@@ -199,7 +254,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         const branded = await finalImage(singleImage);
         const jpeg = await jpegFromImage(branded, format);
         if (!jpeg.startsWith("data:image/jpeg;base64,") || jpeg.length > 16_000_000) throw new Error("The converted image is too large. Try a smaller photo.");
-        const finalDraft = { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, caption: parts.caption, hashtags: parts.hashtags };
+        const finalDraft = { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, poster_layout: posterLayout, language, caption: parts.caption, hashtags: parts.hashtags };
         id = await saveCreation({topic,destination,format,tone,facts,draft:finalDraft,image:jpeg,type:"post"});
         setSavedId(id);
 
@@ -229,7 +284,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
       const brandedSlides = result.slides ? await Promise.all(result.slides.map(async (slide, index) => ({...slide, image: slide.image ? await finalImage(slide.image, index) : undefined}))) : undefined;
       const id = await saveCreation({
         topic, destination, format, tone, facts,
-        draft: { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? (carousel ? await finalImage(singleImage) : await jpegFromImage(await finalImage(singleImage), format)) : undefined, type: carousel ? "carousel" : "post"
+        draft: { ...result, poster_enabled: posterEnabled, poster_style: posterStyle, poster_layout: posterLayout, language, caption: cleanPublicCaption(result.caption), slides: brandedSlides }, image: singleImage ? (carousel ? await finalImage(singleImage) : await jpegFromImage(await finalImage(singleImage), format)) : undefined, type: carousel ? "carousel" : "post"
       });
       setSavedId(id);
       setNotice("Saved successfully to Creations. You can view or delete it there.");
@@ -256,22 +311,25 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
 
   return <main className="social-theme" style={{ minHeight: "100vh", padding: "34px clamp(18px,5vw,64px)", background: "#f6f2e9", color: "#30291f" }}>
     <header style={{ marginBottom: 22 }}><span style={{ color: "#a8752d", fontSize: 10, letterSpacing: ".12em", fontWeight: 800 }}>OAT SOCIAL AI · CREATE</span><h1 style={{ fontSize: 34, letterSpacing: "-.04em", margin: "10px 0 5px" }}>{carousel ? "Carousel Creation Studio" : "Instagram Post Studio"}</h1><p style={{ color: "#60738d", fontSize: 13, margin: 0 }}>{carousel ? "Plan a swipe-worthy story, one clear slide at a time." : "Create a polished single-image Instagram post with AI-written copy and artwork."}</p></header>
-    <section style={{ ...panel, marginBottom: 16, background: "#f2e7d2" }}><strong style={{ color: "#8a5d20", fontSize: 13 }}>AI creation workspace</strong><p style={{ color: "#746957", fontSize: 12, lineHeight: 1.7, marginBottom: 0 }}>Google Gemini writes your post and carousel text. Generate AI artwork from the image prompt with Cloudflare, or upload your own travel photo. Image generation uses a daily allowance; no paid fallback is enabled. AI artwork may not depict a destination accurately. Verify package facts and visuals before publishing.</p></section>
+    <details style={{marginBottom:12,fontSize:12,color:"#746957"}}><summary style={{cursor:"pointer"}}>AI tools · Gemini text + Cloudflare images</summary><p style={{lineHeight:1.6}}>Image generation uses a daily allowance with no paid fallback. Review AI destination imagery and package facts before publishing. Your text and logo are added to exports.</p></details>
     <p role="status" style={{fontSize:12,color:"#746957"}}>{imageService === "loading" ? "Checking image generation…" : imageService === "ready" ? "Image generation available · Create your content first, then generate artwork below." : imageService === "setup" ? "Image service needs setup. You can still create text and upload your own images." : "Could not check the image service. Refresh this page to retry; uploads are still available."}</p>
     {draftState.message&&<p role="status" style={{fontSize:12,color:"#87601f"}}>{draftState.message}</p>}
     <section style={{ ...panel, display: "grid", gap: 14 }}>
-      <h2 style={{ fontSize: 17, margin: 0 }}>1. Creative brief</h2>
+      <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",gap:12,flexWrap:"wrap"}}><h2 style={{ fontSize: 17, margin: 0 }}>1. Creative brief</h2><button type="button" disabled={busy || saving || publishing || imageBusy !== null || !draftState.loaded} onClick={resetStudio} style={{...button,background:"#fff",color:"#8a5d20",border:"1px solid #d7c7ae",padding:"8px 12px",fontSize:12}}>↻ New {carousel?"Carousel":"Post"} / Reset</button></div>
       <label style={label}>TOPIC / CAMPAIGN IDEA<input style={input} value={topic} onChange={e => setTopic(e.target.value)} placeholder={carousel ? "Example: 5 reasons to visit Kashmir" : "Example: Kashmir winter escape"} /></label>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(190px,1fr))", gap: 12 }}>
         <label style={label}>DESTINATION (OPTIONAL)<input style={input} value={destination} onChange={e => setDestination(e.target.value)} placeholder="Kashmir" /></label>
         <label style={label}>FORMAT<select style={input} value={format} disabled={imageBusy !== null} onChange={e => setFormat(e.target.value)}><option>4:5</option><option>1:1</option><option>9:16</option></select></label>
+        <label style={label}>LANGUAGE<select style={input} value={language} onChange={e=>setLanguage(e.target.value as StudioLanguage)} disabled={busy || imageBusy !== null}><option value="Telugu-English">Telugu + English</option><option value="Telugu">Telugu</option><option value="English">English</option></select></label>
         <label style={label}>TONE<select style={input} value={tone} onChange={e => setTone(e.target.value)}><option>Premium, inspiring and trustworthy</option><option>Energetic and youthful</option><option>Warm and emotional</option><option>Informative and practical</option><option>Promotional and direct</option></select></label>
       </div>
+      {isHimalayanCharDham(destination+" "+topic) && <p style={{fontSize:12,color:"#746957",margin:0}}>Char Dham here means Yamunotri, Gangotri, Kedarnath and Badrinath in Uttarakhand. Specify a different circuit in Destination if needed.</p>}
       <StudioLogoControl logo={brandLogo} placement={logoPlacement} onChange={setLogoPlacement} label={carousel ? "Add logo to carousel" : "Add logo to post"} />
       <label style={label}>CONFIRMED PACKAGE FACTS (OPTIONAL)<textarea style={{ ...input, minHeight: 92, resize: "vertical" }} value={facts} onChange={e => setFacts(e.target.value)} placeholder="Add verified price, dates, inclusions and conditions. Leave blank if not confirmed." /></label>
       <div><button style={button} disabled={busy || imageBusy !== null} onClick={() => void create()}>{busy ? "Creating with Gemini…" : carousel ? "Generate carousel content" : "Generate post content"}</button></div>
     </section>
     {result && <section style={{ ...panel, marginTop: 16, display: "grid", gap: 15 }}>
+      {stale && <p role="status" style={{fontSize:12,color:"#9c5b16",margin:0}}>Your brief has changed or this is an older draft. Generate content again to apply the current destination and language. Existing artwork is kept for review.</p>}
       <div><h2 style={{ fontSize: 17, margin: "0 0 8px" }}>2. Review your content</h2><p style={{ fontSize: 12, color: "#60738d", margin: 0 }}>Edit and verify the copy before using it.</p></div>
       <fieldset disabled={saving || publishing || imageBusy !== null} style={{border:"1px solid #ded5c6",borderRadius:12,padding:16,display:"grid",gap:12}}>
         <legend style={{fontWeight:700,fontSize:14}}>Destination poster design</legend>
@@ -282,22 +340,23 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <label style={label}>DETAILS ON IMAGE<textarea style={{...input,minHeight:72}} maxLength={240} value={result.poster_details || ""} placeholder="Backwaters • Tea gardens • Beaches • Wildlife" onChange={e=>setResult(p=>p?{...p,poster_details:e.target.value}:p)} /></label></>}
         {carousel && <p style={{fontSize:12,margin:0}}>Each slide uses its editable slide title and slide copy below.</p>}
         <label style={label}>CALL TO ACTION<input style={input} maxLength={100} value={result.poster_cta ?? (carousel?"Swipe to explore":"Plan your trip with us")} onChange={e=>setResult(p=>p?{...p,poster_cta:e.target.value}:p)} /></label>
+        {!carousel && <PosterTextControl value={posterLayout} onChange={setPosterLayout} disabled={saving || publishing} />}
       </fieldset>
       {!carousel && <label style={label}>HEADLINE<input style={input} value={result.headline || ""} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, headline: e.target.value } : p); }} /></label>}
       <label style={label}>INSTAGRAM CAPTION<textarea style={{ ...input, minHeight: 120, resize: "vertical" }} value={result.caption} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, caption: e.target.value } : p); }} /></label>
       <label style={label}>HASHTAGS<textarea style={{ ...input, minHeight: 60, resize: "vertical" }} value={result.hashtags || ""} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, hashtags: e.target.value } : p); }} /></label>
       {!carousel && <>
-        <label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 80, resize: "vertical" }} value={result.visual_prompt || ""} disabled={imageBusy !== null} maxLength={1600} onChange={e => { setSavedId(""); setPublished(false); setResult(p => p ? { ...p, visual_prompt: e.target.value } : p); }} /></label>
+        <ImagePromptControl prompts={imageOptions()} selected={imageSelection()} disabled={busy || imageBusy !== null} onSelect={selected=>updatePrompt(-1,selected)} onEdit={value=>updatePrompt(-1,imageSelection(),value)} />
         <section aria-label="Generated image result" style={{ border: "1px dashed #cbb99e", borderRadius: 14, padding: 16, background: "#faf6ee", display: "grid", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
             <div><strong style={{ display: "block", fontSize: 14 }}>3. Image result</strong><span style={{ color: "#746957", fontSize: 11 }}>{singleImage ? "Your selected artwork is ready to review." : "Generate an AI image or upload a travel photo to preview it here."}</span></div>
             {singleImage && <button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(singleImage, "oat-social-post")}>Download image</button>}
           </div>
           <div style={{ minHeight: 250, maxWidth: 620, width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", display: "grid", placeItems: "center", overflow: "hidden", borderRadius: 11, border: "1px solid #e7dfd1", background: "linear-gradient(135deg,#eee4d3,#f8f3e9)" }}>
-            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled} style={posterStyle} logo={brandLogo} placement={logoPlacement} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Generate an image above or upload one below.</span></div>}
+            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled} style={posterStyle} layout={posterLayout} logo={brandLogo} placement={logoPlacement} /> : <div style={{ padding: 24, textAlign: "center", color: "#88775f" }}><div style={{ fontSize: 34, marginBottom: 8 }}>✧</div><strong style={{ display: "block", fontSize: 13 }}>No image selected yet</strong><span style={{ fontSize: 11 }}>Generate an image above or upload one below.</span></div>}
           </div>
-          <div><button type="button" style={{...button,opacity:imageBusy !== null ? 0.65 : 1}} disabled={imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage()}>{imageBusy === -1 ? "Generating image…" : singleImage ? "Regenerate AI image" : "Generate AI image"}</button><p style={{fontSize:11,color:"#746957",lineHeight:1.6}}>Uses the image prompt above. Generated artwork is cropped to {format}; review before downloading or publishing.</p></div>
-          <label style={{ ...label, display: "block" }}>UPLOAD IMAGE (FREE — FROM YOUR DEVICE)<input type="file" accept="image/*" disabled={imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0])} style={{ ...input, marginTop: 8 }} /></label>
+          <div><button type="button" style={{...button,opacity:imageBusy !== null ? 0.65 : 1}} disabled={stale || imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage()}>{imageBusy === -1 ? "Generating image…" : singleImage ? "Regenerate AI image" : "Generate AI image"}</button><p style={{fontSize:11,color:"#746957",lineHeight:1.6}}>Uses the image prompt above. Generated artwork is cropped to {format}; review before downloading or publishing.</p></div>
+          <label style={{ ...label, display: "block" }}>UPLOAD IMAGE (FREE — FROM YOUR DEVICE)<input key={uploadKey} type="file" accept="image/*" disabled={busy || saving || publishing || imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0])} style={{ ...input, marginTop: 8 }} /></label>
         </section>
       </>}
       {!carousel && <section aria-label="Instagram post preview" style={{ border: "1px solid #e7dfd1", borderRadius: 15, padding: 18, background: "#f9f5ed", display: "grid", gap: 12 }}>
@@ -309,7 +368,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
             <span aria-hidden="true" style={{ marginLeft: "auto", fontSize: 20, color: "#5c5145" }}>···</span>
           </div>
           <div style={{ width: "100%", aspectRatio: format === "9:16" ? "9 / 16" : format === "1:1" ? "1 / 1" : "4 / 5", maxHeight: 550, background: "#eee5d7", display: "grid", placeItems: "center", overflow: "hidden" }}>
-            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled} style={posterStyle} logo={brandLogo} placement={logoPlacement} /> : <div style={{ textAlign: "center", padding: 25, color: "#8b7b64" }}>Generate or upload an image above to see your post preview</div>}
+            {singleImage ? <PosterPreview source={singleImage} ratio={format} text={posterText()} enabled={posterEnabled} style={posterStyle} layout={posterLayout} logo={brandLogo} placement={logoPlacement} /> : <div style={{ textAlign: "center", padding: 25, color: "#8b7b64" }}>Generate or upload an image above to see your post preview</div>}
           </div>
           <div style={{ padding: "11px 14px 17px" }}>
             <div aria-hidden="true" style={{ display: "flex", gap: 14, fontSize: 22, marginBottom: 10, color: "#292929" }}><span>♡</span><span>♧</span><span>➤</span><span style={{ marginLeft: "auto" }}>♧</span></div>
@@ -326,7 +385,7 @@ export default function CreativeStudio({ mode }: { mode: "post" | "carousel" }) 
         <label style={label}>YOUR MUSIC NOTES<input style={input} value={musicHint} onChange={e=>setMusicHint(e.target.value)} placeholder="Example: peaceful sunset instrumental" /></label>
         <p style={{fontSize:11,color:"#8a7b68",lineHeight:1.5}}>Instagram's licensed music library cannot be attached to an API-published photo. Open Instagram to choose a permitted song manually. Suggestions are not embedded or published as audio.</p>
       </section>}
-      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 64, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><label style={label}>IMAGE PROMPT<textarea style={{ ...input, minHeight: 65, resize: "vertical" }} value={slide.image_prompt} disabled={imageBusy !== null} maxLength={1600} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, image_prompt: e.target.value } : s) } : p)} /></label><button type="button" style={{...button,justifySelf:"start"}} disabled={imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage(i)}>{imageBusy === i ? "Generating slide image…" : slide.image ? "Regenerate slide image" : "Generate slide image"}</button><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input type="file" accept="image/*" disabled={imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><div style={{maxWidth:460,aspectRatio:format.replace(":"," / ")}}><PosterPreview source={slide.image} ratio={format} text={posterText(i)} enabled={posterEnabled} style={posterStyle} logo={brandLogo} placement={logoPlacement} /></div><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(slide.image!, "oat-carousel-slide-" + (i + 1), i)}>Download slide image</button></>}</article>)}</div>}
+      {carousel && <div style={{ display: "grid", gap: 12 }}>{result.slides?.map((slide, i) => <article key={i} style={{ border: "1px solid #e7dfd1", borderRadius: 12, padding: 14, background: "#faf6ee", display: "grid", gap: 10 }}><strong style={{ fontSize: 13 }}>Slide {i + 1}</strong><label style={label}>SLIDE TITLE<input style={input} value={slide.title} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, title: e.target.value } : s) } : p)} /></label><label style={label}>SLIDE COPY<textarea style={{ ...input, minHeight: 54, fontWeight:400, resize: "vertical" }} value={slide.body} onChange={e => setResult(p => p ? { ...p, slides: p.slides?.map((s, n) => n === i ? { ...s, body: e.target.value } : s) } : p)} /></label><ImagePromptControl prompts={imageOptions(i)} selected={imageSelection(i)} disabled={busy || imageBusy !== null} onSelect={selected=>updatePrompt(i,selected)} onEdit={value=>updatePrompt(i,imageSelection(i),value)} /><PosterTextControl value={layoutFor(i)} disabled={saving || publishing} onChange={value=>setResult(p=>p?{...p,slides:p.slides?.map((slide,index)=>index===i?{...slide,poster_layout:value}:slide)}:p)} /><button type="button" style={{...button,justifySelf:"start"}} disabled={stale || imageService !== "ready" || imageBusy !== null || busy || saving || publishing} onClick={() => void generateImage(i)}>{imageBusy === i ? "Generating slide image…" : slide.image ? "Regenerate slide image" : "Generate slide image"}</button><label style={{ ...label, display: "block" }}>UPLOAD SLIDE IMAGE<input key={uploadKey} type="file" accept="image/*" disabled={busy || saving || publishing || imageBusy !== null} onChange={e => uploadImage(e.target.files?.[0], i)} style={{ ...input, marginTop: 8 }} /></label>{slide.image && <><div style={{maxWidth:460,aspectRatio:format.replace(":"," / ")}}><PosterPreview source={slide.image} ratio={format} text={posterText(i)} enabled={posterEnabled} style={posterStyle} layout={layoutFor(i)} logo={brandLogo} placement={logoPlacement} /></div><button style={{ ...button, justifySelf: "start", background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => void downloadBranded(slide.image!, "oat-carousel-slide-" + (i + 1), i)}>Download slide image</button></>}</article>)}</div>}
       <div style={{ display: "flex", gap: 9, flexWrap: "wrap" }}><button style={button} disabled={saving || imageBusy !== null} onClick={() => void save()}>{saving ? "Saving…" : savedId ? "Save another copy" : "Save to Creations"}</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => window.location.assign("/social/creations")}>View Creations</button><button style={button} onClick={() => void copy(formatPublicPost(result.caption, result.hashtags || "").fullCaption)}>Copy caption + hashtags</button><button style={{ ...button, background: "#fff", color: "#8a5d20", border: "1px solid #d7c7ae" }} onClick={() => download("data:application/json;base64," + btoa(unescape(encodeURIComponent(JSON.stringify({ ...result, caption: cleanPublicCaption(result.caption) }, null, 2)))), carousel ? "oat-carousel-content" : "oat-post-content")}>Download content brief</button>{!carousel && <>
       <button type="button" style={{ ...button, background: published ? "#398357" : "#a8752d", opacity: publishing ? 0.65 : 1 }} disabled={publishing || published || imageBusy !== null || instagram === "loading"} onClick={() => void publish()}>{published ? "Published to Instagram" : publishing ? "Publishing…" : "Publish to Instagram"}</button>
 
