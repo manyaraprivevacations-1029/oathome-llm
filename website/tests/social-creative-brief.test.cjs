@@ -49,3 +49,17 @@ test('Kashi and Varanasi are accepted as aliases for the same destination',()=>{
  const data=draft();data.caption='Explore Kashi';data.slides.forEach(s=>{s.title='Kashi';s.body='Ganga Aarti';s.image_prompts=['Varanasi Ganga Aarti, wide view','Varanasi Dashashwamedh Ghat close view','Varanasi priest performing Ganga Aarti']});
  assert.equal(normalizeCreativeResult(JSON.stringify(data),{...brief,topic:'Kashi',destination:'Kashi',language:'English'}).slides.length,5);
 });
+
+test('Kashmir carousel accepts local landmarks and scenic prompts without the literal region name', () => {
+ const data = draft();
+ data.caption = 'Kashmir trip ని plan చేద్దాం';
+ data.slides.forEach(slide => {
+  slide.title = 'Kashmir ట్రిప్';
+  slide.body = 'మన కుటుంబంతో valley ని చూడండి';
+  slide.image_prompts = ['Shikaras on Dal Lake at dawn', 'Quiet mountain panorama', 'Visitors by the lake in Srinagar'];
+ });
+ const result = normalizeCreativeResult(JSON.stringify(data), { ...brief, topic: 'kashmir', destination: 'kashmir' });
+ assert.equal(result.slides.length, 5);
+ assert.equal(selectedImagePrompt(result, 0), 'Setting: kashmir. Shikaras on Dal Lake at dawn');
+ assert.equal(result.slides[0].image_prompts[1], 'Setting: kashmir. Quiet mountain panorama');
+});

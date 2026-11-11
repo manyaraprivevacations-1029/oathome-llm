@@ -44,7 +44,7 @@ export function creativePrompt(brief: CreativeBrief) {
     "Use only the confirmed package facts supplied in this brief. Never invent prices, dates, departures, inclusions or current conditions. If facts are empty, write destination inspiration with an enquiry CTA. Do not put internal confirmation notes into public copy.",
     languageInstruction(brief.language),
     "Every slide must explain a specific point from the CURRENT topic. Use exactly the selected slide count. Combine a hook or CTA with useful information when the count is small; never add extra cover or closing slides beyond that count. No generic filler or recycling copy from another destination.",
-    "For EVERY image provide exactly THREE DISTINCT image_prompts: 1 scenic setting featuring a named local landmark, 2 closer landmark/architecture view, 3 respectful human-interest view with the named landmark. Each prompt must explicitly name the destination AND a real relevant landmark, and describe how that subject relates to that slide. A mountain-only or generic landscape prompt is insufficient for a pilgrimage topic. Never substitute a different region's monument. Do not invent architectural details you cannot identify.",
+    "For EVERY image provide exactly THREE DISTINCT image_prompts: 1 scenic setting featuring a named local landmark, 2 closer landmark/architecture view, 3 respectful human-interest view with the named landmark. Use the destination from the current brief and a relevant local landmark when known. A local landmark may identify the setting on its own. Describe how the subject relates to the slide. A mountain-only or generic landscape prompt is insufficient for a pilgrimage topic. Never substitute a different region's monument. Do not invent architectural details you cannot identify.",
     "Prompts are English, concise (about 35 words each, under 500 characters), realistic travel imagery, no text, no logo. Make the main subject and action prominent in the frame. Leave only modest uncluttered space for optional typography, not a large empty upper half. For rituals, describe the actual action and distinctive ceremonial props, not just a generic priest or crowd. For Ganga Aarti show a priest raising a flaming multi-tier brass aarti lamp, with the full lamp, hands and devotees visible. For a four-shrine overview, name the four shrines in a clearly separated editorial montage rather than merging them into a fictional temple. AI imagery is illustrative, not a verified photograph. Return no surrounding commentary."
   ].join("\n\n");
 }
@@ -53,11 +53,29 @@ function needsLanguage(copy: string, language: StudioLanguage) {
   return language !== "English" && (!telugu.test(copy) || (language === "Telugu-English" && !/[A-Za-z]/.test(copy)));
 }
 function text(value: unknown, max: number) { return typeof value === "string" ? value.trim().slice(0, max) : ""; }
-function prompts(value: unknown) {
+const knownRegions = [
+  /\b(?:kashmir|srinagar|dal lake|gulmarg|pahalgam|sonamarg)\b/i,
+  /\b(?:kerala|kochi|munnar|alleppey|alappuzha)\b/i,
+  /\b(?:kashi|varanasi|banaras|benares|dashashwamedh)\b/i,
+];
+
+function prompts(value: unknown, brief: CreativeBrief) {
   if (!Array.isArray(value)) throw new Error("Provide exactly three distinct image prompts per image.");
   const items = value.map(v=>text(v,1400)).filter(Boolean);
   if (items.length !== 3 || new Set(items.map(v=>v.toLowerCase())).size !== 3) throw new Error("Provide exactly three distinct image prompts per image.");
-  return items;
+  const destination = brief.destination.trim();
+  const requestedPlaces = `${destination} ${brief.topic}`;
+  if (!destination || isHimalayanCharDham(requestedPlaces)) return items;
+
+  // A missing region name is repairable. A known conflicting region needs a new prompt.
+  const hasKnownDestination = knownRegions.some(region => region.test(destination));
+  return items.map(prompt => {
+    if (hasKnownDestination && knownRegions.some(region => region.test(prompt) && !region.test(requestedPlaces))) {
+      throw new Error(`An image prompt mentions a place outside the current destination (${destination}). Use a scene from the requested destination.`);
+    }
+    if (prompt.toLowerCase().includes(destination.toLowerCase())) return prompt;
+    return `Setting: ${destination.slice(0, 160)}. ${prompt}`;
+  });
 }
 export function normalizeCreativeResult(raw: string, brief: CreativeBrief): CreativeResult {
   const data = JSON.parse(raw.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()) as Record<string,unknown>;
@@ -73,14 +91,14 @@ export function normalizeCreativeResult(raw: string, brief: CreativeBrief): Crea
       const slide=item as Record<string,unknown>,title=text(slide.title,160),body=text(slide.body,240);
       if (!title || !body) throw new Error("Each slide needs a relevant title and copy.");
       if (needsLanguage(title+" "+body,brief.language)) throw new Error("Every slide must use the selected Telugu language, with English words when requested.");
-      const options=prompts(slide.image_prompts);
+      const options=prompts(slide.image_prompts, brief);
       return {title,body,image_prompt:options[0],image_prompts:options,selected_prompt:0};
     });
   } else {
     output.headline=text(data.headline,180);output.poster_title=text(data.poster_title,100)||brief.destination||brief.topic;
     output.poster_details=text(data.poster_details,240);
     if (needsLanguage((output.poster_details||"")+" "+(output.poster_cta||""),brief.language)) throw new Error("Poster details must use the selected language too.");
-    output.image_prompts=prompts(data.image_prompts);output.visual_prompt=output.image_prompts[0];output.selected_prompt=0;
+    output.image_prompts=prompts(data.image_prompts, brief);output.visual_prompt=output.image_prompts[0];output.selected_prompt=0;
   }
   // Char Dham prompts must be anchored to actual pilgrimage subjects, not mountains alone.
   if (isHimalayanCharDham(brief.destination+" "+brief.topic)) {
@@ -88,14 +106,6 @@ export function normalizeCreativeResult(raw: string, brief: CreativeBrief): Crea
     if (all.some(prompt=>!/(yamunotri|gangotri|kedarnath|badrinath)/i.test(prompt))) throw new Error("Every Char Dham image prompt must name an actual Char Dham shrine, not just the Himalayas.");
     const visible=[output.caption,output.poster_title,output.poster_details,...(output.slides||[]).map(s=>s.title+" "+s.body)].join(" ");
     if (!/(char\s*dham|chardham|కేదార్|బద్రీ|చార్|యమునోత్రి|గంగోత్రి|kedarnath|badrinath|yamunotri|gangotri)/i.test(visible)) throw new Error("The content must explicitly address Char Dham.");
-  }
-  // English-language destination names must also appear in each English image prompt.
-  const namedDestination = brief.destination.trim();
-  if (!isHimalayanCharDham(brief.destination+" "+brief.topic) && /^[a-z ,.-]+$/i.test(namedDestination)) {
-    const anchors = namedDestination.toLowerCase().split(/[^a-z]+/).filter(word=>word.length>2 && !["india","trip","tour","yatra"].includes(word));
-    if(anchors.some(word=>["kashi","varanasi","banaras","benares"].includes(word)))anchors.push("kashi","varanasi","banaras","benares");
-    const all=output.slides?.flatMap(slide=>slide.image_prompts||[]) || output.image_prompts || [];
-    if(anchors.length && all.some(prompt=>!anchors.some(word=>prompt.toLowerCase().includes(word)))) throw new Error("Each image prompt must explicitly name the current destination, not a different place.");
   }
   return output;
 }
