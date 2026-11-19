@@ -10,6 +10,7 @@ const groups: { title: string; items: { icon: string; name: string; description:
   { title: "CREATE", items: [
     { icon: "✧", name: "Idea Studio", description: "Discover travel content ideas and campaign angles.", href: "/social/trends" },
     { icon: "✎", name: "Create reel", description: "Build reel scripts, storyboards and production briefs.", href: "/social/reels" },
+    { icon: "✂", name: "AutoClip Studio", description: "Cut and export short clips from your own videos locally in your browser.", href: "/social/autoclip", badge: "NEW" },
     { icon: "▧", name: "Create post", description: "Create an Instagram single-image post with AI copy and artwork.", href: "/social/posts" },
     { icon: "▤", name: "Create carousel", description: "Build multi-slide Instagram carousels with individual slide copy and visuals.", href: "/social/carousels" },
     { icon: "▱", name: "Creations", description: "Manage your saved posts and carousels.", href: "/social/creations" },
