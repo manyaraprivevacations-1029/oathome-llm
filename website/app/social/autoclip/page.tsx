@@ -57,9 +57,9 @@ export default function AutoClipPage(){
   };
   const seek=async(value:number)=>{const video=ref.current;if(!video)return;video.pause();await timedSeek(video,bound(value,0,Math.max(0,duration-.05)));};
   const preview=async(clip:Clip)=>{
+    if(busy)return;
     setSelected(clip.id);
-    try{await seek(clip.start);setStatus("Preview positioned at "+stamp(clip.start)+". Use the video controls to play.");}
-    catch(e){setStatus(e instanceof Error?e.message:"Preview failed.");}
+    setStatus("Inline preview opened for clip "+clip.id+" ("+stamp(clip.start)+"–"+stamp(clip.end)+").");
   };
   const update=(id:number,key:"start"|"end"|"title",value:string)=>setClips(items=>items.map(c=>{
     if(c.id!==id)return c;
@@ -194,13 +194,20 @@ export default function AutoClipPage(){
     </section>
     {clips.length>0&&<section style={panel}>
       <h3 style={{margin:"0 0 14px"}}>3. Review, trim and export AI-selected clips</h3>
-      <p style={{fontSize:12,color:"#766a59",lineHeight:1.5}}>Click Preview to jump to a suggestion. Edit start/end times or titles, then export a proper MP4 without relying on real-time browser recording.</p>
+      <p style={{fontSize:12,color:"#766a59",lineHeight:1.5}}>Click Preview to play a section here in the clip card. After export, a separate preview player and download button will appear directly below that clip.</p>
       <div style={{display:"grid",gap:13}}>
         {clips.map(c=><div key={c.id} style={{padding:15,borderRadius:13,border:"1px solid "+(selected===c.id?"#af7e37":"#e5dac9"),background:selected===c.id?"#fff8ec":"#fff",display:"grid",gap:10}}>
           <div style={{display:"flex",justifyContent:"space-between",gap:8,alignItems:"center",flexWrap:"wrap"}}>
             <button style={soft} disabled={!!busy} onClick={()=>void preview(c)}>▶ Preview AI clip {c.id}</button>
             <span style={{fontSize:12,color:"#7f6036"}}>{stamp(c.start)}–{stamp(c.end)} · AI score {c.score}/100</span>
           </div>
+          {selected===c.id && sourceUrl && <div style={{padding:12,borderRadius:12,background:"#191919",display:"grid",gap:8,justifyItems:"center"}}>
+            <video key={"inline-"+c.id+"-"+sourceUrl} src={sourceUrl} playsInline controls preload="metadata"
+              onLoadedMetadata={event=>{const player=event.currentTarget;player.currentTime=Math.max(0,c.start);}}
+              onTimeUpdate={event=>{const player=event.currentTarget;if(player.currentTime>=c.end){player.pause();player.currentTime=c.start;}}}
+              style={{display:"block",width:"100%",maxWidth:380,maxHeight:400,objectFit:"contain",background:"#111",borderRadius:8}}/>
+            <div style={{fontSize:12,color:"#fff"}}>Source preview: {stamp(c.start)} – {stamp(c.end)}. Press play to view this section.</div>
+          </div>}
           <input style={field} value={c.title} aria-label={"Clip "+c.id+" title"} disabled={!!busy} onChange={e=>update(c.id,"title",e.target.value)}/>
           <div style={{fontSize:12,color:"#736652",lineHeight:1.5}}><strong>Why Gemini chose this:</strong> {c.reason}</div>
           {c.caption&&<div style={{fontSize:12,color:"#736652"}}><strong>Caption idea:</strong> {c.caption}</div>}
@@ -210,10 +217,23 @@ export default function AutoClipPage(){
           </div>
           <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
             <button style={{...btn,opacity:(busy||c.end<=c.start)?0.55:1}} disabled={!!busy||c.end<=c.start} onClick={()=>void exportVideo(c)}>Export clip {c.id} as MP4</button>
-            {downloads.filter(d=>d.id===c.id).map(d=><a key={d.url} href={d.url} download={d.filename} style={{color:"#9a671f",fontWeight:700,fontSize:13}}>↓ Download {d.filename}</a>)}
+            {downloads.filter(d=>d.id===c.id).map(d=><a key={d.url} href={d.url} download={d.filename} style={{...soft,textDecoration:"none",display:"inline-block"}}>↓ Download MP4</a>)}
           </div>
+          {downloads.filter(d=>d.id===c.id).map(d=><div key={"rendered-"+d.url} style={{padding:12,borderRadius:12,background:"#f4eee4",display:"grid",gap:9}}>
+            <strong style={{fontSize:13}}>✓ Exported clip {c.id} — Ready to preview and download</strong>
+            <video src={d.url} controls playsInline preload="metadata" style={{display:"block",width:"100%",maxWidth:380,maxHeight:430,background:"#111",borderRadius:9}}/>
+            <div style={{display:"flex",gap:10,flexWrap:"wrap",alignItems:"center"}}>
+              <a href={d.url} download={d.filename} style={{...btn,textDecoration:"none",display:"inline-block"}}>↓ Download video to your computer</a>
+              <span style={{fontSize:12,color:"#6f5c41"}}>{d.filename} · Usually saved in Chrome Downloads</span>
+            </div>
+          </div>)}
         </div>)}
       </div>
+    </section>}
+    {downloads.length>0&&<section style={panel}>
+      <h3 style={{margin:"0 0 10px"}}>4. Your exported videos</h3>
+      <p style={{fontSize:12,color:"#716554"}}>These clips are available in this open tab. Download them to your computer before refreshing or leaving the page.</p>
+      <div style={{display:"flex",gap:10,flexWrap:"wrap"}}>{downloads.map(d=><a key={"export-"+d.url} download={d.filename} href={d.url} style={{...soft,textDecoration:"none",display:"inline-block"}}>↓ Clip {d.id} — Download MP4</a>)}</div>
     </section>}
     {busy&&<section style={panel}><strong>{busy==="analyze"?"AI highlight analysis":"Video export"} · {progress}%</strong><progress value={progress} max={100} style={{display:"block",width:"100%",marginTop:12}}/><p style={{fontSize:12,color:"#7d705d"}}>Keep this page open while processing. Video exporting on your computer can be CPU-intensive.</p></section>}
     <p role="status" aria-live="polite" style={{margin:0,padding:"12px 15px",background:"#faf6ed",border:"1px solid #e8deca",borderRadius:10,fontSize:13,color:"#806236"}}>{status}</p>
