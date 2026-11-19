@@ -25,6 +25,7 @@ function suggestedClips(duration: number, count: number, length: number): Clip[]
 export default function AutoClipStudioPage() {
   const videoRef = useRef<HTMLVideoElement>(null);
   const urlRef = useRef<string | null>(null);
+  const downloadUrlsRef = useRef<string[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [url, setUrl] = useState("");
   const [length, setLength] = useState(0);
@@ -40,10 +41,8 @@ export default function AutoClipStudioPage() {
 
   useEffect(() => () => {
     if (urlRef.current) URL.revokeObjectURL(urlRef.current);
+    for (const href of downloadUrlsRef.current) URL.revokeObjectURL(href);
   }, []);
-  useEffect(() => () => {
-    for (const item of downloads) URL.revokeObjectURL(item.href);
-  }, [downloads]);
 
   function selectFile(next: File | undefined) {
     if (!next) return;
@@ -130,6 +129,7 @@ export default function AutoClipStudioPage() {
       const ext = mimeType.startsWith("video/mp4") ? "mp4" : "webm";
       const name = (file.name.replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]+/gi, "-").slice(0, 35) || "video") + "-clip-" + item.id + "." + ext;
       const href = URL.createObjectURL(blob);
+      downloadUrlsRef.current.push(href);
       setDownloads(prev => [...prev.filter(x => x.id !== item.id), { id: item.id, href, name }]);
       setProgress(100); setStatus("Clip " + item.id + " exported. Download it below.");
     } catch (error) {
