@@ -13,6 +13,7 @@ const groups = [
   { label: "CREATE", items: [
     { label: "Idea Studio", icon: "✧", href: "/social/trends" },
     { label: "Create reel", icon: "✎", href: "/social/reels" },
+    { label: "AutoClip Studio", icon: "✂", href: "/social/autoclip", badge: "NEW" },
     { label: "Create post", icon: "▧", href: "/social/posts" },
     { label: "Create carousel", icon: "▤", href: "/social/carousels" },
     { label: "Creations", icon: "▱", href: "/social/creations" },
