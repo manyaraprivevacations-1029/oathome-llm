@@ -76,25 +76,42 @@ export async function POST(request: NextRequest) {
     parts.push({ inline_data: { mime_type: "image/jpeg", data: frame.image.split(",")[1] } });
   });
   const configured = process.env.GEMINI_TEXT_MODEL?.trim();
-  const models = [...new Set([configured, "gemini-3.1-flash-lite", "gemini-3.5-flash-lite"].filter((m): m is string => Boolean(m)))].filter(m => /^[a-z0-9.-]{3,64}$/.test(m));
+  // Model availability differs by API key; never assume a model ID is enabled.
+  const models = [...new Set([configured, "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-2.5-flash-lite", "gemini-2.5-flash"].filter((m): m is string => Boolean(m)))].filter(m => /^[a-z0-9.-]{3,64}$/.test(m));
+  const problems: string[] = [];
   for (const model of models) {
     try {
       const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent", {
         method: "POST", headers: { "Content-Type": "application/json", "x-goog-api-key": key },
         body: JSON.stringify({
           contents: [{ role: "user", parts }],
-          generationConfig: { temperature: .25, maxOutputTokens: 2400, responseMimeType: "application/json" }
+          generationConfig: {
+            temperature: .2, maxOutputTokens: 4500, responseMimeType: "application/json",
+            ...(model.startsWith("gemini-2.5") ? { thinkingConfig: { thinkingBudget: 0 } } : {})
+          }
         }),
-        cache: "no-store", signal: AbortSignal.timeout(48000)
+        cache: "no-store", signal: AbortSignal.timeout(18000)
       });
-      if (response.status === 404 || response.status === 503) continue;
-      if (response.status === 429) return fail("Gemini API quota or rate limit reached. Try again later.", 429);
-      if (response.status === 401 || response.status === 403) return fail("Gemini API key is not authorized for this model.", 503);
-      if (!response.ok) return fail("Gemini analysis failed (HTTP " + response.status + "). Try fewer frames or another model.", 502);
-      const data = await response.json() as { candidates?: Array<{content?: {parts?: Array<{text?: string}>}} > };
-      const raw = data.candidates?.[0]?.content?.parts?.map(p => p.text || "").join("") || "";
-      const parsed = JSON.parse(raw.replace(/^\x60\x60\x60(?:json)?/i,"").replace(/\x60\x60\x60$/,"").trim()) as { clips?: unknown[] };
-      if (!Array.isArray(parsed.clips)) return fail("Gemini did not return valid clip suggestions. Retry analysis.",502);
+      if (response.status === 429) return fail("Gemini quota or rate limit reached (HTTP 429). Open Google AI Studio to check remaining quota for this API key.", 429);
+      if (response.status === 401 || response.status === 403) return fail("Gemini API key is invalid or lacks permission (HTTP " + response.status + "). Check the key and API restrictions in Google AI Studio.", 503);
+      if (!response.ok) {
+        console.warn("[autoclip] Gemini model rejected analysis", { model, status: response.status });
+        problems.push(model + ": HTTP " + response.status);
+        // Continue to the next configured model if this model cannot serve the request.
+        if ([400, 404, 500, 502, 503, 504].includes(response.status)) continue;
+        return fail("Gemini rejected the request (HTTP " + response.status + ").", 502);
+      }
+      const data = await response.json() as { candidates?: Array<{content?: {parts?: Array<{text?: string}>}; finishReason?: string}>; promptFeedback?: {blockReason?: string} };
+      const candidate = data.candidates?.[0];
+      const raw = candidate?.content?.parts?.map(p => p.text || "").join("").trim() || "";
+      if (!raw) {
+        problems.push(model + ": empty response (" + (candidate?.finishReason || data.promptFeedback?.blockReason || "unknown reason") + ")");
+        continue;
+      }
+      let parsed: { clips?: unknown[] };
+      try { parsed = JSON.parse(raw.replace(/^\x60\x60\x60(?:json)?/i, "").replace(/\x60\x60\x60$/, "").trim()) as { clips?: unknown[] }; }
+      catch { problems.push(model + ": invalid JSON"); continue; }
+      if (!Array.isArray(parsed.clips) || !parsed.clips.length) { problems.push(model + ": no highlights returned"); continue; }
       const clips: Highlight[] = parsed.clips.slice(0,count).map((entry) => {
         const item = entry && typeof entry === "object" ? entry as Record<string,unknown> : {};
         const start = Math.max(0,Math.min(duration - .5,Number(item.start) || 0));
@@ -107,11 +124,12 @@ export async function POST(request: NextRequest) {
           score: Math.max(1,Math.min(100,Math.round(Number(item.score)||70)))
         };
       });
-      if (!clips.length) return fail("Gemini returned no highlights. Try different footage.",502);
-      return NextResponse.json({ clips, model, analysis: "visual-frames-only" },{ headers: { "Cache-Control": "no-store" } });
+      return NextResponse.json({ clips, model, analysis: "visual-frames-only" }, { headers: { "Cache-Control": "no-store" } });
     } catch (error) {
-      console.error("[autoclip] Gemini video highlight analysis error", { model, reason: error instanceof Error ? error.message : "unknown" });
+      const reason = error instanceof Error && error.name === "TimeoutError" ? "timeout" : "network or processing failure";
+      problems.push(model + ": " + reason);
+      console.error("[autoclip] Gemini highlight request failed", { model, reason });
     }
   }
-  return fail("Gemini analysis is unavailable. Check the configured model and retry.", 502);
+  return fail("Gemini could not analyze the frames. Tried " + models.length + " models. " + problems.slice(0,5).join("; ") + ". Check model access and quota in Google AI Studio.", 502);
 }
